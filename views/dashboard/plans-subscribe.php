@@ -11,6 +11,11 @@
 $planColor = View::e($plan['color'] ?? '#9945ff');
 $planApps  = $plan['included_apps'] ?? [];
 $isFree    = (float)($plan['price'] ?? 0) === 0.0;
+$defaultPaymentMethod = $paymentSettings['payment_method'] ?? 'request';
+$canUseUpi = !empty($paymentSettings['payment_upi_id'] ?? '');
+$canUseCashfree = ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+    && !empty($paymentSettings['payment_cashfree_app_id'] ?? '')
+    && !empty($paymentSettings['payment_cashfree_secret'] ?? '');
 ?>
 
 <!-- Breadcrumb -->
@@ -92,6 +97,28 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
             </div>
 
             <?php if (!$isFree): ?>
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                    <?php if ($canUseUpi): ?>
+                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
+                        <input type="radio" name="payment_method" value="upi" <?= $defaultPaymentMethod === 'upi' ? 'checked' : '' ?>>
+                        <span><strong>UPI QR</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Pay exact amount using <?= View::e($paymentSettings['payment_upi_id']) ?></span></span>
+                    </label>
+                    <?php endif; ?>
+                    <?php if ($canUseCashfree): ?>
+                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
+                        <input type="radio" name="payment_method" value="cashfree" <?= $defaultPaymentMethod === 'cashfree' ? 'checked' : '' ?>>
+                        <span><strong>Cashfree Checkout</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Pay securely using Cashfree hosted checkout</span></span>
+                    </label>
+                    <?php endif; ?>
+                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
+                        <input type="radio" name="payment_method" value="request" <?= (!$canUseUpi && !$canUseCashfree) || $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
+                        <span><strong>Manual Review</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Submit request and let admin activate manually</span></span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Optional message for paid plans -->
             <div class="form-group">
                 <label class="form-label">Message to Admin <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>

@@ -132,6 +132,7 @@
             $billing  = $sub['billing_cycle'] ?? null;
             $since    = $sub['started_at']    ?? null;
             $expires  = $sub['expires_at']    ?? null;
+            $upgradeUrl = $appKey === 'resumex' ? '/projects/resumex/plans' : '#platform-plans';
         ?>
         <div class="app-sub-row">
             <!-- Icon -->
@@ -166,7 +167,7 @@
             <div class="app-actions">
                 <a href="<?= $meta['url'] ?>" class="btn-app btn-app-open">Open</a>
                 <?php if (!$planName): ?>
-                <a href="#platform-plans" class="btn-app btn-app-upgrade">Upgrade</a>
+                <a href="<?= $upgradeUrl ?>" class="btn-app btn-app-upgrade">Upgrade</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -194,6 +195,9 @@
                     <div style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">
                         <?php $subCur = htmlspecialchars($sub['currency'] ?? 'USD'); echo $sub['price'] == 0 ? 'Free' : ($subCur.'&nbsp;'.number_format((float)$sub['price'],2).' / '.htmlspecialchars($sub['billing_cycle'])); ?>
                         &middot; Active since <?= date('M j, Y', strtotime($sub['started_at'])) ?>
+                        <?php if (!empty($sub['expires_at'])): ?>
+                            &middot; Expires <?= date('M j, Y', strtotime($sub['expires_at'])) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="plan-apps" style="margin-top:10px;">
                         <?php foreach ($apps as $ak):
@@ -279,6 +283,76 @@
             </div>
         </div>
         <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if (!empty($platformHistory)): ?>
+    <hr class="plans-divider">
+    <section style="margin-bottom:28px;">
+        <p class="plans-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
+            </svg>
+            Subscription History
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <?php foreach ($platformHistory as $history): ?>
+            <div class="app-sub-row" style="grid-template-columns:1fr auto auto;">
+                <div class="app-info">
+                    <div class="app-name"><?= View::e($history['plan_name']) ?></div>
+                    <div class="app-meta">
+                        <?= View::e($history['currency'] ?? 'USD') ?>&nbsp;<?= number_format((float) ($history['price'] ?? 0), 2) ?> / <?= View::e($history['billing_cycle'] ?? 'monthly') ?>
+                        &middot; Started <?= date('M j, Y', strtotime($history['started_at'])) ?>
+                        <?php if (!empty($history['expires_at'])): ?>
+                            &middot; Expires <?= date('M j, Y', strtotime($history['expires_at'])) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <span class="sub-badge <?= ($history['status'] ?? '') === 'active' ? 'sub-badge-active' : 'sub-badge-free' ?>">
+                    <?= View::e(ucfirst($history['status'] ?? 'unknown')) ?>
+                </span>
+                <div class="app-actions">
+                    <a href="/plans/invoice/<?= (int) $history['id'] ?>" class="btn-app btn-app-open">Invoice</a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if (!empty($paymentHistory)): ?>
+    <hr class="plans-divider">
+    <section style="margin-bottom:28px;">
+        <p class="plans-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            Payment History
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <?php foreach ($paymentHistory as $payment): ?>
+            <div class="app-sub-row" style="grid-template-columns:1fr auto auto;">
+                <div class="app-info">
+                    <div class="app-name"><?= View::e($payment['plan_name']) ?></div>
+                    <div class="app-meta">
+                        <?= View::e($payment['currency']) ?>&nbsp;<?= number_format((float) $payment['amount'], 2) ?>
+                        &middot; <?= strtoupper(View::e($payment['gateway'])) ?>
+                        &middot; Ref <?= View::e($payment['reference']) ?>
+                        &middot; <?= date('M j, Y', strtotime($payment['created_at'])) ?>
+                    </div>
+                </div>
+                <span class="sub-badge <?= ($payment['status'] ?? '') === 'paid' ? 'sub-badge-active' : 'sub-badge-free' ?>">
+                    <?= View::e(str_replace('_', ' ', ucfirst($payment['status'] ?? 'pending'))) ?>
+                </span>
+                <div class="app-actions">
+                    <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn-app btn-app-open">View</a>
+                    <?php if (!empty($payment['subscription_id']) && ($payment['status'] ?? '') === 'paid'): ?>
+                    <a href="/plans/invoice/<?= (int) $payment['subscription_id'] ?>" class="btn-app btn-app-open">Invoice</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
         </div>
     </section>
     <?php endif; ?>

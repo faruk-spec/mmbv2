@@ -164,8 +164,15 @@ switch ($segments[0]) {
         $ctrl = new \Projects\ResumeX\Controllers\PlansController();
         $sub1 = $segments[1] ?? '';
         $sub2 = $segments[2] ?? '';
+        $sub3 = $segments[3] ?? '';
         if ($sub1 === 'invoice' && $sub2) {
             $ctrl->invoice((int)$sub2);
+        } elseif ($sub1 === 'payment' && $sub2 && $sub3 === 'confirm' && $method === 'POST') {
+            $ctrl->confirmPayment((int)$sub2);
+        } elseif ($sub1 === 'payment' && $sub2 && $sub3 === 'return') {
+            $ctrl->cashfreeReturn((int)$sub2);
+        } elseif ($sub1 === 'payment' && $sub2) {
+            $ctrl->payment((int)$sub2);
         } elseif ($method === 'POST') {
             $ctrl->subscribe($sub1);
         } elseif ($sub1) {

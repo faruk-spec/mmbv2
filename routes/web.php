@@ -85,6 +85,9 @@ $router->post('/mail/sync', 'MailController@sync', ['auth']);
 $router->get('/plans', 'PlansController@index', ['auth']);
 $router->get('/plans/subscribe/{slug}', 'PlansController@subscribe', ['auth']);
 $router->post('/plans/subscribe/{slug}', 'PlansController@processSubscribe', ['auth']);
+$router->get('/plans/payment/{id}', 'PlansController@payment', ['auth']);
+$router->post('/plans/payment/{id}/confirm', 'PlansController@confirmPayment', ['auth']);
+$router->get('/plans/payment/{id}/return', 'PlansController@cashfreeReturn', ['auth']);
 $router->get('/plans/invoice/{id}', 'PlansController@invoice', ['auth']);
 
 // Notification API

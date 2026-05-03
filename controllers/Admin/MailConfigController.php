@@ -17,6 +17,7 @@ use Core\Security;
 use Core\View;
 use Core\MailService;
 use Core\Logger;
+use Core\SubscriptionService;
 
 class MailConfigController extends BaseController
 {
@@ -270,6 +271,9 @@ class MailConfigController extends BaseController
     public function templates(): void
     {
         $db        = Database::getInstance();
+        $subscriptionService = new SubscriptionService($db);
+        $subscriptionService->ensureInfrastructure();
+        $subscriptionService->ensureNotificationTemplates();
         $templates = $db->fetchAll("SELECT * FROM mail_notification_templates ORDER BY slug ASC");
         $providers = $db->fetchAll("SELECT id, name, from_email, is_active FROM mail_provider_configs ORDER BY is_active DESC, name ASC");
 

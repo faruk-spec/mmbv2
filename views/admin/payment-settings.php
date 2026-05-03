@@ -102,9 +102,9 @@
         <div class="form-group">
             <label for="payment_cashfree_secret">Secret Key</label>
             <input type="text" id="payment_cashfree_secret" name="payment_cashfree_secret"
-                   value="<?= htmlspecialchars($settings['payment_cashfree_secret']??'') ?>"
-                   placeholder="Your Cashfree Secret Key">
-            <small>&#9888; Stored as plain text in the database. Ensure your server is secured.</small>
+                   value=""
+                   placeholder="<?= !empty($settings['payment_cashfree_secret_set']) ? htmlspecialchars($settings['payment_cashfree_secret']) . ' (leave blank to keep existing)' : 'Your Cashfree Secret Key' ?>">
+            <small>Secrets are stored encrypted. Leave blank to keep the current secret unchanged.</small>
         </div>
         <div class="form-group">
             <label>Sandbox / Test Mode</label>

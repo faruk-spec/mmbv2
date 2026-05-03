@@ -32,8 +32,10 @@
     border-radius: 10px; padding: 12px 16px; margin-bottom: 8px; font-size: .85rem;
 }
 .badge-active  { background: rgba(0,255,136,.15); color: var(--green); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+.badge-paid  { background: rgba(0,255,136,.15); color: var(--green); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .badge-cancelled { background: rgba(255,107,107,.15); color: var(--red); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .badge-trial   { background: rgba(245,158,11,.15); color: #f59e0b; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
+.badge-pending { background: rgba(0,240,255,.15); color: var(--cyan); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 </style>
 <?php View::endSection(); ?>
 
@@ -171,6 +173,33 @@
             <span class="badge-<?= htmlspecialchars($h['status']) ?>"><?= ucfirst($h['status']) ?></span>
             <a href="/projects/resumex/plans/invoice/<?= (int)$h['id'] ?>" class="btn btn-secondary btn-sm" style="font-size:.75rem;padding:4px 10px;">
                 <i class="fas fa-file-invoice"></i> Invoice
+            </a>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($paymentHistory)): ?>
+    <div style="margin-top:32px;">
+        <p style="font-size:.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-receipt" style="color:var(--purple);"></i> Payment History
+        </p>
+        <?php foreach ($paymentHistory as $payment): ?>
+        <div class="rx-history-row">
+            <div>
+                <strong><?= htmlspecialchars($payment['plan_name']) ?></strong>
+                <div style="font-size:.75rem;color:var(--text-secondary);">
+                    <?= strtoupper(htmlspecialchars($payment['gateway'])) ?> &middot; Ref <?= htmlspecialchars($payment['reference']) ?>
+                </div>
+            </div>
+            <div style="font-size:.82rem;color:var(--text-secondary);">
+                <?= htmlspecialchars($payment['currency']) ?>&nbsp;<?= number_format((float) $payment['amount'], 2) ?>
+            </div>
+            <span class="badge-<?= htmlspecialchars(in_array($payment['status'], ['active','paid','cancelled','trial'], true) ? $payment['status'] : 'pending') ?>">
+                <?= ucfirst(str_replace('_', ' ', $payment['status'])) ?>
+            </span>
+            <a href="/projects/resumex/plans/payment/<?= (int) $payment['id'] ?>" class="btn btn-secondary btn-sm" style="font-size:.75rem;padding:4px 10px;">
+                <i class="fas fa-eye"></i> View
             </a>
         </div>
         <?php endforeach; ?>

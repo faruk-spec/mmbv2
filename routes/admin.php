@@ -501,3 +501,6 @@ $router->get('/admin/support/builder/{category_id}',               'Admin\\Suppo
 // Payment Gateway Settings
 $router->get('/admin/payment-settings', 'Admin\\PaymentSettingsController@index', ['auth', 'admin']);
 $router->post('/admin/payment-settings', 'Admin\\PaymentSettingsController@save', ['auth', 'admin']);
+$router->get('/admin/subscription-payments', 'Admin\\SubscriptionPaymentsController@index', ['auth', 'admin']);
+$router->post('/admin/subscription-payments/{id}/approve', 'Admin\\SubscriptionPaymentsController@approve', ['auth', 'admin']);
+$router->post('/admin/subscription-payments/{id}/reject', 'Admin\\SubscriptionPaymentsController@reject', ['auth', 'admin']);

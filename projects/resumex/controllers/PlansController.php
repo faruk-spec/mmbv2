@@ -11,11 +11,13 @@ use Core\Database;
 use Core\Logger;
 use Core\Security;
 use Core\View;
+use Core\SubscriptionService;
 
 class PlansController
 {
     private Database $db;
     private int $userId;
+    private SubscriptionService $subscriptionService;
 
     public function __construct()
     {
@@ -25,7 +27,10 @@ class PlansController
         }
         $this->db     = Database::getInstance();
         $this->userId = Auth::id();
+        $this->subscriptionService = new SubscriptionService($this->db);
         $this->ensureTables();
+        $this->subscriptionService->ensureInfrastructure();
+        $this->subscriptionService->ensureNotificationTemplates();
     }
 
     public function index(): void
@@ -34,6 +39,7 @@ class PlansController
         $currentSub = $this->getCurrentSubscription();
         $history    = $this->getSubscriptionHistory();
         $settings   = $this->getPaymentSettings();
+        $paymentHistory = $this->subscriptionService->getUserPayments($this->userId, 'resumex');
 
         $this->render('plans', [
             'title'      => 'ResumeX Plans',
@@ -41,6 +47,7 @@ class PlansController
             'currentSub' => $currentSub,
             'history'    => $history,
             'settings'   => $settings,
+            'paymentHistory' => $paymentHistory,
         ]);
     }
 
@@ -88,20 +95,112 @@ class PlansController
             exit;
         }
 
-        // Paid plan — check payment method
         $settings = $this->getPaymentSettings();
-        $method   = $_POST['payment_method'] ?? 'request';
+        $method   = $_POST['payment_method'] ?? ($settings['payment_method'] ?? 'request');
 
-        if ($method === 'upi' && !empty($settings['upi_id'])) {
-            Logger::activity($this->userId, 'resumex_upi_payment_initiated', ['plan_slug' => $slug]);
-            $this->activateSubscription($plan, 'pending_payment');
-            $_SESSION['_flash']['success'] = 'UPI payment initiated. Your plan will be activated after payment confirmation.';
-        } else {
-            Logger::activity($this->userId, 'resumex_subscription_requested', ['plan_slug' => $slug, 'price' => $plan['price']]);
-            $_SESSION['_flash']['success'] = 'Your subscription request for "' . $plan['name'] . '" has been submitted. An admin will activate it shortly.';
+        $payment = $this->subscriptionService->createOrReusePayment([
+            'user_id' => $this->userId,
+            'app_key' => 'resumex',
+            'plan_id' => (int) $plan['id'],
+            'plan_name' => (string) $plan['name'],
+            'billing_cycle' => $plan['billing_cycle'] ?? 'monthly',
+            'gateway' => in_array($method, ['upi', 'cashfree'], true) ? $method : 'request',
+            'status' => $method === 'request' ? 'verification_pending' : 'pending',
+            'amount' => (float) $plan['price'],
+            'currency' => (string) ($plan['currency'] ?? ($settings['payment_currency'] ?? 'USD')),
+            'payment_payload' => $method === 'upi' && !empty($settings['payment_upi_id'])
+                ? 'upi://pay?' . http_build_query([
+                    'pa' => $settings['payment_upi_id'],
+                    'pn' => 'ResumeX',
+                    'am' => number_format((float) $plan['price'], 2, '.', ''),
+                    'cu' => $plan['currency'] ?? ($settings['payment_currency'] ?? 'INR'),
+                    'tn' => $plan['name'] . ' Plan',
+                ])
+                : null,
+            'metadata' => ['plan_slug' => $slug],
+        ]);
+
+        if ($method === 'cashfree'
+            && ($settings['payment_cashfree_enabled'] ?? '0') === '1'
+            && !empty($settings['payment_cashfree_app_id'])
+            && !empty($settings['payment_cashfree_secret'])
+        ) {
+            $cashfreeResult = $this->subscriptionService->createCashfreeOrder(
+                $payment,
+                $settings,
+                [
+                    'name' => Auth::user()['name'] ?? 'Customer',
+                    'email' => Auth::user()['email'] ?? '',
+                    'phone' => Auth::user()['phone'] ?? '9999999999',
+                ],
+                $this->buildAbsoluteUrl('/projects/resumex/plans/payment/' . (int) $payment['id'] . '/return')
+            );
+
+            if (!$cashfreeResult['success']) {
+                $_SESSION['_flash']['error'] = $cashfreeResult['message'] ?? 'Unable to start Cashfree payment.';
+                header('Location: /projects/resumex/plans/' . urlencode($slug));
+                exit;
+            }
         }
 
-        header('Location: /projects/resumex/plans');
+        Logger::activity($this->userId, 'resumex_subscription_requested', ['plan_slug' => $slug, 'price' => $plan['price'], 'gateway' => $method]);
+        header('Location: /projects/resumex/plans/payment/' . (int) $payment['id']);
+        exit;
+    }
+
+    public function payment(int $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment($id, $this->userId);
+        if (!$payment) {
+            $_SESSION['_flash']['error'] = 'Payment record not found.';
+            header('Location: /projects/resumex/plans');
+            exit;
+        }
+
+        $this->render('plans-payment', [
+            'title' => 'ResumeX Payment',
+            'payment' => $payment,
+            'settings' => $this->getPaymentSettings(),
+        ]);
+    }
+
+    public function confirmPayment(int $id): void
+    {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid request token.';
+            header('Location: /projects/resumex/plans/payment/' . $id);
+            exit;
+        }
+
+        if ($this->subscriptionService->markUserPaymentSubmitted($id, $this->userId)) {
+            $_SESSION['_flash']['success'] = 'Payment marked as submitted. Admin verification is pending.';
+        } else {
+            $_SESSION['_flash']['error'] = 'Unable to update payment status.';
+        }
+
+        header('Location: /projects/resumex/plans/payment/' . $id);
+        exit;
+    }
+
+    public function cashfreeReturn(int $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment($id, $this->userId);
+        if (!$payment) {
+            $_SESSION['_flash']['error'] = 'Payment record not found.';
+            header('Location: /projects/resumex/plans');
+            exit;
+        }
+
+        $result = $this->subscriptionService->verifyCashfreePayment($payment, $this->getPaymentSettings());
+        if (!empty($result['success']) && !empty($result['paid']) && $this->subscriptionService->approvePayment($id, $this->userId)) {
+            $_SESSION['_flash']['success'] = 'Payment received and your ResumeX plan is now active.';
+        } elseif (!empty($result['success'])) {
+            $_SESSION['_flash']['error'] = 'Cashfree payment is not marked paid yet. Please try again in a moment.';
+        } else {
+            $_SESSION['_flash']['error'] = $result['message'] ?? 'Unable to verify Cashfree payment.';
+        }
+
+        header('Location: /projects/resumex/plans/payment/' . $id);
         exit;
     }
 
@@ -294,17 +393,7 @@ HTML;
 
     private function getPaymentSettings(): array
     {
-        $defaults = ['upi_id' => '', 'cashfree_enabled' => '0', 'payment_method' => 'request'];
-        try {
-            $rows = $this->db->fetchAll(
-                "SELECT `key`, value FROM settings WHERE `key` IN ('payment_upi_id','payment_cashfree_enabled','payment_method')"
-            );
-            foreach ($rows as $row) {
-                $k = str_replace('payment_', '', $row['key']);
-                $defaults[$k] = $row['value'];
-            }
-        } catch (\Exception $e) {}
-        return $defaults;
+        return $this->subscriptionService->getPaymentSettings();
     }
 
     private function ensureTables(): void
@@ -353,8 +442,18 @@ HTML;
 
     private function render(string $view, array $data = []): void
     {
-        extract($data);
-        $viewPath = PROJECT_PATH . '/views/' . $view . '.php';
-        require $viewPath;
+        View::render('projects/resumex/' . $view, $data);
+    }
+
+    private function buildAbsoluteUrl(string $path): string
+    {
+        $base = defined('APP_URL') && APP_URL ? rtrim(APP_URL, '/') : '';
+        if ($base !== '') {
+            return $base . $path;
+        }
+
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $scheme . '://' . $host . $path;
     }
 }

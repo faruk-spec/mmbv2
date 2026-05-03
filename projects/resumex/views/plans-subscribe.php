@@ -13,8 +13,12 @@
     $isFree    = (float)($plan['price'] ?? 0) === 0.0;
     $planColor = '#9945ff';
     $cur       = htmlspecialchars($plan['currency'] ?? 'USD');
-    $upiId     = $settings['upi_id'] ?? '';
+    $upiId     = $settings['payment_upi_id'] ?? '';
     $hasUpi    = !empty($upiId);
+    $canUseCashfree = ($settings['payment_cashfree_enabled'] ?? '0') === '1'
+        && !empty($settings['payment_cashfree_app_id'] ?? '')
+        && !empty($settings['payment_cashfree_secret'] ?? '');
+    $defaultPaymentMethod = $settings['payment_method'] ?? 'request';
     ?>
 
     <div style="background:var(--bg-card);border:2px solid <?= $planColor ?>;border-radius:14px;overflow:hidden;margin-bottom:24px;">
@@ -44,7 +48,7 @@
             <?php if ($isFree): ?>
                 This plan is free &mdash; click below to activate it instantly.
             <?php else: ?>
-                After subscribing, <?= $hasUpi ? 'complete payment via UPI QR, or your' : 'your' ?> request will be reviewed by an admin.
+                Choose a payment method below and complete your subscription payment flow.
             <?php endif; ?>
         </p>
 
@@ -59,34 +63,32 @@
             </div>
         </div>
 
-        <?php if (!$isFree && $hasUpi): ?>
-        <div style="background:rgba(153,69,255,.06);border:1px solid rgba(153,69,255,.2);border-radius:10px;padding:16px;margin-bottom:20px;text-align:center;">
-            <div style="font-size:.8rem;font-weight:700;color:var(--purple);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;">
-                <i class="fas fa-qrcode"></i> Pay via UPI
-            </div>
-            <div style="font-size:.82rem;color:var(--text-secondary);margin-bottom:12px;">
-                Amount: <strong style="color:var(--text-primary);"><?= $cur ?>&nbsp;<?= number_format((float)$plan['price'],2) ?></strong>
-                &middot; UPI ID: <code><?= htmlspecialchars($upiId) ?></code>
-            </div>
-            <?php
-            $upiAmount  = number_format((float)$plan['price'], 2, '.', '');
-            $upiPayload = 'upi://pay?pa=' . urlencode($upiId) . '&pn=ResumeX&am=' . $upiAmount . '&cu=' . urlencode($plan['currency'] ?? 'INR') . '&tn=' . urlencode('ResumeX ' . $plan['name'] . ' Plan');
-            $qrUrl      = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' . urlencode($upiPayload);
-            ?>
-            <img src="<?= $qrUrl ?>" alt="UPI QR Code" style="border-radius:8px;border:3px solid rgba(153,69,255,.3);">
-            <div style="font-size:.75rem;color:var(--text-secondary);margin-top:8px;">Scan with any UPI app</div>
-        </div>
-        <?php endif; ?>
-
         <form method="POST" action="/projects/resumex/plans/<?= urlencode($plan['slug']) ?>">
             <?= \Core\Security::csrfField() ?>
-            <?php if (!$isFree && $hasUpi): ?>
-            <input type="hidden" name="payment_method" value="upi">
+            <?php if (!$isFree): ?>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                <?php if ($hasUpi): ?>
+                <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-secondary);cursor:pointer;">
+                    <input type="radio" name="payment_method" value="upi" <?= $defaultPaymentMethod === 'upi' ? 'checked' : '' ?>>
+                    <span><strong>UPI QR</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Pay exact amount using <?= htmlspecialchars($upiId) ?></span></span>
+                </label>
+                <?php endif; ?>
+                <?php if ($canUseCashfree): ?>
+                <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-secondary);cursor:pointer;">
+                    <input type="radio" name="payment_method" value="cashfree" <?= $defaultPaymentMethod === 'cashfree' ? 'checked' : '' ?>>
+                    <span><strong>Cashfree Checkout</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Hosted secure checkout</span></span>
+                </label>
+                <?php endif; ?>
+                <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-secondary);cursor:pointer;">
+                    <input type="radio" name="payment_method" value="request" <?= (!$hasUpi && !$canUseCashfree) || $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
+                    <span><strong>Manual Review</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Submit request for admin approval</span></span>
+                </label>
+            </div>
             <?php endif; ?>
             <div style="display:flex;gap:12px;">
                 <button type="submit" style="flex:1;padding:12px;background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>bb);border:none;border-radius:8px;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s;"
                         onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
-                    <?= $isFree ? '&#10003; Activate Now' : ($hasUpi ? '&#10003; I have paid' : '&rarr; Submit Request') ?>
+                    <?= $isFree ? '&#10003; Activate Now' : '&rarr; Continue to Payment' ?>
                 </button>
                 <a href="/projects/resumex/plans" style="padding:12px 20px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);text-decoration:none;font-size:.85rem;display:inline-flex;align-items:center;">
                     Cancel

@@ -102,12 +102,12 @@ class PlatformPlansController extends BaseController
         try {
             $this->db->query(
                 "INSERT INTO platform_plans
-                    (name, slug, description, price, billing_cycle, color,
-                     included_apps, app_features, status, sort_order, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                    (name, slug, description, price, currency, billing_cycle, color,
+                      included_apps, app_features, status, sort_order, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
                 [
                     $data['name'], $data['slug'], $data['description'],
-                    $data['price'], $data['billing_cycle'], $data['color'],
+                    $data['price'], $data['currency'], $data['billing_cycle'], $data['color'],
                     $data['included_apps'], $data['app_features'],
                     $data['status'], $data['sort_order'],
                 ]
@@ -169,14 +169,14 @@ class PlatformPlansController extends BaseController
         try {
             $this->db->query(
                 "UPDATE platform_plans SET
-                    name = ?, slug = ?, description = ?, price = ?,
+                    name = ?, slug = ?, description = ?, price = ?, currency = ?,
                     billing_cycle = ?, color = ?,
                     included_apps = ?, app_features = ?,
                     status = ?, sort_order = ?, updated_at = NOW()
                  WHERE id = ?",
                 [
                     $data['name'], $data['slug'], $data['description'],
-                    $data['price'], $data['billing_cycle'], $data['color'],
+                    $data['price'], $data['currency'], $data['billing_cycle'], $data['color'],
                     $data['included_apps'], $data['app_features'],
                     $data['status'], $data['sort_order'], $id,
                 ]
@@ -365,6 +365,9 @@ class PlatformPlansController extends BaseController
         $billing     = in_array($this->input('billing_cycle'), ['monthly', 'yearly', 'lifetime'])
                         ? $this->input('billing_cycle')
                         : 'monthly';
+        $currency    = in_array($this->input('currency'), ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'], true)
+                        ? $this->input('currency')
+                        : 'USD';
         $color       = preg_match('/^#[0-9a-fA-F]{6}$/', $this->input('color', '#9945ff'))
                         ? $this->input('color')
                         : '#9945ff';
@@ -443,6 +446,7 @@ class PlatformPlansController extends BaseController
             'slug'          => $slug,
             'description'   => $description,
             'price'         => $price,
+            'currency'      => $currency,
             'billing_cycle' => $billing,
             'color'         => $color,
             'included_apps' => json_encode($includedApps),
@@ -462,6 +466,7 @@ class PlatformPlansController extends BaseController
                     `slug` VARCHAR(100) UNIQUE NOT NULL,
                     `description` TEXT NULL,
                     `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
                     `billing_cycle` ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
                     `color` VARCHAR(7) DEFAULT '#9945ff',
                     `included_apps` JSON NULL,
@@ -473,6 +478,13 @@ class PlatformPlansController extends BaseController
                     INDEX `idx_status` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
+            try {
+                $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM platform_plans"), 'Field');
+                if (!in_array('currency', $cols, true)) {
+                    $this->db->query("ALTER TABLE platform_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+                }
+            } catch (\Exception $e) {
+            }
             $this->db->query("
                 CREATE TABLE IF NOT EXISTS `platform_user_subscriptions` (
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

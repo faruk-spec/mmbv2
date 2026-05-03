@@ -79,7 +79,7 @@
                 <?php if ((float)$plan['price'] === 0.0): ?>
                     <span style="color:var(--green);font-weight:600;">Free</span>
                 <?php else: ?>
-                    <span style="font-weight:600;">$<?= number_format((float)$plan['price'], 2) ?></span>
+                    <span style="font-weight:600;"><?= View::e($plan['currency'] ?? 'USD') ?> <?= number_format((float)$plan['price'], 2) ?></span>
                     <span style="color:var(--text-secondary);font-size:.8rem;">/ <?= $plan['billing_cycle'] ?></span>
                 <?php endif; ?>
             </td>
