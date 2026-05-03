@@ -476,10 +476,8 @@ class ResumeXAdminController extends BaseController
                 return;
             }
 
-            $existing = json_decode($plan['features'] ?? '{}', true) ?: [];
-            foreach (array_keys($this->getResumeXPlanFeatures()) as $key) {
-                $existing[$key] = (bool) $this->input('feature_' . $key, false);
-            }
+            // Preserve existing features — feature toggling is handled via togglePlanFeature() (AJAX)
+            $existingFeatures = $plan['features'] ?? '{}';
 
             $currency = $this->input('currency', 'USD');
             if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
@@ -508,7 +506,7 @@ class ResumeXAdminController extends BaseController
                     $currency,
                     $billingCycle,
                     (int) $this->input('max_resumes', $plan['max_resumes'] ?? 5),
-                    json_encode($existing),
+                    $existingFeatures,
                     in_array($this->input('status', $plan['status']), ['active', 'inactive']) ? $this->input('status') : 'active',
                     (int) $this->input('sort_order', $plan['sort_order'] ?? 0),
                     $planId,
