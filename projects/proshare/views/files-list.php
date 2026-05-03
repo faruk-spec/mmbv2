@@ -451,9 +451,9 @@
     </div>
 </div>
 
-<?php View::endSection(); ?>
-
-<!-- Include QR Modal -->
+<!-- QR Modal — must be inside the scripts section so View::yield('scripts') includes it -->
 <?php if (file_exists(BASE_PATH . '/views/partials/eco-qr-modal.php')): ?>
     <?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
 <?php endif; ?>
+
+<?php View::endSection(); ?>

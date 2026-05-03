@@ -114,56 +114,72 @@
 <?php View::include('partials.ecosystem-activity-panel'); ?>
 
 <style>
-/* Mobile-friendly link cards */
+/* ── Compact mobile link cards ───────────────────────────────── */
 @media (max-width: 768px) {
-    .links-table-container {
-        overflow-x: visible;
-    }
-    .links-table thead {
-        display: none;
-    }
+    .links-table-container { overflow-x: visible; }
+
+    .links-table thead { display: none; }
+
     .links-table tbody,
-    .links-table tbody tr {
-        display: block;
-        width: 100%;
-    }
+    .links-table tbody tr { display: block; width: 100%; }
+
     .link-row {
         display: block;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         border: 1px solid var(--border-color);
         border-radius: 0.75rem;
-        padding: 1rem;
+        padding: 0.75rem 0.875rem;
         background: var(--bg-card);
-        transition: all 0.2s;
     }
     .link-row:hover {
-        border-color: rgba(0, 212, 255, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);
+        border-color: rgba(0,212,255,0.3);
+        box-shadow: 0 4px 12px rgba(0,212,255,0.08);
     }
+
+    /* Hide all cells by default on mobile */
     .links-table tbody tr td {
-        display: block;
-        text-align: left;
-        padding: 0.5rem 0;
+        display: none;
         border-bottom: none;
+        padding: 0;
     }
-    .links-table tbody tr td:before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--text-secondary);
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        display: block;
-        margin-bottom: 0.25rem;
-    }
+
+    /* Show only Short Link, Status and Actions on mobile */
+    .links-table tbody tr td[data-label="Short Link"],
+    .links-table tbody tr td[data-label="Status"],
     .links-table tbody tr td[data-label="Actions"] {
-        padding-top: 1rem;
-        margin-top: 0.5rem;
+        display: block;
+    }
+
+    /* Short link row: flex between code+title and status badge */
+    .links-table tbody tr td[data-label="Short Link"] {
+        padding-bottom: 0.4rem;
+    }
+
+    /* Clicks shown as small secondary text under the code */
+    .links-table tbody tr td[data-label="Clicks"] {
+        display: inline;
+    }
+
+    /* Status badge sits on the same visual row as the code */
+    .links-table tbody tr td[data-label="Status"] {
+        padding-bottom: 0.5rem;
+    }
+
+    /* Actions row: compact, scrollable if needed */
+    .links-table tbody tr td[data-label="Actions"] {
+        padding-top: 0.6rem;
+        margin-top: 0.4rem;
         border-top: 1px solid var(--border-color);
     }
     .links-table tbody tr td[data-label="Actions"] > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
         justify-content: flex-start;
     }
+
+    /* Remove data-label pseudo-element on mobile (no labels needed) */
+    .links-table tbody tr td:before { content: none; }
 }
 </style>
 
@@ -178,9 +194,9 @@ function copyText(text) {
     });
 }
 </script>
-<?php View::end(); ?>
 
-<!-- Include QR Modal -->
+<!-- QR Modal (must live inside the section so it is captured by View::end()) -->
 <?php if (file_exists(BASE_PATH . '/views/partials/eco-qr-modal.php')): ?>
     <?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
 <?php endif; ?>
+<?php View::end(); ?>

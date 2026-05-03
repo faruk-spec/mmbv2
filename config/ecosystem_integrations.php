@@ -2,10 +2,10 @@
 
 return [
     'apps' => [
-        'qr'          => ['prefer_short' => true],
-        'linkshortner'=> ['prefer_short' => true],
-        'proshare'    => ['prefer_short' => true],
-        'formx'       => ['prefer_short' => true],
+        'qr'           => [],
+        'linkshortner' => [],
+        'proshare'     => [],
+        'formx'        => [],
     ],
 
     'routes' => [
