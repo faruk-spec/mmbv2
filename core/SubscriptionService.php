@@ -140,7 +140,7 @@ class SubscriptionService
         $defaults['payment_cashfree_secret'] = $this->decryptStoredSecret((string) ($defaults['payment_cashfree_secret'] ?? ''));
         if ($forDisplay) {
             $plain = $defaults['payment_cashfree_secret'];
-            $defaults['payment_cashfree_secret'] = $plain === '' ? '' : str_repeat('•', max(4, strlen($plain) - 4)) . substr($plain, -4);
+            $defaults['payment_cashfree_secret'] = $plain === '' ? '' : '••••••••';
             $defaults['payment_cashfree_secret_set'] = $plain !== '';
         }
 

@@ -112,7 +112,7 @@ class PlansController
                 ? 'upi://pay?' . http_build_query([
                     'pa' => $settings['payment_upi_id'],
                     'pn' => 'ResumeX',
-                    'am' => number_format((float) $plan['price'], 2, '.', ''),
+                    'am' => sprintf('%.2f', (float) $plan['price']),
                     'cu' => $plan['currency'] ?? ($settings['payment_currency'] ?? 'USD'),
                     'tn' => $plan['name'] . ' Plan',
                 ])

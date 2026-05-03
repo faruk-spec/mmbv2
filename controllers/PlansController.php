@@ -205,7 +205,7 @@ class PlansController extends BaseController
                 ? 'upi://pay?' . http_build_query([
                     'pa' => $paymentSettings['payment_upi_id'],
                     'pn' => 'MMB Platform',
-                    'am' => number_format((float) $plan['price'], 2, '.', ''),
+                    'am' => sprintf('%.2f', (float) $plan['price']),
                     'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD'),
                     'tn' => $plan['name'] . ' Plan',
                 ])
