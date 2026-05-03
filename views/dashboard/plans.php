@@ -212,6 +212,7 @@
     </section>
     <?php endif; ?>
 
+    <?php if (!empty($platformPlans)): ?>
     <hr class="plans-divider">
 
     <!-- ── Section 3: Available platform plans ── -->
@@ -224,12 +225,7 @@
         </p>
         <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:18px;">One plan covering multiple applications.</p>
 
-        <?php if (empty($platformPlans)): ?>
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:40px;text-align:center;color:var(--text-secondary);">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:.4;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <div>No platform plans available yet.</div>
-        </div>
-        <?php else: ?>
+        <?php /* $platformPlans is non-empty — loop directly */ ?>
         <div class="plan-grid">
         <?php foreach ($platformPlans as $plan):
             $isActive  = in_array($plan['id'], $activePlatformPlanIds);
@@ -284,8 +280,8 @@
         </div>
         <?php endforeach; ?>
         </div>
-        <?php endif; ?>
     </section>
+    <?php endif; ?>
 
 </div>
 

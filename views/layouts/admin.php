@@ -1873,9 +1873,15 @@ window.mmbSkeleton = (function(){
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
+                            <a href="/admin/projects/resumex/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-crown"></i>
+                                <span>Plans &amp; Pro Features</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
                             <a href="/admin/projects/resumex/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>
-                                <span>Settings & Pro Features</span>
+                                <span>Settings</span>
                             </a>
                             <?php endif; ?>
                         </div>

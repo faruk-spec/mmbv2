@@ -376,7 +376,7 @@
         <div class="rx-sidebar-upgrade">
             <h4>Upgrade to Pro</h4>
             <p>Unlock unlimited resumes, AI writing, premium templates and more.</p>
-            <a href="#upgrade" class="rx-upgrade-btn">Upgrade Now</a>
+            <a href="/plans" class="rx-upgrade-btn">View Plans</a>
         </div>
     </aside>
 

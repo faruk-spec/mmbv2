@@ -783,6 +783,7 @@ class ConvertXAdminController extends BaseController
     {
         $this->requirePermission('convertx.plans');
         $this->ensurePlansTables();
+        $this->ensureContactSaleUrlColumn();
         $plans = [];
         try {
             $plans = $this->db->fetchAll(
@@ -836,6 +837,11 @@ class ConvertXAdminController extends BaseController
         $desc       = trim($_POST['description'] ?? '');
         $price      = max(0, (float) ($_POST['price'] ?? 0));
         $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
+        $currency   = $_POST['currency'] ?? 'USD';
+        if (!in_array($currency, ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'], true)) {
+            $currency = 'USD';
+        }
+        $contactSaleUrl = filter_var(trim($_POST['contact_sale_url'] ?? ''), FILTER_VALIDATE_URL) ?: '';
         $maxJobs    = (int) ($_POST['max_jobs_per_month'] ?? 50);
         $maxFile    = (int) ($_POST['max_file_size_mb'] ?? 10);
         $maxBatch   = (int) ($_POST['max_batch_size'] ?? 5);
@@ -852,16 +858,19 @@ class ConvertXAdminController extends BaseController
             $this->redirect('/admin/projects/convertx/plans');
             return;
         }
+
+        $this->ensureContactSaleUrlColumn();
+
         try {
             $this->db->query(
                 "INSERT INTO convertx_subscription_plans
-                    (name,slug,description,price,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,features,status,sort_order)
-                 VALUES (:name,:slug,:desc,:price,:billing,:jobs,:file,:batch,:ai,:api,:bconv,:prio,:features,:status,:sort)",
+                    (name,slug,description,price,currency,billing_cycle,max_jobs_per_month,max_file_size_mb,max_batch_size,ai_access,api_access,batch_convert,priority_processing,features,contact_sale_url,status,sort_order)
+                 VALUES (:name,:slug,:desc,:price,:currency,:billing,:jobs,:file,:batch,:ai,:api,:bconv,:prio,:features,:csu,:status,:sort)",
                 [
-                    'name'=>$name,'slug'=>$slug,'desc'=>$desc,'price'=>$price,'billing'=>$billing,
+                    'name'=>$name,'slug'=>$slug,'desc'=>$desc,'price'=>$price,'currency'=>$currency,'billing'=>$billing,
                     'jobs'=>$maxJobs,'file'=>$maxFile,'batch'=>$maxBatch,'ai'=>$aiAccess,
                     'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'features'=>json_encode($features),
-                    'status'=>$status,'sort'=>$sortOrder
+                    'csu'=>$contactSaleUrl,'status'=>$status,'sort'=>$sortOrder
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan created.';
@@ -887,6 +896,11 @@ class ConvertXAdminController extends BaseController
         $desc       = trim($_POST['description'] ?? '');
         $price      = max(0, (float) ($_POST['price'] ?? 0));
         $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
+        $currency   = $_POST['currency'] ?? 'USD';
+        if (!in_array($currency, ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'], true)) {
+            $currency = 'USD';
+        }
+        $contactSaleUrl = filter_var(trim($_POST['contact_sale_url'] ?? ''), FILTER_VALIDATE_URL) ?: '';
         $maxJobs    = (int) ($_POST['max_jobs_per_month'] ?? 50);
         $maxFile    = (int) ($_POST['max_file_size_mb'] ?? 10);
         $maxBatch   = (int) ($_POST['max_batch_size'] ?? 5);
@@ -902,19 +916,22 @@ class ConvertXAdminController extends BaseController
             $this->redirect('/admin/projects/convertx/plans');
             return;
         }
+
+        $this->ensureContactSaleUrlColumn();
+
         try {
             $this->db->query(
                 "UPDATE convertx_subscription_plans SET
-                    name=:name, description=:desc, price=:price, billing_cycle=:billing,
+                    name=:name, description=:desc, price=:price, currency=:currency, billing_cycle=:billing,
                     max_jobs_per_month=:jobs, max_file_size_mb=:file, max_batch_size=:batch,
                     ai_access=:ai, api_access=:api, batch_convert=:bconv, priority_processing=:prio,
-                    features=:features, status=:status
+                    features=:features, contact_sale_url=:csu, status=:status
                  WHERE id=:id",
                 [
-                    'name'=>$name,'desc'=>$desc,'price'=>$price,'billing'=>$billing,
+                    'name'=>$name,'desc'=>$desc,'price'=>$price,'currency'=>$currency,'billing'=>$billing,
                     'jobs'=>$maxJobs,'file'=>$maxFile,'batch'=>$maxBatch,'ai'=>$aiAccess,
                     'api'=>$apiAccess,'bconv'=>$batchConv,'prio'=>$priority,'features'=>json_encode($features),
-                    'status'=>$status,'id'=>$id
+                    'csu'=>$contactSaleUrl,'status'=>$status,'id'=>$id
                 ]
             );
             $_SESSION['_flash']['success'] = 'Plan updated.';
@@ -997,6 +1014,24 @@ class ConvertXAdminController extends BaseController
                     'ent_features'  => json_encode(array_fill_keys(array_keys($this->getPlanFeatures()), true)),
                 ]);
         } catch (\Exception $e) {}
+    }
+
+    /**
+     * Idempotent migration: add currency and contact_sale_url columns if missing.
+     */
+    private function ensureContactSaleUrlColumn(): void
+    {
+        try {
+            $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM convertx_subscription_plans"), 'Field');
+            if (!in_array('currency', $cols, true)) {
+                $this->db->query("ALTER TABLE convertx_subscription_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+            }
+            if (!in_array('contact_sale_url', $cols, true)) {
+                $this->db->query("ALTER TABLE convertx_subscription_plans ADD COLUMN `contact_sale_url` VARCHAR(500) NULL DEFAULT NULL");
+            }
+        } catch (\Exception $e) {
+            Logger::error('ConvertX ensureContactSaleUrlColumn: ' . $e->getMessage());
+        }
     }
 
     public function roles(): void

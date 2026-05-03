@@ -831,9 +831,25 @@ class QRAdminController extends BaseController
                 $existing['downloads'] = $existing['downloads'] ?? [];
             }
 
+            // Ensure price/currency columns exist (idempotent).
+            $this->ensurePriceCurrencyColumns();
+
+            $currency = $this->input('currency', 'USD');
+            $allowedCurrencies = ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
+            if (!in_array($currency, $allowedCurrencies, true)) {
+                $currency = 'USD';
+            }
+            $billingCycle = $this->input('billing_cycle', $plan['billing_cycle'] ?? 'lifetime');
+            if (!in_array($billingCycle, ['monthly', 'yearly', 'lifetime'], true)) {
+                $billingCycle = 'lifetime';
+            }
+
             $this->db->query(
                 "UPDATE qr_subscription_plans SET
                      name                 = ?,
+                     price                = ?,
+                     currency             = ?,
+                     billing_cycle        = ?,
                      max_static_qr        = ?,
                      max_dynamic_qr       = ?,
                      max_scans_per_month  = ?,
@@ -844,6 +860,9 @@ class QRAdminController extends BaseController
                  WHERE id = ?",
                 [
                     Security::sanitize($this->input('name', $plan['name'])),
+                    max(0, (float) $this->input('price', $plan['price'] ?? 0)),
+                    $currency,
+                    $billingCycle,
                     (int) $this->input('max_static_qr', $plan['max_static_qr']),
                     (int) $this->input('max_dynamic_qr', $plan['max_dynamic_qr']),
                     (int) $this->input('max_scans_per_month', $plan['max_scans_per_month']),
@@ -913,6 +932,120 @@ class QRAdminController extends BaseController
         } catch (\Exception $e) {
             Logger::error('Toggle plan feature error: ' . $e->getMessage());
             $this->json(['success' => false, 'message' => 'Server error.'], 500);
+        }
+    }
+
+    /**
+     * Create a new subscription plan
+     */
+    public function createPlan(): void
+    {
+        $this->requirePermission('qr.plans');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/qr/plans');
+            return;
+        }
+
+        $name = Security::sanitize(trim($this->input('name', '')));
+        $slug = strtolower(trim(preg_replace('/[^a-z0-9_\-]/', '-', $this->input('slug', ''))));
+        if (!$name || !$slug) {
+            $this->flash('error', 'Name and slug are required.');
+            $this->redirect('/admin/qr/plans');
+            return;
+        }
+
+        $this->ensurePriceCurrencyColumns();
+
+        $currency = $this->input('currency', 'USD');
+        $allowedCurrencies = ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
+        if (!in_array($currency, $allowedCurrencies, true)) {
+            $currency = 'USD';
+        }
+        $billingCycle = $this->input('billing_cycle', 'monthly');
+        if (!in_array($billingCycle, ['monthly', 'yearly', 'lifetime'], true)) {
+            $billingCycle = 'monthly';
+        }
+
+        try {
+            $this->db->query(
+                "INSERT INTO qr_subscription_plans
+                    (name, slug, price, currency, billing_cycle, max_static_qr, max_dynamic_qr,
+                     max_scans_per_month, max_bulk_generation, features, status, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    $name,
+                    $slug,
+                    max(0, (float) $this->input('price', 0)),
+                    $currency,
+                    $billingCycle,
+                    (int) $this->input('max_static_qr', 10),
+                    (int) $this->input('max_dynamic_qr', 0),
+                    (int) $this->input('max_scans_per_month', 1000),
+                    (int) $this->input('max_bulk_generation', 0),
+                    json_encode([]),
+                    in_array($this->input('status', 'active'), ['active', 'inactive']) ? $this->input('status') : 'active',
+                    (int) $this->input('sort_order', 0),
+                ]
+            );
+            Logger::activity(Auth::id(), 'admin_qr_plan_created', ['slug' => $slug]);
+            $this->flash('success', 'Plan "' . $name . '" created successfully.');
+        } catch (\Exception $e) {
+            Logger::error('QR createPlan error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to create plan: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/qr/plans');
+    }
+
+    /**
+     * Delete a subscription plan
+     */
+    public function deletePlan(string $id): void
+    {
+        $this->requirePermission('qr.plans');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/qr/plans');
+            return;
+        }
+
+        $planId = (int) $id;
+        try {
+            $plan = $this->db->fetch("SELECT * FROM qr_subscription_plans WHERE id = ?", [$planId]);
+            if (!$plan) {
+                $this->flash('error', 'Plan not found.');
+                $this->redirect('/admin/qr/plans');
+                return;
+            }
+            if (!empty($plan['is_default'])) {
+                $this->flash('error', 'The default free plan cannot be deleted.');
+                $this->redirect('/admin/qr/plans');
+                return;
+            }
+            $this->db->query("DELETE FROM qr_subscription_plans WHERE id = ?", [$planId]);
+            Logger::activity(Auth::id(), 'admin_qr_plan_deleted', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
+            $this->flash('success', 'Plan deleted.');
+        } catch (\Exception $e) {
+            Logger::error('QR deletePlan error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to delete plan.');
+        }
+
+        $this->redirect('/admin/qr/plans');
+    }
+
+    /**
+     * Ensure price and currency columns exist (idempotent migration).
+     */
+    private function ensurePriceCurrencyColumns(): void
+    {
+        try {
+            $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM qr_subscription_plans"), 'Field');
+            if (!in_array('currency', $cols, true)) {
+                $this->db->query("ALTER TABLE qr_subscription_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+            }
+        } catch (\Exception $e) {
+            Logger::error('QRAdmin ensurePriceCurrencyColumns: ' . $e->getMessage());
         }
     }
 

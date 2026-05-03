@@ -354,6 +354,75 @@ class ResumeXAdminController extends BaseController
 
 
     // ──────────────────────────────────────────────────────────────────────────
+    //  Plans (Pro Feature Controls)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function plans(): void
+    {
+        $this->requirePermission('resumex.settings');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->savePlans();
+            return;
+        }
+
+        $settings = $this->getResumeXSettings();
+
+        $this->view('admin/projects/resumex/plans', [
+            'title'     => 'ResumeX — Plans & Pro Features',
+            'settings'  => $settings,
+            'csrfToken' => Security::generateCsrfToken(),
+            'success'   => $_SESSION['_flash']['success'] ?? null,
+            'error'     => $_SESSION['_flash']['error']   ?? null,
+        ]);
+        unset($_SESSION['_flash']['success'], $_SESSION['_flash']['error']);
+    }
+
+    public function savePlans(): void
+    {
+        $this->requirePermission('resumex.settings');
+
+        if (!Security::validateCsrfToken($_POST['_token'] ?? '')) {
+            $_SESSION['_flash']['error'] = 'Invalid security token.';
+            $this->redirect('/admin/projects/resumex/plans');
+            return;
+        }
+
+        $maxResumesFree    = max(0, (int) ($_POST['resumex_max_resumes_free'] ?? 3));
+        $maxResumesPro     = max(0, (int) ($_POST['resumex_max_resumes_pro'] ?? 0));
+        $pdfWatermarkFree  = isset($_POST['resumex_pdf_watermark_free']) ? '1' : '0';
+        $pdfWatermarkText  = Security::sanitize(trim($_POST['resumex_pdf_watermark_text'] ?? 'ResumeX Free'));
+        $proTemplatesOnly  = isset($_POST['resumex_pro_templates_only']) ? '1' : '0';
+        $linkedinImport    = isset($_POST['resumex_linkedin_import']) ? '1' : '0';
+        $publicResumes     = isset($_POST['resumex_public_resumes']) ? '1' : '0';
+        $customDomain      = isset($_POST['resumex_custom_domain']) ? '1' : '0';
+
+        $updates = [
+            'resumex_max_resumes_free'    => (string) $maxResumesFree,
+            'resumex_max_resumes_pro'     => (string) $maxResumesPro,
+            'resumex_pdf_watermark_free'  => $pdfWatermarkFree,
+            'resumex_pdf_watermark_text'  => $pdfWatermarkText !== '' ? $pdfWatermarkText : 'ResumeX Free',
+            'resumex_pro_templates_only'  => $proTemplatesOnly,
+            'resumex_linkedin_import'     => $linkedinImport,
+            'resumex_public_resumes'      => $publicResumes,
+            'resumex_custom_domain'       => $customDomain,
+        ];
+
+        foreach ($updates as $key => $value) {
+            $existing = $this->db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+            if ($existing) {
+                $this->db->update('settings', ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', [$key]);
+            } else {
+                $this->db->insert('settings', ['key' => $key, 'value' => $value, 'type' => 'string', 'created_at' => date('Y-m-d H:i:s')]);
+            }
+        }
+
+        ActivityLogger::log(Auth::id(), 'resumex_plans_updated', ['module' => 'resumex']);
+        $_SESSION['_flash']['success'] = 'ResumeX plan settings saved successfully.';
+        $this->redirect('/admin/projects/resumex/plans');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     //  Settings
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -393,14 +462,6 @@ class ResumeXAdminController extends BaseController
             'resumex_openai_model',
             'resumex_ai_enabled',
             'resumex_ai_daily_limit',
-            'resumex_max_resumes_free',
-            'resumex_max_resumes_pro',
-            'resumex_pdf_watermark_free',
-            'resumex_pdf_watermark_text',
-            'resumex_pro_templates_only',
-            'resumex_linkedin_import',
-            'resumex_public_resumes',
-            'resumex_custom_domain',
         ];
 
         $oldValues = [];
@@ -415,14 +476,6 @@ class ResumeXAdminController extends BaseController
         $openaiKey         = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
         $openaiModel       = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
         $dailyLimit        = max(0, (int) ($_POST['resumex_ai_daily_limit'] ?? 0));
-        $maxResumesFree    = max(0, (int) ($_POST['resumex_max_resumes_free'] ?? 3));
-        $maxResumesPro     = max(0, (int) ($_POST['resumex_max_resumes_pro'] ?? 0));
-        $pdfWatermarkFree  = isset($_POST['resumex_pdf_watermark_free']) ? '1' : '0';
-        $pdfWatermarkText  = Security::sanitize(trim($_POST['resumex_pdf_watermark_text'] ?? 'ResumeX Free'));
-        $proTemplatesOnly  = isset($_POST['resumex_pro_templates_only']) ? '1' : '0';
-        $linkedinImport    = isset($_POST['resumex_linkedin_import']) ? '1' : '0';
-        $publicResumes     = isset($_POST['resumex_public_resumes']) ? '1' : '0';
-        $customDomain      = isset($_POST['resumex_custom_domain']) ? '1' : '0';
 
         // Validate key format: must be empty OR start with 'sk-'
         if (!empty($openaiKey) && !str_starts_with($openaiKey, 'sk-')) {
@@ -450,14 +503,6 @@ class ResumeXAdminController extends BaseController
             'resumex_openai_api_key'      => $openaiKey,
             'resumex_openai_model'        => $openaiModel,
             'resumex_ai_daily_limit'      => (string) $dailyLimit,
-            'resumex_max_resumes_free'    => (string) $maxResumesFree,
-            'resumex_max_resumes_pro'     => (string) $maxResumesPro,
-            'resumex_pdf_watermark_free'  => $pdfWatermarkFree,
-            'resumex_pdf_watermark_text'  => $pdfWatermarkText !== '' ? $pdfWatermarkText : 'ResumeX Free',
-            'resumex_pro_templates_only'  => $proTemplatesOnly,
-            'resumex_linkedin_import'     => $linkedinImport,
-            'resumex_public_resumes'      => $publicResumes,
-            'resumex_custom_domain'       => $customDomain,
         ];
 
         foreach ($updates as $key => $value) {

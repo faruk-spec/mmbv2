@@ -44,8 +44,10 @@ $router->post('/admin/qr/blocked-links/add', 'Admin\\QRAdminController@blockLink
 $router->post('/admin/qr/blocked-links/{id}/remove', 'Admin\\QRAdminController@unblockLink', ['auth', 'admin']);
 $router->get('/admin/qr/storage', 'Admin\\QRAdminController@storage', ['auth', 'admin']);
 $router->get('/admin/qr/plans', 'Admin\\QRAdminController@plans', ['auth', 'admin']);
+$router->post('/admin/qr/plans/create', 'Admin\\QRAdminController@createPlan', ['auth', 'admin']);
 $router->post('/admin/qr/plans/{id}/update', 'Admin\\QRAdminController@updatePlan', ['auth', 'admin']);
 $router->post('/admin/qr/plans/{id}/toggle-feature', 'Admin\\QRAdminController@togglePlanFeature', ['auth', 'admin']);
+$router->post('/admin/qr/plans/{id}/delete', 'Admin\\QRAdminController@deletePlan', ['auth', 'admin']);
 $router->get('/admin/qr/abuse-reports', 'Admin\\QRAdminController@abuseReports', ['auth', 'admin']);
 $router->post('/admin/qr/abuse-reports/{id}/resolve', 'Admin\\QRAdminController@resolveAbuse', ['auth', 'admin']);
 $router->get('/admin/qr/roles', 'Admin\\QRAdminController@roles', ['auth', 'admin']);
@@ -394,6 +396,8 @@ $router->post('/admin/whatsapp/user-subscriptions/cancel/{id}', 'Admin\\WhatsApp
 // ── ResumeX Admin ────────────────────────────────────────────────────────────
 $router->get('/admin/projects/resumex', 'Admin\\ResumeXAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/analytics', 'Admin\\ResumeXAdminController@analytics', ['auth', 'admin']);
+$router->get('/admin/projects/resumex/plans', 'Admin\\ResumeXAdminController@plans', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/plans', 'Admin\\ResumeXAdminController@plans', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/settings', 'Admin\\ResumeXAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/settings', 'Admin\\ResumeXAdminController@settings', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/templates', 'Admin\\ResumeXAdminController@templates', ['auth', 'admin']);
