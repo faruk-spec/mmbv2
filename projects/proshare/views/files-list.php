@@ -438,4 +438,8 @@
 </div>
 
 <?php View::endSection(); ?>
-<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
+
+<!-- Include QR Modal -->
+<?php if (file_exists(BASE_PATH . '/views/partials/eco-qr-modal.php')): ?>
+    <?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
+<?php endif; ?>

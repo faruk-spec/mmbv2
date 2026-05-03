@@ -174,4 +174,8 @@ function copyText(text) {
 }
 </script>
 <?php View::end(); ?>
-<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
+
+<!-- Include QR Modal -->
+<?php if (file_exists(BASE_PATH . '/views/partials/eco-qr-modal.php')): ?>
+    <?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
+<?php endif; ?>
