@@ -9,6 +9,7 @@ class SecurityHeadersMiddleware
 
         // Remove server-fingerprinting headers
         header_remove('X-Powered-By');
+        header_remove('Server');
 
         header('X-Frame-Options: SAMEORIGIN');
         header('X-Content-Type-Options: nosniff');
@@ -32,6 +33,23 @@ class SecurityHeadersMiddleware
 
         if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+        }
+
+        // For authenticated sessions: add identity headers visible in DevTools Network tab
+        // and prevent sensitive responses from being stored in intermediary caches.
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['user_id'])) {
+            // Expose the user's unique identifier and role in response headers so the
+            // browser DevTools Network inspector shows who the request belongs to.
+            $uid = $_SESSION['user_unique_id'] ?? (string) $_SESSION['user_id'];
+            header('X-Auth-User: ' . $uid);
+
+            $role = $_SESSION['user_role'] ?? 'user';
+            header('X-Auth-Role: ' . $role);
+
+            // Prevent authenticated page responses from being stored in shared caches
+            // or previewed as plain content by browser network tools.
+            header('Cache-Control: private, no-store, must-revalidate');
+            header('Pragma: no-cache');
         }
     }
 }

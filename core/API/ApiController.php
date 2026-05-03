@@ -169,6 +169,11 @@ abstract class ApiController
     protected function respond($data, int $statusCode = 200): void
     {
         http_response_code($statusCode);
+        // Prevent API responses from being stored in any cache.
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
+        }
         echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         exit;
     }

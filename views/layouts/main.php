@@ -2870,5 +2870,46 @@ window.mmbSkeleton = (function(){
     }
 })();
 </script>
+<?php if (Auth::check()): ?>
+<script>
+// Attach authentication and CSRF tokens to every same-origin fetch() call so
+// they appear in the browser DevTools Network → Headers → Request Headers panel.
+(function () {
+    var _csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var _userMeta = document.querySelector('meta[name="user-id"]');
+    var _csrfToken = _csrfMeta ? _csrfMeta.getAttribute('content') : '';
+    var _authUser  = _userMeta ? _userMeta.getAttribute('content') : '';
+    var _nativeFetch = window.fetch;
+
+    window.fetch = function (input, init) {
+        init = init || {};
+        var headers = new Headers(init.headers || {});
+
+        // Always add CSRF token so server-side middleware can validate it.
+        if (_csrfToken && !headers.has('X-CSRF-Token')) {
+            headers.set('X-CSRF-Token', _csrfToken);
+        }
+
+        // Mark as an authenticated XHR — visible in Network inspector.
+        if (!headers.has('X-Requested-With')) {
+            headers.set('X-Requested-With', 'XMLHttpRequest');
+        }
+
+        // Identify the logged-in user in the request headers.
+        if (_authUser && !headers.has('X-Auth-User')) {
+            headers.set('X-Auth-User', _authUser);
+        }
+
+        init.headers = headers;
+        // Ensure session cookies are always sent with same-origin requests.
+        if (!init.credentials) {
+            init.credentials = 'same-origin';
+        }
+
+        return _nativeFetch.call(this, input, init);
+    };
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>

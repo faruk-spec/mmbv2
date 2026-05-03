@@ -29,6 +29,10 @@ class Helpers
     {
         http_response_code($code);
         header('Content-Type: application/json');
+        if (!headers_sent()) {
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
+        }
         echo json_encode($data);
         exit;
     }
