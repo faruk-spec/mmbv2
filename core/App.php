@@ -54,6 +54,10 @@ class App
         // Add security headers to every response
         $this->sendSecurityHeaders();
 
+        // For authenticated HTML pages: strip HTML comments from output so they
+        // do not appear in the browser DevTools Response/Preview tab.
+        $this->installHtmlCommentFilter();
+
         try {
             // Get request method
             $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -77,6 +81,36 @@ class App
             $this->handleError($e);
         }
     }
+
+    /**
+     * Install an output-buffer callback that strips HTML comments from the
+     * response body when the user is authenticated.  This prevents development
+     * comments, section markers, and version strings from appearing in the
+     * browser DevTools → Response / Preview tabs.
+     *
+     * The filter is deliberately lightweight:
+     *  - Only removes standard <!-- ... --> comments (not IE conditional blocks
+     *    <!--[if …]> … <![endif]--> which are stripped separately if needed).
+     *  - Skips JSON / binary / streaming responses (no HTML doctype present).
+     *  - Skips non-authenticated sessions so public pages are unaffected.
+     */
+    protected function installHtmlCommentFilter(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE || empty($_SESSION['user_id'])) {
+            return;
+        }
+
+        ob_start(static function (string $buffer): string {
+            // Only process HTML documents (avoid stripping from JSON/JS/CSS).
+            if (stripos($buffer, '<!DOCTYPE') === false && stripos($buffer, '<html') === false) {
+                return $buffer;
+            }
+
+            // Remove standard HTML comments; preserve IE conditional comments.
+            return (string) preg_replace('/<!--(?!\[if\s).*?-->/s', '', $buffer);
+        });
+    }
+
 
     /**
      * Send standard security headers on every response.

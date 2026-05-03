@@ -26,7 +26,9 @@ $router->put('/api/user/profile', 'Api\\UserController@updateProfile', ['auth'])
 // Session token — dedicated endpoint for CSRF token and identity metadata.
 // Browsers fetch this once on page-load; tokens appear in this response instead
 // of being embedded in every HTML page's <meta> tags.
-$router->get('/api/auth/token', 'Api\\UserController@sessionToken', ['auth']);
+// No 'auth' middleware here: the controller returns a JSON 401 for unauthenticated
+// callers, avoiding the middleware's HTML redirect that would break the fetch wrapper.
+$router->get('/api/auth/token', 'Api\\UserController@sessionToken');
 
 // Projects API
 $router->get('/api/projects', 'Api\\ProjectController@list', ['auth']);
