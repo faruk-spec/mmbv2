@@ -13,6 +13,7 @@ use Core\Helpers;
 use Core\Logger;
 use Core\ActivityLogger;
 use Core\SecureUpload;
+use Core\EcosystemIntegration;
 use Projects\QR\Models\QRModel;
 use Projects\QR\Models\SettingsModel;
 use Projects\QR\Services\QRFeatureService;
@@ -63,8 +64,19 @@ class QRController
             'user'         => Auth::user(),
             'settings'     => $settings,
             'preset'       => $preset,
+            'prefillContent' => trim((string)($_GET['content'] ?? '')),
             'userFeatures' => $userFeatures,
         ]);
+
+        if ($userId && !empty($_GET['content'])) {
+            EcosystemIntegration::logHandoff(
+                $userId,
+                'ecosystem',
+                'qr',
+                'open_qr_generate_prefill',
+                ['has_prefill_content' => true]
+            );
+        }
     }
     
     /**

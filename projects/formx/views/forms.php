@@ -173,13 +173,15 @@
                             <a href="/forms/<?= View::e($f['slug']) ?>" target="_blank" class="fx-action-btn" style="background:rgba(153,69,255,.08);border-color:rgba(153,69,255,.2);color:var(--purple);">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
-                            <button type="button"
-                                    class="fx-action-btn"
-                                    style="background:rgba(0,240,255,.08);border-color:rgba(0,240,255,.2);color:#00f0ff;"
-                                    title="Generate QR for form link"
-                                    onclick="ecoQrOpen('<?= htmlspecialchars((defined('APP_URL') ? APP_URL : '') . '/forms/' . $f['slug'], ENT_QUOTES) ?>')">
-                                <i class="fas fa-qrcode"></i>
-                            </button>
+                            <?php
+                            $formPublicPath = \Core\EcosystemIntegration::route('formx_public', ['slug' => (string)$f['slug']]);
+                            View::include('partials.cross-app-action-bar', [
+                                'entityType' => 'formx_form',
+                                'context' => [
+                                    'public_url' => $formPublicPath ? ((defined('APP_URL') ? APP_URL : '') . $formPublicPath) : '',
+                                ],
+                            ]);
+                            ?>
                             <?php endif; ?>
                             <form method="POST" action="/projects/formx/<?= $f['id'] ?>/delete" style="display:inline;"
                                   onsubmit="return confirm('Delete this form and all its submissions?');">
@@ -208,6 +210,8 @@
         <?php endif; ?>
     </main>
 </div>
+
+<?php View::include('partials.ecosystem-activity-panel'); ?>
 
 <div class="fx-sidebar-overlay" id="fxOverlay"></div>
 <button class="fx-sidebar-toggle" id="fxToggle"><i class="fas fa-bars"></i></button>

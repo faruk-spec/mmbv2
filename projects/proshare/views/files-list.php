@@ -77,9 +77,15 @@
                                     <button onclick="copyLink('<?= View::e($file['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Copy Link">
                                         <i class="fas fa-copy"></i>
                                     </button>
-                                    <button onclick="ecoQrOpen('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/projects/proshare/preview/' . $file['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color:#00f0ff;" title="Generate QR">
-                                        <i class="fas fa-qrcode"></i>
-                                    </button>
+                                    <?php
+                                    $filePublicPath = \Core\EcosystemIntegration::route('proshare_preview', ['short_code' => (string)$file['short_code']]);
+                                    View::include('partials.cross-app-action-bar', [
+                                        'entityType' => 'proshare_file',
+                                        'context' => [
+                                            'public_url' => $filePublicPath ? ((defined('APP_URL') ? APP_URL : '') . $filePublicPath) : '',
+                                        ],
+                                    ]);
+                                    ?>
                                     <button onclick="openPasswordModal('<?= View::e($file['short_code']) ?>', <?= $file['password'] ? 'true' : 'false' ?>)" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Password Settings">
                                         <i class="fas fa-key"></i>
                                     </button>
@@ -180,9 +186,15 @@
                                     <button onclick="copyTextLink('<?= View::e($text['short_code']) ?>', this)" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem;" title="Copy Link">
                                         <i class="fas fa-copy"></i>
                                     </button>
-                                    <button onclick="ecoQrOpen('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/t/' . $text['short_code']) ?>')" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; color:#00f0ff;" title="Generate QR">
-                                        <i class="fas fa-qrcode"></i>
-                                    </button>
+                                    <?php
+                                    $textPublicPath = \Core\EcosystemIntegration::route('proshare_text_public', ['short_code' => (string)$text['short_code']]);
+                                    View::include('partials.cross-app-action-bar', [
+                                        'entityType' => 'proshare_text',
+                                        'context' => [
+                                            'public_url' => $textPublicPath ? ((defined('APP_URL') ? APP_URL : '') . $textPublicPath) : '',
+                                        ],
+                                    ]);
+                                    ?>
                                     <?php if ($text['status'] === 'active'): ?>
                                         <button onclick="deleteText('<?= View::e($text['short_code']) ?>', this)" class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" title="Delete">
                                             <i class="fas fa-trash"></i>
@@ -228,6 +240,8 @@
     </div>
 </div>
 <?php endif; ?>
+
+<?php View::include('partials.ecosystem-activity-panel'); ?>
 
 <?php View::endSection(); ?>
 

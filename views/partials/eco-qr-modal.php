@@ -1,4 +1,7 @@
 <!-- Ecosystem QR Modal – include in any project list/detail view -->
+<?php
+$qrGeneratePath = \Core\EcosystemIntegration::route('qr_generate') ?? '/projects/qr/generate';
+?>
 <div id="ecoQrBackdrop"
      style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9900;align-items:center;justify-content:center;"
      onclick="if(event.target===this)ecoQrClose()">
@@ -20,7 +23,7 @@
                     style="flex:1;padding:0.5rem;font-size:0.78rem;border-radius:0.375rem;border:1px solid var(--border-color,rgba(255,255,255,0.1));background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);cursor:pointer;font-family:inherit;">
                 <i class="fas fa-times"></i> Close
             </button>
-            <a id="ecoQrOpenInQrx" href="/projects/qr/generate" target="_blank" rel="noopener"
+            <a id="ecoQrOpenInQrx" href="<?= \Core\View::e($qrGeneratePath) ?>" target="_blank" rel="noopener"
                style="flex:1;padding:0.5rem;font-size:0.78rem;border-radius:0.375rem;border:1px solid #00f0ff;background:#00f0ff;color:#000;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.3rem;font-weight:600;font-family:inherit;">
                 <i class="fas fa-external-link-alt"></i> Open in QRx
             </a>
@@ -52,7 +55,7 @@
         var lk=document.getElementById('ecoQrOpenInQrx');
         ct.innerHTML='';
         ul.textContent=url;
-        lk.href='/projects/qr/generate';
+        lk.href='<?= \Core\View::e($qrGeneratePath) ?>';
         bd.style.display='flex';
         _loadLib(function(){
             ct.innerHTML='';
