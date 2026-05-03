@@ -80,6 +80,33 @@ class UserController extends BaseController
     }
 
     /**
+     * GET /api/auth/token
+     *
+     * Returns the current session's CSRF token and identity metadata so the
+     * browser can (a) attach them to subsequent XHR/fetch requests and
+     * (b) expose a dedicated DevTools-visible network request instead of
+     * embedding tokens inside every HTML page's <meta> tags.
+     */
+    public function sessionToken(): void
+    {
+        $this->requireAuth();
+
+        $uid  = $_SESSION['user_unique_id'] ?? null;
+        $role = $_SESSION['user_role']       ?? 'user';
+
+        $this->json([
+            'authenticated' => true,
+            'csrf_token'    => \Core\Security::generateCsrfToken(),
+            'user_uid'      => $uid,
+            'role'          => $role,
+            'session'       => [
+                'issued_at'     => $_SESSION['_login_time'] ?? null,
+                'last_activity' => time(),
+            ],
+        ]);
+    }
+
+    /**
      * PUT /api/user/profile
      */
     public function updateProfile(): void
