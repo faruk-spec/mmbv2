@@ -838,7 +838,7 @@ class ConvertXAdminController extends BaseController
         $price      = max(0, (float) ($_POST['price'] ?? 0));
         $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
         $currency   = $_POST['currency'] ?? 'USD';
-        if (!in_array($currency, ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'], true)) {
+        if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
             $currency = 'USD';
         }
         $contactSaleUrl = filter_var(trim($_POST['contact_sale_url'] ?? ''), FILTER_VALIDATE_URL) ?: '';
@@ -897,7 +897,7 @@ class ConvertXAdminController extends BaseController
         $price      = max(0, (float) ($_POST['price'] ?? 0));
         $billing    = in_array($_POST['billing_cycle'] ?? '', ['monthly','yearly','lifetime']) ? $_POST['billing_cycle'] : 'monthly';
         $currency   = $_POST['currency'] ?? 'USD';
-        if (!in_array($currency, ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'], true)) {
+        if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
             $currency = 'USD';
         }
         $contactSaleUrl = filter_var(trim($_POST['contact_sale_url'] ?? ''), FILTER_VALIDATE_URL) ?: '';
@@ -1032,6 +1032,12 @@ class ConvertXAdminController extends BaseController
         } catch (\Exception $e) {
             Logger::error('ConvertX ensureContactSaleUrlColumn: ' . $e->getMessage());
         }
+    }
+
+    /** @return string[] List of accepted ISO-4217 currency codes. */
+    private function getAllowedCurrencies(): array
+    {
+        return ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
     }
 
     public function roles(): void

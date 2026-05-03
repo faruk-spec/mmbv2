@@ -6,6 +6,7 @@ use Core\Database;
 use Core\Security;
 use Core\Auth;
 use Core\ActivityLogger;
+use Core\Logger;
 
 class PagesController extends BaseController
 {
@@ -251,7 +252,7 @@ class PagesController extends BaseController
                     ]);
                 }
             } catch (\Exception $e) {
-                // Non-critical — silently skip if table is unavailable.
+                Logger::error('PagesController seedLegalPages: ' . $e->getMessage());
             }
         }
     }

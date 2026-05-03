@@ -835,8 +835,7 @@ class QRAdminController extends BaseController
             $this->ensurePriceCurrencyColumns();
 
             $currency = $this->input('currency', 'USD');
-            $allowedCurrencies = ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
-            if (!in_array($currency, $allowedCurrencies, true)) {
+            if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
                 $currency = 'USD';
             }
             $billingCycle = $this->input('billing_cycle', $plan['billing_cycle'] ?? 'lifetime');
@@ -958,8 +957,7 @@ class QRAdminController extends BaseController
         $this->ensurePriceCurrencyColumns();
 
         $currency = $this->input('currency', 'USD');
-        $allowedCurrencies = ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
-        if (!in_array($currency, $allowedCurrencies, true)) {
+        if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
             $currency = 'USD';
         }
         $billingCycle = $this->input('billing_cycle', 'monthly');
@@ -1047,6 +1045,12 @@ class QRAdminController extends BaseController
         } catch (\Exception $e) {
             Logger::error('QRAdmin ensurePriceCurrencyColumns: ' . $e->getMessage());
         }
+    }
+
+    /** @return string[] List of accepted ISO-4217 currency codes. */
+    private function getAllowedCurrencies(): array
+    {
+        return ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
     }
 
     // -------------------------------------------------------------------------
