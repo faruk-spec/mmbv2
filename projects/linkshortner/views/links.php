@@ -9,8 +9,8 @@
     </div>
 
     <?php if (!empty($links)): ?>
-    <div class="table-container">
-        <table>
+    <div class="table-container links-table-container">
+        <table class="links-table">
             <thead>
                 <tr>
                     <th>Short Link</th>
@@ -23,8 +23,8 @@
             </thead>
             <tbody>
             <?php foreach ($links as $link): ?>
-            <tr>
-                <td>
+            <tr class="link-row" data-link-id="<?= $link['id'] ?>">
+                <td data-label="Short Link">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <a href="/l/<?= View::e($link['code']) ?>" target="_blank" style="color:var(--accent);font-weight:600;">/l/<?= View::e($link['code']) ?></a>
                         <button class="copy-btn" onclick="copyText('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/l/' . $link['code']) ?>')" title="Copy">
@@ -35,10 +35,10 @@
                         <div style="color:var(--text-secondary);font-size:12px;margin-top:3px;"><?= View::e($link['title']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                <td data-label="Destination" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                     <a href="<?= View::e($link['original_url']) ?>" target="_blank" style="color:var(--text-secondary);font-size:13px;"><?= View::e($link['original_url']) ?></a>
                 </td>
-                <td>
+                <td data-label="Clicks">
                     <a href="/projects/linkshortner/analytics/<?= View::e($link['code']) ?>" style="color:var(--orange);font-weight:600;">
                         <?= number_format($link['total_clicks']) ?>
                     </a>
@@ -46,14 +46,14 @@
                         <span style="color:var(--text-secondary);font-size:12px;">/ <?= $link['click_limit'] ?></span>
                     <?php endif; ?>
                 </td>
-                <td style="font-size:13px;">
+                <td data-label="Expires" style="font-size:13px;">
                     <?php if ($link['expires_at']): ?>
                         <?= date('M d, Y', strtotime($link['expires_at'])) ?>
                     <?php else: ?>
                         <span style="color:var(--text-secondary);">Never</span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Status">
                     <?php if ($link['status'] === 'active'): ?>
                         <span class="badge badge-success">Active</span>
                     <?php elseif ($link['status'] === 'expired'): ?>
@@ -62,7 +62,7 @@
                         <span class="badge badge-warning">Disabled</span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Actions">
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <a href="/projects/linkshortner/analytics/<?= View::e($link['code']) ?>" class="btn btn-secondary btn-sm" title="Analytics">
                             <i class="fas fa-chart-bar"></i>
@@ -107,6 +107,60 @@
     </div>
     <?php endif; ?>
 </div>
+
+<style>
+/* Mobile-friendly link cards */
+@media (max-width: 768px) {
+    .links-table-container {
+        overflow-x: visible;
+    }
+    .links-table thead {
+        display: none;
+    }
+    .links-table tbody,
+    .links-table tbody tr {
+        display: block;
+        width: 100%;
+    }
+    .link-row {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        background: var(--bg-card);
+        transition: all 0.2s;
+    }
+    .link-row:hover {
+        border-color: rgba(0, 212, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);
+    }
+    .links-table tbody tr td {
+        display: block;
+        text-align: left;
+        padding: 0.5rem 0;
+        border-bottom: none;
+    }
+    .links-table tbody tr td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    .links-table tbody tr td[data-label="Actions"] {
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .links-table tbody tr td[data-label="Actions"] > div {
+        justify-content: flex-start;
+    }
+}
+</style>
 
 <script>
 function copyText(text) {
