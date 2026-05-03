@@ -1,15 +1,10 @@
-<?php use Core\View; use Core\Security; use Core\Auth; ?>
-<!-- Admin Layout Version: 2.0 - Updated <?= date('Y-m-d H:i:s') ?> -->
+<?php use Core\View; use Core\Auth; ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Admin Panel - MyMultiBranch">
-    <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
-    <?php if (Auth::check()): ?>
-    <meta name="user-id" content="<?= htmlspecialchars($_SESSION['user_unique_id'] ?? (string) Auth::id(), ENT_QUOTES) ?>">
-    <?php endif; ?>
     <title><?= View::e($title ?? 'Admin Panel') ?> - <?= APP_NAME ?></title>
     
     <!-- Fonts -->
@@ -3081,34 +3076,47 @@ window.mmbSkeleton = (function(){
 })();
 </script>
 <script>
-// Attach authentication and CSRF tokens to every same-origin fetch() call so
-// they appear in the browser DevTools Network → Headers → Request Headers panel.
+// Fetch auth token from the dedicated endpoint so tokens do NOT appear in the
+// page HTML source (no meta tags). The /api/auth/token request is visible in
+// DevTools Network as a separate, clearly-labelled request.
 (function () {
-    var _csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    var _userMeta = document.querySelector('meta[name="user-id"]');
-    var _csrfToken = _csrfMeta ? _csrfMeta.getAttribute('content') : '';
-    var _authUser  = _userMeta ? _userMeta.getAttribute('content') : '';
     var _nativeFetch = window.fetch;
+    var _csrfToken   = '';
+    var _authUser    = '';
+    var _tokenLoaded = false;
 
+    // Use the native (unwrapped) fetch so this bootstrap request is not
+    // intercepted by the wrapper below, avoiding circular dependency.
+    var _tokenPromise = _nativeFetch.call(window, '/api/auth/token', {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (r) {
+        return r.ok ? r.json() : {};
+    }).then(function (data) {
+        _csrfToken   = data.csrf_token || '';
+        _authUser    = data.user_uid   || '';
+        _tokenLoaded = true;
+    }).catch(function () {
+        _tokenLoaded = true; // allow fetches to proceed even on error
+    });
+
+    // Override window.fetch to automatically attach auth headers to every
+    // same-origin AJAX call — visible in DevTools Network → Request Headers.
     window.fetch = function (input, init) {
+        var self = this;
+        // Queue calls that arrive before the token has loaded.
+        if (!_tokenLoaded) {
+            return _tokenPromise.then(function () {
+                return window.fetch.call(self, input, init);
+            });
+        }
         init = init || {};
         var headers = new Headers(init.headers || {});
-
-        if (_csrfToken && !headers.has('X-CSRF-Token')) {
-            headers.set('X-CSRF-Token', _csrfToken);
-        }
-        if (!headers.has('X-Requested-With')) {
-            headers.set('X-Requested-With', 'XMLHttpRequest');
-        }
-        if (_authUser && !headers.has('X-Auth-User')) {
-            headers.set('X-Auth-User', _authUser);
-        }
-
+        if (_csrfToken && !headers.has('X-CSRF-Token'))  headers.set('X-CSRF-Token', _csrfToken);
+        if (!headers.has('X-Requested-With'))             headers.set('X-Requested-With', 'XMLHttpRequest');
+        if (_authUser  && !headers.has('X-Auth-User'))   headers.set('X-Auth-User', _authUser);
+        if (!init.credentials) init.credentials = 'same-origin';
         init.headers = headers;
-        if (!init.credentials) {
-            init.credentials = 'same-origin';
-        }
-
         return _nativeFetch.call(this, input, init);
     };
 })();

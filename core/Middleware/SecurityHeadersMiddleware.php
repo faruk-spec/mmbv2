@@ -46,10 +46,13 @@ class SecurityHeadersMiddleware
             $role = $_SESSION['user_role'] ?? 'user';
             header('X-Auth-Role: ' . $role);
 
-            // Prevent authenticated page responses from being stored in shared caches
-            // or previewed as plain content by browser network tools.
+            // Prevent authenticated page responses from being stored in shared caches.
             header('Cache-Control: private, no-store, must-revalidate');
             header('Pragma: no-cache');
+
+            // Prevent search engines and crawlers from indexing authenticated pages
+            // or caching snapshots of them.
+            header('X-Robots-Tag: noindex, nofollow, nosnippet, noarchive');
         }
     }
 }
