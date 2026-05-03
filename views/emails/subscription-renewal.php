@@ -2,7 +2,7 @@
 /**
  * Email Template: subscription-renewal
  */
-$subject = $subject ?? 'Subscription Update';
+$subject = $subject ?? 'Subscription Renewal';
 $userName = $userName ?? 'User';
 $planName = $planName ?? 'Plan';
 $appName  = $appName  ?? 'MMB Platform';

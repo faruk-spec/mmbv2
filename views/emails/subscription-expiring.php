@@ -2,7 +2,7 @@
 /**
  * Email Template: subscription-expiring
  */
-$subject = $subject ?? 'Subscription Update';
+$subject = $subject ?? 'Subscription Expiring Soon';
 $userName = $userName ?? 'User';
 $planName = $planName ?? 'Plan';
 $appName  = $appName  ?? 'MMB Platform';

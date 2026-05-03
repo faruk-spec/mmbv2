@@ -153,7 +153,7 @@ $featureLabels = [
                 </button>
                 <?php if (empty($plan['is_default'])): ?>
                 <form method="POST" action="/admin/projects/resumex/plans/<?= $plan['id'] ?>/delete" style="margin:0;"
-                      onsubmit="return confirm('Delete plan <?= addslashes(View::e($plan['name'])) ?>? This cannot be undone.')">
+                      onsubmit="return confirm('Delete plan <?= htmlspecialchars($plan['name'], ENT_QUOTES) ?>? This cannot be undone.')">
                     <?= \Core\Security::csrfField() ?>
                     <button type="submit" class="btn btn-sm" style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);cursor:pointer;">
                         <i class="fas fa-trash"></i> Delete

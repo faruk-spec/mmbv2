@@ -2,7 +2,7 @@
 /**
  * Email Template: subscription-confirmed
  */
-$subject = $subject ?? 'Subscription Update';
+$subject = $subject ?? 'Subscription Confirmed';
 $userName = $userName ?? 'User';
 $planName = $planName ?? 'Plan';
 $appName  = $appName  ?? 'MMB Platform';
