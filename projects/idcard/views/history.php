@@ -77,6 +77,12 @@ $csrfToken = \Core\Security::generateCsrfToken();
                 <button type="button" class="btn btn-secondary btn-sm" onclick="openHistoryDownload(<?= (int)$card['id'] ?>)" title="Download card">
                     <i class="fas fa-download"></i>
                 </button>
+                <button type="button"
+                        class="btn btn-secondary btn-sm"
+                        title="Generate QR"
+                        onclick="ecoQrOpen('<?= htmlspecialchars((defined('APP_URL') ? APP_URL : '') . '/projects/idcard/view/' . (int)$card['id'], ENT_QUOTES) ?>')">
+                    <i class="fas fa-qrcode" style="color:#00f0ff;"></i>
+                </button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="deleteCard(<?= (int)$card['id'] ?>)" title="Delete card">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -174,3 +180,4 @@ document.getElementById('deleteModal').addEventListener('click', function(e){
     if(e.target === this) closeDeleteModal();
 });
 </script>
+<?php if (defined('BASE_PATH')) require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>

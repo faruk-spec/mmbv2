@@ -392,6 +392,10 @@ if ($userId) {
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <?php endif; ?>
+                                    <?php \Core\View::include('partials.cross-app-action-bar', [
+                                        'entityType' => 'qr_url',
+                                        'context' => ['content_url' => (string)($qr['content'] ?? '')],
+                                    ]); ?>
                                     <button onclick="downloadQRCode(<?= $qr['id'] ?>)" 
                                             class="btn btn-success btn-sm icon-only-btn" 
                                             title="Download QR Code"
@@ -462,6 +466,8 @@ if ($userId) {
         <?php endif; ?>
     <?php endif; ?>
 </div>
+
+<?php \Core\View::include('partials.ecosystem-activity-panel'); ?>
 
 <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>

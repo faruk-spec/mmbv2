@@ -126,7 +126,7 @@ $canPriority      = (bool) ($userFeatures['priority_support']     ?? false);
             <!-- Simple Content Field -->
             <div class="form-group" id="simpleContent">
                 <label class="form-label" id="contentLabel">Content</label>
-                <textarea name="content" id="contentField" class="form-textarea" rows="4" placeholder="Enter content..."></textarea>
+                <textarea name="content" id="contentField" class="form-textarea" rows="4" placeholder="Enter content..."><?= htmlspecialchars($prefillContent ?? '', ENT_QUOTES) ?></textarea>
             </div>
             
             <!-- Email Fields -->

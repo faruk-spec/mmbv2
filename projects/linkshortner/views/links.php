@@ -9,8 +9,8 @@
     </div>
 
     <?php if (!empty($links)): ?>
-    <div class="table-container">
-        <table>
+    <div class="table-container links-table-container">
+        <table class="links-table">
             <thead>
                 <tr>
                     <th>Short Link</th>
@@ -23,8 +23,8 @@
             </thead>
             <tbody>
             <?php foreach ($links as $link): ?>
-            <tr>
-                <td>
+            <tr class="link-row" data-link-id="<?= $link['id'] ?>">
+                <td data-label="Short Link">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <a href="/l/<?= View::e($link['code']) ?>" target="_blank" style="color:var(--accent);font-weight:600;">/l/<?= View::e($link['code']) ?></a>
                         <button class="copy-btn" onclick="copyText('<?= View::e((defined('APP_URL') ? APP_URL : '') . '/l/' . $link['code']) ?>')" title="Copy">
@@ -35,10 +35,10 @@
                         <div style="color:var(--text-secondary);font-size:12px;margin-top:3px;"><?= View::e($link['title']) ?></div>
                     <?php endif; ?>
                 </td>
-                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                <td data-label="Destination" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                     <a href="<?= View::e($link['original_url']) ?>" target="_blank" style="color:var(--text-secondary);font-size:13px;"><?= View::e($link['original_url']) ?></a>
                 </td>
-                <td>
+                <td data-label="Clicks">
                     <a href="/projects/linkshortner/analytics/<?= View::e($link['code']) ?>" style="color:var(--orange);font-weight:600;">
                         <?= number_format($link['total_clicks']) ?>
                     </a>
@@ -46,14 +46,14 @@
                         <span style="color:var(--text-secondary);font-size:12px;">/ <?= $link['click_limit'] ?></span>
                     <?php endif; ?>
                 </td>
-                <td style="font-size:13px;">
+                <td data-label="Expires" style="font-size:13px;">
                     <?php if ($link['expires_at']): ?>
                         <?= date('M d, Y', strtotime($link['expires_at'])) ?>
                     <?php else: ?>
                         <span style="color:var(--text-secondary);">Never</span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Status">
                     <?php if ($link['status'] === 'active'): ?>
                         <span class="badge badge-success">Active</span>
                     <?php elseif ($link['status'] === 'expired'): ?>
@@ -62,11 +62,20 @@
                         <span class="badge badge-warning">Disabled</span>
                     <?php endif; ?>
                 </td>
-                <td>
+                <td data-label="Actions">
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <a href="/projects/linkshortner/analytics/<?= View::e($link['code']) ?>" class="btn btn-secondary btn-sm" title="Analytics">
                             <i class="fas fa-chart-bar"></i>
                         </a>
+                        <?php
+                        $linkPublicPath = \Core\EcosystemIntegration::route('linkshortner_public', ['code' => (string)$link['code']]);
+                        View::include('partials.cross-app-action-bar', [
+                            'entityType' => 'linkshortner_link',
+                            'context' => [
+                                'public_url' => $linkPublicPath ? ((defined('APP_URL') ? APP_URL : '') . $linkPublicPath) : '',
+                            ],
+                        ]);
+                        ?>
                         <a href="/projects/linkshortner/links/<?= $link['id'] ?>/edit" class="btn btn-secondary btn-sm" title="Edit">
                             <i class="fas fa-edit"></i>
                         </a>
@@ -102,6 +111,78 @@
     <?php endif; ?>
 </div>
 
+<?php View::include('partials.ecosystem-activity-panel'); ?>
+
+<style>
+/* ── Compact mobile link cards ───────────────────────────────── */
+@media (max-width: 768px) {
+    .links-table-container { overflow-x: visible; }
+
+    .links-table thead { display: none; }
+
+    .links-table tbody,
+    .links-table tbody tr { display: block; width: 100%; }
+
+    .link-row {
+        display: block;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 0.75rem 0.875rem;
+        background: var(--bg-card);
+    }
+    .link-row:hover {
+        border-color: rgba(0,212,255,0.3);
+        box-shadow: 0 4px 12px rgba(0,212,255,0.08);
+    }
+
+    /* Hide all cells by default on mobile */
+    .links-table tbody tr td {
+        display: none;
+        border-bottom: none;
+        padding: 0;
+    }
+
+    /* Show only Short Link, Status and Actions on mobile */
+    .links-table tbody tr td[data-label="Short Link"],
+    .links-table tbody tr td[data-label="Status"],
+    .links-table tbody tr td[data-label="Actions"] {
+        display: block;
+    }
+
+    /* Short link row: flex between code+title and status badge */
+    .links-table tbody tr td[data-label="Short Link"] {
+        padding-bottom: 0.4rem;
+    }
+
+    /* Clicks shown as small secondary text under the code */
+    .links-table tbody tr td[data-label="Clicks"] {
+        display: inline;
+    }
+
+    /* Status badge sits on the same visual row as the code */
+    .links-table tbody tr td[data-label="Status"] {
+        padding-bottom: 0.5rem;
+    }
+
+    /* Actions row: compact, scrollable if needed */
+    .links-table tbody tr td[data-label="Actions"] {
+        padding-top: 0.6rem;
+        margin-top: 0.4rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .links-table tbody tr td[data-label="Actions"] > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-start;
+    }
+
+    /* Remove data-label pseudo-element on mobile (no labels needed) */
+    .links-table tbody tr td:before { content: none; }
+}
+</style>
+
 <script>
 function copyText(text) {
     navigator.clipboard.writeText(text).then(() => {
@@ -113,4 +194,9 @@ function copyText(text) {
     });
 }
 </script>
+
+<!-- QR Modal (must live inside the section so it is captured by View::end()) -->
+<?php if (file_exists(BASE_PATH . '/views/partials/eco-qr-modal.php')): ?>
+    <?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
+<?php endif; ?>
 <?php View::end(); ?>

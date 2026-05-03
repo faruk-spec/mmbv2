@@ -12,7 +12,7 @@
 
         <div class="form-group">
             <label class="form-label">Destination URL <span style="color:var(--red);">*</span></label>
-            <input type="url" name="original_url" class="form-input" placeholder="https://example.com/your-long-url" required>
+            <input type="url" name="original_url" class="form-input" placeholder="https://example.com/your-long-url" required value="<?= View::e($_GET['url'] ?? '') ?>">
         </div>
 
         <div class="form-row">

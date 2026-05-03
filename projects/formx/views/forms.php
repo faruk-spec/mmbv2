@@ -173,6 +173,15 @@
                             <a href="/forms/<?= View::e($f['slug']) ?>" target="_blank" class="fx-action-btn" style="background:rgba(153,69,255,.08);border-color:rgba(153,69,255,.2);color:var(--purple);">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
+                            <?php
+                            $formPublicPath = \Core\EcosystemIntegration::route('formx_public', ['slug' => (string)$f['slug']]);
+                            View::include('partials.cross-app-action-bar', [
+                                'entityType' => 'formx_form',
+                                'context' => [
+                                    'public_url' => $formPublicPath ? ((defined('APP_URL') ? APP_URL : '') . $formPublicPath) : '',
+                                ],
+                            ]);
+                            ?>
                             <?php endif; ?>
                             <form method="POST" action="/projects/formx/<?= $f['id'] ?>/delete" style="display:inline;"
                                   onsubmit="return confirm('Delete this form and all its submissions?');">
@@ -202,6 +211,8 @@
     </main>
 </div>
 
+<?php View::include('partials.ecosystem-activity-panel'); ?>
+
 <div class="fx-sidebar-overlay" id="fxOverlay"></div>
 <button class="fx-sidebar-toggle" id="fxToggle"><i class="fas fa-bars"></i></button>
 <script>
@@ -213,5 +224,7 @@
     o.addEventListener('click',close);
 })();
 </script>
+
+<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
 
 <?php View::endSection(); ?>

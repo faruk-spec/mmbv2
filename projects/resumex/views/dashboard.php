@@ -520,6 +520,12 @@
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                     Preview
                                 </a>
+                                <button type="button" class="rx-action-btn"
+                                        style="color:#00f0ff;"
+                                        title="Generate QR for resume preview"
+                                        onclick="ecoQrOpen('<?= htmlspecialchars((defined('APP_URL') ? APP_URL : '') . '/projects/resumex/preview/' . $resumeId, ENT_QUOTES) ?>')">
+                                    <i class="fas fa-qrcode" style="font-size:0.7rem;"></i> QR
+                                </button>
                                 <?php if (($featureSettings['resumex_public_resumes'] ?? '0') === '1'): ?>
                                 <button type="button" class="rx-action-btn share<?= !empty($resume['is_public']) ? ' active' : '' ?>"
                                         onclick="openShareModal(<?= $resumeId ?>, <?= json_encode($resume['share_token'] ?? '') ?>, <?= !empty($resume['is_public']) ? 'true' : 'false' ?>)"
@@ -832,4 +838,5 @@
     // Close on Escape — handled by the shared keydown listener above
 }());
 </script>
+<?php require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
 <?php View::end(); ?>

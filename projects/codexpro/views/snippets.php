@@ -85,9 +85,19 @@ $langColors = [
             </span>
         </div>
 
-        <a href="/projects/codexpro/snippets/<?= (int)$snippet['id'] ?>" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;">
-            <i class="fas fa-eye"></i> View Snippet
-        </a>
+        <div style="display:flex;gap:.5rem;">
+            <a href="/projects/codexpro/snippets/<?= (int)$snippet['id'] ?>" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">
+                <i class="fas fa-eye"></i> View Snippet
+            </a>
+            <?php if (!empty($snippet['is_public'])): ?>
+            <button type="button"
+                    class="btn btn-secondary btn-sm"
+                    title="Generate QR"
+                    onclick="ecoQrOpen('<?= htmlspecialchars((defined('APP_URL') ? APP_URL : '') . '/projects/codexpro/snippets/' . (int)$snippet['id'], ENT_QUOTES) ?>')">
+                <i class="fas fa-qrcode" style="color:#00f0ff;font-size:.7rem;"></i>
+            </button>
+            <?php endif; ?>
+        </div>
     </div>
     <?php endforeach; ?>
 </div>
@@ -181,6 +191,8 @@ document.getElementById('newSnippetModal').addEventListener('click', function(e)
     if (e.target === this) closeNewSnippetModal();
 });
 </script>
+
+<?php if (defined('BASE_PATH')) require BASE_PATH . '/views/partials/eco-qr-modal.php'; ?>
 
 <?php
 $content = ob_get_clean();

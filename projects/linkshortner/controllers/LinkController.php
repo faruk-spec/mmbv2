@@ -11,6 +11,7 @@ use Core\Database;
 use Core\View;
 use Core\Auth;
 use Core\Security;
+use Core\EcosystemIntegration;
 
 class LinkController
 {
@@ -52,6 +53,17 @@ class LinkController
 
     public function create(): void
     {
+        $prefillUrl = trim((string)($_GET['url'] ?? ''));
+        if ($prefillUrl !== '' && filter_var($prefillUrl, FILTER_VALIDATE_URL)) {
+            EcosystemIntegration::logHandoff(
+                Auth::id(),
+                'ecosystem',
+                'linkshortner',
+                'open_linkshortner_create_prefill',
+                ['has_prefill_url' => true]
+            );
+        }
+
         View::render('projects/linkshortner/create', [
             'title'    => 'Create Short Link',
             'subtitle' => 'Shorten a URL',
