@@ -113,7 +113,7 @@ class PlansController
                     'pa' => $settings['payment_upi_id'],
                     'pn' => 'ResumeX',
                     'am' => number_format((float) $plan['price'], 2, '.', ''),
-                    'cu' => $plan['currency'] ?? ($settings['payment_currency'] ?? 'INR'),
+                    'cu' => $plan['currency'] ?? ($settings['payment_currency'] ?? 'USD'),
                     'tn' => $plan['name'] . ' Plan',
                 ])
                 : null,

@@ -334,6 +334,11 @@ class SubscriptionService
 
     public function createCashfreeOrder(array $payment, array $settings, array $customer, string $returnUrl): array
     {
+        $validatedReturnUrl = $this->validateReturnUrl($returnUrl);
+        if ($validatedReturnUrl === null) {
+            return ['success' => false, 'message' => 'Invalid Cashfree return URL.'];
+        }
+
         $baseUrl = ($settings['payment_cashfree_sandbox'] ?? '1') === '1'
             ? 'https://sandbox.cashfree.com/pg/orders'
             : 'https://api.cashfree.com/pg/orders';
@@ -350,7 +355,7 @@ class SubscriptionService
                 'customer_phone' => (string) ($customer['phone'] ?? '9999999999'),
             ],
             'order_meta' => [
-                'return_url' => $returnUrl . (str_contains($returnUrl, '?') ? '&' : '?') . 'order_id={order_id}',
+                'return_url' => $validatedReturnUrl . (str_contains($validatedReturnUrl, '?') ? '&' : '?') . 'order_id={order_id}',
             ],
         ];
 
@@ -601,5 +606,22 @@ class SubscriptionService
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $scheme . '://' . $host . $path;
+    }
+
+    private function validateReturnUrl(string $returnUrl): ?string
+    {
+        if (!filter_var($returnUrl, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $urlHost = parse_url($returnUrl, PHP_URL_HOST);
+        $appUrl = defined('APP_URL') && APP_URL ? APP_URL : null;
+        $allowedHost = $appUrl ? parse_url($appUrl, PHP_URL_HOST) : ($_SERVER['HTTP_HOST'] ?? null);
+
+        if (!$urlHost || !$allowedHost || strcasecmp((string) $urlHost, (string) $allowedHost) !== 0) {
+            return null;
+        }
+
+        return $returnUrl;
     }
 }

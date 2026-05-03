@@ -206,7 +206,7 @@ class PlansController extends BaseController
                     'pa' => $paymentSettings['payment_upi_id'],
                     'pn' => 'MMB Platform',
                     'am' => number_format((float) $plan['price'], 2, '.', ''),
-                    'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'INR'),
+                    'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD'),
                     'tn' => $plan['name'] . ' Plan',
                 ])
                 : null,
