@@ -397,7 +397,10 @@ $router->post('/admin/whatsapp/user-subscriptions/cancel/{id}', 'Admin\\WhatsApp
 $router->get('/admin/projects/resumex', 'Admin\\ResumeXAdminController@overview', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/analytics', 'Admin\\ResumeXAdminController@analytics', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/plans', 'Admin\\ResumeXAdminController@plans', ['auth', 'admin']);
-$router->post('/admin/projects/resumex/plans', 'Admin\\ResumeXAdminController@plans', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/plans/create', 'Admin\\ResumeXAdminController@createPlan', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/plans/{id}/update', 'Admin\\ResumeXAdminController@updatePlan', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/plans/{id}/toggle-feature', 'Admin\\ResumeXAdminController@togglePlanFeature', ['auth', 'admin']);
+$router->post('/admin/projects/resumex/plans/{id}/delete', 'Admin\\ResumeXAdminController@deletePlan', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/settings', 'Admin\\ResumeXAdminController@settings', ['auth', 'admin']);
 $router->post('/admin/projects/resumex/settings', 'Admin\\ResumeXAdminController@settings', ['auth', 'admin']);
 $router->get('/admin/projects/resumex/templates', 'Admin\\ResumeXAdminController@templates', ['auth', 'admin']);
@@ -494,3 +497,7 @@ $router->post('/admin/support/categories/{id}/update',             'Admin\\Suppo
 $router->post('/admin/support/categories/{id}/delete',             'Admin\\SupportTemplateAdminController@deleteCategory',  ['auth', 'admin']);
 // Form Builder (drag-and-drop)
 $router->get('/admin/support/builder/{category_id}',               'Admin\\SupportTemplateAdminController@builder',         ['auth', 'admin']);
+
+// Payment Gateway Settings
+$router->get('/admin/payment-settings', 'Admin\\PaymentSettingsController@index', ['auth', 'admin']);
+$router->post('/admin/payment-settings', 'Admin\\PaymentSettingsController@save', ['auth', 'admin']);

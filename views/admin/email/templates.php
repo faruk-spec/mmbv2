@@ -22,7 +22,11 @@
         'password-changed' => ['label' => 'Password Changed',     'desc' => 'Sent after a user successfully changes their password.'],
         'login-alert'      => ['label' => 'Login Alert',          'desc' => 'Sent when a new login is detected on an account.'],
         'file-downloaded'  => ['label' => 'File Downloaded',      'desc' => 'Sent after a file download is completed.'],
-        'ocr-completed'    => ['label' => 'OCR Completed',        'desc' => 'Sent when an OCR processing job finishes.'],
+        'ocr-completed'          => ['label' => 'OCR Completed',            'desc' => 'Sent when an OCR processing job finishes.'],
+        'subscription-confirmed' => ['label' => 'Subscription Confirmed',    'desc' => 'Sent to user when a subscription is activated.'],
+        'subscription-expiring'  => ['label' => 'Subscription Expiring Soon', 'desc' => 'Sent a few days before a subscription expires.'],
+        'subscription-expired'   => ['label' => 'Subscription Expired',       'desc' => 'Sent when a subscription has expired.'],
+        'subscription-renewal'   => ['label' => 'Subscription Renewal',       'desc' => 'Sent as a renewal reminder.'],
     ];
     ?>
 

@@ -147,7 +147,7 @@
                     <?php if ($planName): ?>
                         Plan: <strong style="color:var(--cyan);"><?= View::e($planName) ?></strong>
                         <?php if ($price !== null): ?>
-                            &mdash; <?= $price == 0 ? 'Free' : ('$'.number_format((float)$price,2).' / '.$billing) ?>
+                            &mdash; <?php $cur = $sub['currency'] ?? 'USD'; echo $price == 0 ? 'Free' : (htmlspecialchars($cur).'&nbsp;'.number_format((float)$price,2).' / '.htmlspecialchars($billing)); ?>
                         <?php endif; ?>
                         <?php if ($since): ?>
                             &middot; Active since <?= date('M j, Y', strtotime($since)) ?>
@@ -192,7 +192,7 @@
                 <div>
                     <div style="font-weight:700;font-size:1rem;color:<?= $col ?>;"><?= View::e($sub['plan_name']) ?></div>
                     <div style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">
-                        <?= $sub['price'] == 0 ? 'Free' : ('$'.number_format((float)$sub['price'],2).' / '.$sub['billing_cycle']) ?>
+                        <?php $subCur = htmlspecialchars($sub['currency'] ?? 'USD'); echo $sub['price'] == 0 ? 'Free' : ($subCur.'&nbsp;'.number_format((float)$sub['price'],2).' / '.htmlspecialchars($sub['billing_cycle'])); ?>
                         &middot; Active since <?= date('M j, Y', strtotime($sub['started_at'])) ?>
                     </div>
                     <div class="plan-apps" style="margin-top:10px;">
@@ -241,7 +241,7 @@
                     <?php endif; ?>
                 </div>
                 <div class="plan-price">
-                    <?= $plan['price'] == 0 ? 'Free' : ('$'.number_format((float)$plan['price'],2)) ?>
+                    <?php $ppCur = htmlspecialchars($plan['currency'] ?? 'USD'); echo $plan['price'] == 0 ? 'Free' : ($ppCur.'&nbsp;'.number_format((float)$plan['price'],2)); ?>
                     <?php if ($plan['price'] > 0): ?>
                     <small>/ <?= $plan['billing_cycle'] ?></small>
                     <?php endif; ?>

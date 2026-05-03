@@ -28,7 +28,7 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
         <div style="background:linear-gradient(135deg,<?= $planColor ?>22,<?= $planColor ?>08);padding:24px;">
             <div style="font-weight:700;font-size:1.1rem;color:<?= $planColor ?>;"><?= View::e($plan['name']) ?></div>
             <div style="font-size:1.6rem;font-weight:800;margin:10px 0 4px;">
-                <?= $isFree ? 'Free' : ('$' . number_format((float)$plan['price'], 2)) ?>
+                <?= $isFree ? 'Free' : (htmlspecialchars($plan['currency'] ?? 'USD').'&nbsp;'.number_format((float)$plan['price'], 2)) ?>
                 <?php if (!$isFree): ?>
                 <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">/ <?= View::e($plan['billing_cycle']) ?></span>
                 <?php endif; ?>
@@ -103,7 +103,7 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
             <!-- Pricing reminder -->
             <div style="background:rgba(153,69,255,.08);border:1px solid rgba(153,69,255,.3);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:.82rem;color:var(--text-secondary);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                Price: <strong style="color:var(--text-primary);">$<?= number_format((float)$plan['price'],2) ?> / <?= View::e($plan['billing_cycle']) ?></strong>.
+                Price: <strong style="color:var(--text-primary);"><?= View::e($plan['currency'] ?? 'USD') ?>&nbsp;<?= number_format((float)$plan['price'],2) ?> / <?= View::e($plan['billing_cycle']) ?></strong>.
                 Payment and activation will be handled by an admin after reviewing your request.
             </div>
             <?php endif; ?>

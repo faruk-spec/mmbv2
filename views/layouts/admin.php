@@ -2460,6 +2460,12 @@ window.mmbSkeleton = (function(){
                                 <span>General</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/payment-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/payment-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-credit-card" style="width:18px;"></i>
+                                <span>Payment Settings</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.session')): ?>
                             <a href="/admin/settings/session" class="menu-link">
                                 <i class="fas fa-clock"></i>
