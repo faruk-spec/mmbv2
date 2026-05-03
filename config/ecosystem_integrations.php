@@ -44,24 +44,6 @@ return [
     ],
 
     'entities' => [
-        'qr_url' => [
-            'actions' => [
-                [
-                    'id'       => 'shorten_url',
-                    'type'     => 'link',
-                    'route'    => 'linkshortner_create',
-                    'query'    => ['url' => 'content_url'],
-                    'label'    => 'Shorten URL',
-                    'icon'     => 'fa-compress-alt',
-                    'title'    => 'Shorten this URL with LinkShortner',
-                    'requires' => ['content_url'],
-                    'validate' => 'url',
-                    'class'    => 'btn btn-secondary btn-sm icon-only-btn',
-                    'style'    => 'padding: 0.5rem 0.75rem; text-decoration: none; color:#00f0ff;',
-                ],
-            ],
-        ],
-
         'linkshortner_link' => [
             'actions' => [
                 [

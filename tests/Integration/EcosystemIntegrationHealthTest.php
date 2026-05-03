@@ -16,11 +16,6 @@ class EcosystemIntegrationHealthTest extends TestCase
 
     public function testWaveOneEntityActionsResolveForHandoffs(): void
     {
-        $qrActions = EcosystemIntegration::actionsForEntity('qr_url', [
-            'content_url' => 'https://example.com',
-        ]);
-        $this->assertNotEmpty($qrActions);
-
         $formActions = EcosystemIntegration::actionsForEntity('formx_form', [
             'public_url' => 'https://example.com/forms/contact-us',
         ]);
