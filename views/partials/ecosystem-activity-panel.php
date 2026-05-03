@@ -39,9 +39,13 @@ try {
         </div>
         <div style="display:grid;gap:0.45rem;">
             <?php foreach ($ecosystemEvents as $event): ?>
+                <?php
+                $activityMessage = $event['readable_message']
+                    ?: (($event['module'] ?: 'platform') . ' • ' . $event['action']);
+                ?>
                 <div style="display:flex;justify-content:space-between;gap:0.75rem;padding:0.45rem 0.55rem;background:rgba(255,255,255,0.02);border:1px solid var(--border-color);border-radius:8px;">
                     <div style="font-size:0.8rem; color: var(--text-primary);">
-                        <?= View::e($event['readable_message'] ?: (($event['module'] ?: 'platform') . ' • ' . $event['action'])) ?>
+                        <?= View::e($activityMessage) ?>
                     </div>
                     <div style="font-size:0.72rem;color:var(--text-secondary);white-space:nowrap;">
                         <?= date('M j, H:i', strtotime($event['created_at'])) ?>
