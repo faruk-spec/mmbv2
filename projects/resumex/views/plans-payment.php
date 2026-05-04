@@ -60,7 +60,7 @@
                 <h3 style="margin:0 0 10px;">Cashfree Checkout</h3>
                 <p style="color:var(--text-secondary);font-size:.85rem;">Continue to Cashfree to complete your payment securely.</p>
                 <?php if (!empty($payment['payment_url'])): ?>
-                <a href="<?= View::e($payment['payment_url']) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Open Cashfree Checkout</a>
+                <a href="<?= View::e($payment['payment_url']) ?>" rel="noopener noreferrer" class="btn btn-primary">Open Cashfree Checkout</a>
                 <?php elseif (!empty($payment['provider_payment_session_id'])): ?>
                 <button type="button" id="resumeCashfreePayBtn" class="btn btn-primary">Open Cashfree Checkout</button>
                 <?php endif; ?>
