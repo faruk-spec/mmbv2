@@ -873,6 +873,20 @@ class PlansController extends BaseController
         return $scheme . '://' . $host . $path;
     }
 
+    /**
+     * Check that the user meets all prerequisites before subscribing to a plan.
+     *
+     * Verifies (in order):
+     * 1. Email is verified (email_verified_at set on the users table).
+     * 2. Phone is verified when the admin has enabled require_mobile_verification.
+     * 3. Billing details are fully completed.
+     *
+     * If any check fails the user is redirected to the appropriate page and false
+     * is returned; the caller should immediately return on false.
+     *
+     * @param string $returnPath The URL path to redirect back to after completing prerequisites.
+     * @return bool True if all prerequisites are satisfied.
+     */
     private function checkSubscriptionPrerequisites(string $returnPath): bool
     {
         $db = $this->db;
