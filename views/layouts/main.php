@@ -2500,7 +2500,14 @@ window.mmbSkeleton = (function(){
             </div>
             <?php endif; ?>
             <p style="font-size:.8rem;color:var(--text-secondary);">
-                <?= !empty($footerCopyright) ? htmlspecialchars($footerCopyright) : ('&copy; ' . date('Y') . ' ' . htmlspecialchars(APP_NAME ?? 'Platform') . '. All rights reserved.') ?>
+                <?php
+                if (!empty($footerCopyright)) {
+                    echo htmlspecialchars($footerCopyright);
+                } else {
+                    $appName = defined('APP_NAME') ? APP_NAME : 'Platform';
+                    echo '&copy; ' . date('Y') . ' ' . htmlspecialchars($appName) . '. All rights reserved.';
+                }
+                ?>
             </p>
         </div>
     </footer>

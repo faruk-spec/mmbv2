@@ -429,7 +429,7 @@ class NavbarController extends BaseController
                    AND COLUMN_NAME  = 'logo_type'
                  LIMIT 1"
             );
-            if ($row && strpos((string) $row['COLUMN_TYPE'], "'both'") === false) {
+            if ($row && !preg_match("/enum\([^)]*'both'[^)]*\)/i", (string) $row['COLUMN_TYPE'])) {
                 $this->db->query(
                     "ALTER TABLE navbar_settings
                      MODIFY COLUMN logo_type ENUM('text','image','both') DEFAULT 'text'"

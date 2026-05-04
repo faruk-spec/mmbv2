@@ -249,8 +249,7 @@
                         <?php if ($subPaymentId): ?>
                         <a href="/plans/payment/<?= (int) $subPaymentId ?>" class="btn-app btn-app-open">View</a>
                         <?php endif; ?>
-                        <a href="/plans/payment/<?= $subPaymentId ? (int) $subPaymentId . '/cancel' : '' ?>#" class="btn-app btn-app-manage"
-                           onclick="return confirm('Are you sure you want to cancel this subscription?')">
+                        <a href="/plans" class="btn-app btn-app-manage" style="cursor:default;opacity:.6;" title="To cancel, contact support or manage via your payment gateway.">
                             Manage
                         </a>
                     </div>
@@ -404,18 +403,32 @@
         </div>
         <?php if (($payTotalPages ?? 1) > 1): ?>
         <nav class="pay-pagination" aria-label="Payment history pages">
-            <a href="?pay_page=<?= max(1, ($payPage ?? 1) - 1) ?>#payment-history" class="pay-pg-btn <?= ($payPage ?? 1) <= 1 ? 'disabled' : '' ?>">&laquo; Prev</a>
+            <?php $isPrevDisabled = ($payPage ?? 1) <= 1; ?>
+            <?php if ($isPrevDisabled): ?>
+            <span class="pay-pg-btn disabled" aria-disabled="true">&laquo; Prev</span>
+            <?php else: ?>
+            <a href="?pay_page=<?= max(1, ($payPage ?? 1) - 1) ?>#payment-history" class="pay-pg-btn">&laquo; Prev</a>
+            <?php endif; ?>
             <?php
             $start = max(1, ($payPage ?? 1) - 2);
             $end   = min($payTotalPages ?? 1, ($payPage ?? 1) + 2);
-            if ($start > 1): ?><a href="?pay_page=1#payment-history" class="pay-pg-btn">1</a><?php if ($start > 2): ?><span class="pay-pg-btn disabled">&hellip;</span><?php endif; ?>
+            if ($start > 1): ?><a href="?pay_page=1#payment-history" class="pay-pg-btn">1</a><?php if ($start > 2): ?><span class="pay-pg-btn disabled" aria-hidden="true">&hellip;</span><?php endif; ?>
             <?php endif;
             for ($p = $start; $p <= $end; $p++): ?>
-            <a href="?pay_page=<?= $p ?>#payment-history" class="pay-pg-btn <?= $p === ($payPage ?? 1) ? 'active' : '' ?>"><?= $p ?></a>
-            <?php endfor;
-            if ($end < ($payTotalPages ?? 1)): ?><?php if ($end < ($payTotalPages ?? 1) - 1): ?><span class="pay-pg-btn disabled">&hellip;</span><?php endif; ?><a href="?pay_page=<?= $payTotalPages ?>#payment-history" class="pay-pg-btn"><?= $payTotalPages ?></a>
+            <?php if ($p === ($payPage ?? 1)): ?>
+            <span class="pay-pg-btn active" aria-current="page"><?= $p ?></span>
+            <?php else: ?>
+            <a href="?pay_page=<?= $p ?>#payment-history" class="pay-pg-btn"><?= $p ?></a>
             <?php endif; ?>
-            <a href="?pay_page=<?= min($payTotalPages ?? 1, ($payPage ?? 1) + 1) ?>#payment-history" class="pay-pg-btn <?= ($payPage ?? 1) >= ($payTotalPages ?? 1) ? 'disabled' : '' ?>">Next &raquo;</a>
+            <?php endfor;
+            if ($end < ($payTotalPages ?? 1)): ?><?php if ($end < ($payTotalPages ?? 1) - 1): ?><span class="pay-pg-btn disabled" aria-hidden="true">&hellip;</span><?php endif; ?><a href="?pay_page=<?= $payTotalPages ?>#payment-history" class="pay-pg-btn"><?= $payTotalPages ?></a>
+            <?php endif; ?>
+            <?php $isNextDisabled = ($payPage ?? 1) >= ($payTotalPages ?? 1); ?>
+            <?php if ($isNextDisabled): ?>
+            <span class="pay-pg-btn disabled" aria-disabled="true">Next &raquo;</span>
+            <?php else: ?>
+            <a href="?pay_page=<?= min($payTotalPages ?? 1, ($payPage ?? 1) + 1) ?>#payment-history" class="pay-pg-btn">Next &raquo;</a>
+            <?php endif; ?>
         </nav>
         <?php endif; ?>
     </section>
