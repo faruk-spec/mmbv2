@@ -2435,7 +2435,8 @@ window.mmbSkeleton = (function(){
             "SELECT title, slug
              FROM pages
              WHERE status = 'published' AND show_footer = 1
-             ORDER BY sort_order ASC, title ASC"
+             ORDER BY sort_order ASC, title ASC
+             LIMIT 12"
         );
     } catch (\Exception $e) {
         $footerPages = [];

@@ -36,7 +36,7 @@
                 Homepage Footer Links
             </h2>
             <p style="color:var(--text-secondary);margin:0;font-size:.92rem;">
-                Footer links are powered by the Pages CMS. Published pages with <strong>Show Footer</strong> enabled appear automatically in the homepage footer.
+                Footer links are powered by the Pages CMS. Published pages with <strong>Show Footer</strong> enabled in <a href="/admin/pages" style="color:inherit;text-decoration:underline;">Admin Pages</a> appear automatically in the homepage footer.
             </p>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
