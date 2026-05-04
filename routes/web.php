@@ -90,6 +90,8 @@ $router->get('/plans/project/{app}/{slug}', 'PlansController@appSubscribe', ['au
 $router->post('/plans/project/{app}/{slug}', 'PlansController@processAppSubscribe', ['auth']);
 $router->get('/plans/payment/{id}', 'PlansController@payment', ['auth']);
 $router->post('/plans/payment/{id}/confirm', 'PlansController@confirmPayment', ['auth']);
+$router->get('/plans/payment/{id}/cancel', 'PlansController@cancelOtpPage', ['auth']);
+$router->post('/plans/payment/{id}/cancel/send-otp', 'PlansController@sendCancelOtp', ['auth']);
 $router->post('/plans/payment/{id}/cancel', 'PlansController@cancelPaymentSubscription', ['auth']);
 $router->post('/plans/payment/{id}/refund', 'PlansController@requestRefund', ['auth']);
 $router->get('/plans/payment/{id}/return', 'PlansController@cashfreeReturn', ['auth']);

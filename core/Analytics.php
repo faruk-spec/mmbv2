@@ -22,10 +22,6 @@ class Analytics
      */
     public static function track(string $event, array $data = [], ?int $userId = null): bool
     {
-        // Get database connection based on context
-        // For ProShare analytics, use ProShare database
-        $db = Database::getInstance();
-        
         $eventData = [
             'event' => $event,
             'user_id' => $userId,

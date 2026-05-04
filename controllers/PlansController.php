@@ -217,6 +217,7 @@ class PlansController extends BaseController
             && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
             && !empty($paymentSettings['payment_cashfree_app_id'])
             && !empty($paymentSettings['payment_cashfree_secret'])
+            && empty($payment['provider_order_id'])
         ) {
             $cashfreeResult = $this->subscriptionService->createCashfreeOrder(
                 $payment,
@@ -364,6 +365,7 @@ class PlansController extends BaseController
             && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
             && !empty($paymentSettings['payment_cashfree_app_id'])
             && !empty($paymentSettings['payment_cashfree_secret'])
+            && empty($payment['provider_order_id'])
         ) {
             $result = $this->subscriptionService->createCashfreeOrder(
                 $payment,
@@ -413,6 +415,38 @@ class PlansController extends BaseController
         exit;
     }
 
+    public function cancelOtpPage(string $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id());
+        if (!$payment || ($payment['status'] ?? '') !== 'paid' || empty($payment['subscription_id'])) {
+            $this->flash('error', 'No active subscription found for this payment.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+
+        $this->view('dashboard/plans-cancel-otp', [
+            'title' => 'Cancel Subscription',
+            'payment' => $payment,
+        ]);
+    }
+
+    public function sendCancelOtp(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id . '/cancel');
+            return;
+        }
+
+        if ($this->subscriptionService->sendCancelOtp((int) $id, Auth::id())) {
+            $this->flash('success', 'A 6-digit verification code has been sent to your email.');
+        } else {
+            $this->flash('error', 'Unable to send verification code. Please try again.');
+        }
+
+        $this->redirect('/plans/payment/' . (int) $id . '/cancel');
+    }
+
     public function cancelPaymentSubscription(string $id): void
     {
         if (!$this->validateCsrf()) {
@@ -420,6 +454,27 @@ class PlansController extends BaseController
             $this->redirect('/plans/payment/' . (int) $id);
             return;
         }
+
+        $otp = trim((string) ($_POST['cancel_otp'] ?? ''));
+
+        // OTP-based cancel flow (for active paid subscriptions)
+        if ($otp !== '') {
+            $result = $this->subscriptionService->cancelSubscriptionWithOtp((int) $id, Auth::id(), $otp);
+            if ($result['success']) {
+                $msg = $result['refund_eligible']
+                    ? 'Subscription cancelled. A refund request has been submitted and is pending admin confirmation.'
+                    : 'Subscription cancelled. Your access remains active until the end of the billing period.';
+                $this->flash('success', $msg);
+            } else {
+                $this->flash('error', $result['message'] ?? 'Unable to cancel subscription.');
+                $this->redirect('/plans/payment/' . (int) $id . '/cancel');
+                return;
+            }
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+
+        // Legacy direct cancel (e.g. admin actions or non-paid subscriptions)
         if ($this->subscriptionService->cancelSubscriptionByPayment((int) $id, Auth::id())) {
             $this->flash('success', 'Subscription cancelled.');
         } else {

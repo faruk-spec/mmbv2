@@ -241,6 +241,34 @@ class SubscriptionService
 <p><a href=\"{{renew_url}}\" style=\"background:#667eea;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;\">Renew Subscription</a></p>',
                         '[\"user_name\",\"plan_name\",\"app_name\",\"currency\",\"amount\",\"renew_url\"]',
                         1
+                    ),
+                    (
+                        'subscription-cancel-otp',
+                        'Subscription Cancellation Verification',
+                        'Your cancellation code for {{plan_name}}',
+                        '<h2>Hi {{user_name}},</h2>
+<p>You requested to cancel your <strong>{{plan_name}}</strong> subscription.</p>
+<p>Use the code below to confirm cancellation. This code expires in <strong>{{expiry_minutes}} minutes</strong>.</p>
+<div style=\"text-align:center;margin:24px 0;\">
+  <span style=\"display:inline-block;font-size:36px;font-weight:700;letter-spacing:10px;background:#f4f7fb;border:2px dashed #e74c3c;border-radius:10px;padding:16px 32px;color:#333;\">{{otp}}</span>
+</div>
+<p style=\"color:#888;font-size:.85em;\">If you did not request this, you can ignore this email — your subscription will remain active.</p>',
+                        '[\"user_name\",\"plan_name\",\"otp\",\"expiry_minutes\"]',
+                        1
+                    ),
+                    (
+                        'subscription-cancelled',
+                        'Subscription Cancelled',
+                        'Your {{plan_name}} subscription has been cancelled',
+                        '<h2>Hi {{user_name}},</h2>
+<p>Your <strong>{{plan_name}}</strong> subscription for <strong>{{app_name}}</strong> has been cancelled.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Refund Requested</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{refund_requested}}</td></tr>
+</table>
+<p style=\"color:#555;\">If a refund was requested, an admin will review it and you will be notified by email once a decision is made.</p>
+<p><a href=\"{{dashboard_url}}\">Go to your dashboard</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"refund_requested\",\"dashboard_url\"]',
+                        1
                     )
             ");
         } catch (\Throwable $e) {
@@ -705,6 +733,200 @@ class SubscriptionService
             'expires_at' => $subscription['expires_at'] ?? null,
             'status' => $subscription['status'] ?? 'active',
         ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Cancel subscription with OTP verification + 7-day refund policy
+    // -------------------------------------------------------------------------
+
+    /**
+     * Generate and store a one-time cancel-confirmation code for a payment,
+     * then send it via email to the user. Returns false if anything fails.
+     */
+    public function sendCancelOtp(int $paymentId, int $userId): bool
+    {
+        $payment = $this->getUserPayment($paymentId, $userId);
+        if (!$payment || ($payment['status'] ?? '') !== 'paid' || empty($payment['subscription_id'])) {
+            return false;
+        }
+
+        // Fetch user email
+        try {
+            $user = $this->db->fetch("SELECT email, name FROM users WHERE id = ? LIMIT 1", [$userId]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (!$user || empty($user['email'])) {
+            return false;
+        }
+
+        $code = (string) random_int(100000, 999999);
+        $expires = date('Y-m-d H:i:s', time() + 600); // 10 minutes
+
+        // Persist code in metadata
+        $meta = $this->decodePaymentMetadata($payment);
+        $meta['cancel_otp'] = $code;
+        $meta['cancel_otp_expires'] = $expires;
+        $this->db->query(
+            "UPDATE subscription_payments SET metadata_json = ?, updated_at = NOW() WHERE id = ?",
+            [json_encode($meta), $paymentId]
+        );
+
+        // Send email
+        $this->ensureNotificationTemplates();
+        MailService::sendNotification(
+            $user['email'],
+            'subscription-cancel-otp',
+            [
+                'user_name' => $user['name'] ?? 'User',
+                'plan_name' => $payment['plan_name'] ?? 'Subscription',
+                'otp' => $code,
+                'expiry_minutes' => '10',
+            ],
+            false
+        );
+
+        return true;
+    }
+
+    /**
+     * Verify the OTP and, if valid, cancel the subscription.
+     *  - Within 7 days (or plan refund_days): cancel + auto-request refund + email.
+     *  - After 7 days: cancel but subscription stays active until expires_at.
+     * Returns ['success'=>bool, 'refund_eligible'=>bool, 'message'=>string].
+     */
+    public function cancelSubscriptionWithOtp(int $paymentId, int $userId, string $otp): array
+    {
+        $payment = $this->getUserPayment($paymentId, $userId);
+        if (!$payment || ($payment['status'] ?? '') !== 'paid' || empty($payment['subscription_id'])) {
+            return ['success' => false, 'refund_eligible' => false, 'message' => 'Invalid payment or subscription not active.'];
+        }
+
+        $meta = $this->decodePaymentMetadata($payment);
+        $storedOtp = $meta['cancel_otp'] ?? null;
+        $otpExpires = $meta['cancel_otp_expires'] ?? null;
+
+        if (!$storedOtp || $otp !== $storedOtp) {
+            return ['success' => false, 'refund_eligible' => false, 'message' => 'Invalid verification code.'];
+        }
+        if ($otpExpires && time() > strtotime($otpExpires)) {
+            return ['success' => false, 'refund_eligible' => false, 'message' => 'Verification code has expired. Please request a new one.'];
+        }
+
+        // Clear OTP
+        unset($meta['cancel_otp'], $meta['cancel_otp_expires']);
+
+        // Determine refund eligibility (within refund_days, default 7)
+        $refundDays = (int) ($meta['refund_days'] ?? 7);
+        $start = $payment['paid_at'] ?? $payment['created_at'] ?? null;
+        $withinRefundWindow = $start && (time() <= strtotime($start . ' +' . $refundDays . ' days'));
+
+        $config = $this->getAppConfig((string) $payment['app_key']);
+
+        try {
+            if ($withinRefundWindow) {
+                // Cancel immediately + auto-request refund; subscription row is cancelled
+                $this->doCancelSubscriptionRow($payment, $config, $userId);
+                $meta['cancel_otp_verified'] = true;
+                $this->db->query(
+                    "UPDATE subscription_payments
+                     SET status = 'cancelled', cancel_requested_at = NOW(),
+                         refund_status = 'requested', refund_requested_at = NOW(),
+                         metadata_json = ?, updated_at = NOW()
+                     WHERE id = ?",
+                    [json_encode($meta), $paymentId]
+                );
+                Logger::activity($userId, 'subscription_cancelled_with_refund_request', ['payment_id' => $paymentId]);
+                $this->sendCancellationEmail($paymentId, true);
+            } else {
+                // Cancel after window: subscription stays active until expires_at, no refund
+                $meta['cancel_otp_verified'] = true;
+                $this->db->query(
+                    "UPDATE subscription_payments
+                     SET status = 'cancelled', cancel_requested_at = NOW(),
+                         metadata_json = ?, updated_at = NOW()
+                     WHERE id = ?",
+                    [json_encode($meta), $paymentId]
+                );
+                // Mark subscription as "cancelling at period end" — still active until expires_at
+                // We set a cancel marker but don't change the app subscription status yet
+                Logger::activity($userId, 'subscription_cancelled_end_of_period', ['payment_id' => $paymentId]);
+                $this->sendCancellationEmail($paymentId, false);
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::cancelSubscriptionWithOtp - ' . $e->getMessage());
+            return ['success' => false, 'refund_eligible' => false, 'message' => 'An error occurred. Please try again.'];
+        }
+
+        return ['success' => true, 'refund_eligible' => $withinRefundWindow, 'message' => ''];
+    }
+
+    /**
+     * Immediately cancel the subscription row in the project's own table.
+     */
+    private function doCancelSubscriptionRow(array $payment, ?array $config, int $userId): void
+    {
+        if ($payment['app_key'] === 'whatsapp') {
+            $this->db->query(
+                "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ? AND user_id = ?",
+                [(int) $payment['subscription_id'], $userId]
+            );
+            return;
+        }
+        if ($config === null) {
+            return;
+        }
+        $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+        $sql = "UPDATE {$config['subscription_table']}
+                SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+        if ($cancelledColumn) {
+            $sql .= ", {$cancelledColumn} = NOW()";
+        }
+        $sql .= " WHERE id = ? AND {$config['subscription_user_column']} = ?";
+        $this->db->query($sql, [(int) $payment['subscription_id'], $userId]);
+    }
+
+    /**
+     * Send cancellation confirmation email to the user.
+     * $refundRequested = true when within refund window.
+     */
+    private function sendCancellationEmail(int $paymentId, bool $refundRequested): void
+    {
+        try {
+            $payment = $this->db->fetch(
+                "SELECT sp.*, u.email AS user_email, u.name AS user_name
+                 FROM subscription_payments sp
+                 JOIN users u ON u.id = sp.user_id
+                 WHERE sp.id = ? LIMIT 1",
+                [$paymentId]
+            );
+            if (!$payment || empty($payment['user_email'])) {
+                return;
+            }
+
+            $dashboardUrl = match ($payment['app_key']) {
+                'resumex' => '/projects/resumex/plans',
+                'qr' => '/projects/qr/plans',
+                'convertx' => '/projects/convertx/plans',
+                'whatsapp' => '/projects/whatsapp/plans',
+                default => '/plans',
+            };
+
+            MailService::sendNotification(
+                (string) $payment['user_email'],
+                'subscription-cancelled',
+                [
+                    'user_name' => $payment['user_name'] ?? 'User',
+                    'plan_name' => $payment['plan_name'] ?? 'Subscription',
+                    'app_name' => self::APP_CONFIG[$payment['app_key']]['label'] ?? 'MMB Platform',
+                    'refund_requested' => $refundRequested ? 'Yes — pending admin confirmation' : 'No',
+                    'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                ],
+                false
+            );
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::sendCancellationEmail - ' . $e->getMessage());
+        }
     }
 
     public function cancelSubscriptionByPayment(int $paymentId, int $userId): bool
