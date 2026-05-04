@@ -401,6 +401,20 @@ class PlansController extends BaseController
         exit;
     }
 
+    public function appInvoice(string $app, string $id): void
+    {
+        $payment = $this->subscriptionService->getSubscriptionInvoicePayment($app, (int) $id, Auth::id());
+        if (!$payment) {
+            $this->flash('error', 'Invoice not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        header('Content-Type: text/html; charset=utf-8');
+        echo $this->subscriptionService->renderInvoiceHtmlForPayment($payment, Auth::user());
+        exit;
+    }
+
     public function cancelPaymentSubscription(string $id): void
     {
         if (!$this->validateCsrf()) {
@@ -440,8 +454,8 @@ class PlansController extends BaseController
             return;
         }
 
-        $result = $this->subscriptionService->verifyCashfreePayment($payment, $this->subscriptionService->getPaymentSettings());
-        if (!empty($result['success']) && !empty($result['paid']) && $this->subscriptionService->approvePayment((int) $id, Auth::id())) {
+        $result = $this->subscriptionService->confirmCashfreePayment($payment, $this->subscriptionService->getPaymentSettings(), Auth::id());
+        if (!empty($result['success']) && !empty($result['paid']) && !empty($result['approved'])) {
             $this->flash('success', 'Payment received and subscription activated.');
         } elseif (!empty($result['success'])) {
             $this->flash('error', 'Cashfree payment is not marked paid yet. Please try again in a moment.');

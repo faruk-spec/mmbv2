@@ -83,6 +83,7 @@ $router->post('/mail/sync', 'MailController@sync', ['auth']);
 
 // Plans & Subscriptions
 $router->get('/plans', 'PlansController@index', ['auth']);
+$router->get('/plans/project/{app}/invoice/{id}', 'PlansController@appInvoice', ['auth']);
 $router->get('/plans/subscribe/{slug}', 'PlansController@subscribe', ['auth']);
 $router->post('/plans/subscribe/{slug}', 'PlansController@processSubscribe', ['auth']);
 $router->get('/plans/project/{app}/{slug}', 'PlansController@appSubscribe', ['auth']);
@@ -96,6 +97,7 @@ $router->get('/plans/payment/{id}/invoice', 'PlansController@paymentInvoice', ['
 $router->get('/plans/invoice/{id}', 'PlansController@invoice', ['auth']);
 
 // Notification API
+$router->post('/api/webhooks/cashfree', 'WebhookController@cashfree');
 $router->get('/api/notifications', 'NotificationController@getList', ['auth']);
 $router->post('/api/notifications/mark-read', 'NotificationController@markRead', ['auth']);
 $router->post('/api/notifications/mark-all-read', 'NotificationController@markAllRead', ['auth']);

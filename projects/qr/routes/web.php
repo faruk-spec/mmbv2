@@ -254,6 +254,7 @@ switch ($segments[0]) {
         break;
 
     case 'plan':
+    case 'plans':
         require_once PROJECT_PATH . '/controllers/DashboardController.php';
         $controller = new \Projects\QR\Controllers\DashboardController();
         $controller->plan();

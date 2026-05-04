@@ -588,6 +588,125 @@ class SubscriptionService
         }, $rows);
     }
 
+    public function findPaymentByProviderOrderId(string $orderId): ?array
+    {
+        $payment = $this->db->fetch(
+            "SELECT * FROM subscription_payments WHERE provider_order_id = ? LIMIT 1",
+            [$orderId]
+        ) ?: null;
+
+        if ($payment !== null) {
+            $payment['currency'] = $this->normalizeCurrencyValue($payment['currency'] ?? null);
+        }
+
+        return $payment;
+    }
+
+    public function confirmCashfreePayment(array $payment, array $settings, int $actorId = 0): array
+    {
+        $result = $this->verifyCashfreePayment($payment, $settings);
+        if (empty($result['success'])) {
+            return $result;
+        }
+
+        if (empty($result['paid'])) {
+            return $result + ['approved' => false];
+        }
+
+        $approved = $this->approvePayment((int) $payment['id'], $actorId);
+
+        return $result + [
+            'approved' => $approved,
+            'payment_id' => (int) $payment['id'],
+        ];
+    }
+
+    public function getSubscriptionInvoicePayment(string $appKey, int $subscriptionId, int $userId): ?array
+    {
+        $config = $this->getAppConfig($appKey);
+        if ($config === null) {
+            return null;
+        }
+
+        $payment = $this->db->fetch(
+            "SELECT *
+             FROM subscription_payments
+             WHERE user_id = ? AND app_key = ? AND subscription_id = ?
+             ORDER BY id DESC
+             LIMIT 1",
+            [$userId, $appKey, $subscriptionId]
+        );
+
+        if ($payment) {
+            $payment['currency'] = $this->normalizeCurrencyValue($payment['currency'] ?? null);
+            return $payment;
+        }
+
+        try {
+            if ($appKey === 'whatsapp') {
+                $subscription = $this->db->fetch(
+                    "SELECT s.id, s.status, s.start_date AS started_at, s.end_date AS expires_at,
+                            p.id AS plan_id, p.name AS plan_name, p.price, p.currency, p.duration_days
+                     FROM whatsapp_subscriptions s
+                     LEFT JOIN whatsapp_subscription_plans p
+                       ON p.id = COALESCE(
+                           s.plan_id,
+                           (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1)
+                       )
+                     WHERE s.id = ? AND s.user_id = ?
+                     LIMIT 1",
+                    [$subscriptionId, $userId]
+                );
+            } else {
+                $subscription = $this->db->fetch(
+                    "SELECT s.id,
+                            s.{$config['subscription_status_column']} AS status,
+                            s.{$config['subscription_started_column']} AS started_at,
+                            s.{$config['subscription_expires_column']} AS expires_at,
+                            p.{$config['plan_id_column']} AS plan_id,
+                            p.{$config['plan_name_column']} AS plan_name,
+                            p.{$config['plan_price_column']} AS price,
+                            p.{$config['plan_currency_column']} AS currency,
+                            p.{$config['plan_billing_column']} AS billing_cycle
+                     FROM {$config['subscription_table']} s
+                     JOIN {$config['plan_table']} p ON p.{$config['plan_id_column']} = s.{$config['subscription_plan_column']}
+                     WHERE s.id = ? AND s.{$config['subscription_user_column']} = ?
+                     LIMIT 1",
+                    [$subscriptionId, $userId]
+                );
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::getSubscriptionInvoicePayment - ' . $e->getMessage());
+            return null;
+        }
+
+        if (!$subscription) {
+            return null;
+        }
+
+        $billingCycle = $subscription['billing_cycle'] ?? null;
+        if ($appKey === 'whatsapp') {
+            $billingCycle = ((int) ($subscription['duration_days'] ?? 30)) . ' days';
+        }
+
+        return [
+            'id' => (int) $subscription['id'],
+            'user_id' => $userId,
+            'app_key' => $appKey,
+            'plan_id' => (int) ($subscription['plan_id'] ?? 0),
+            'subscription_id' => (int) $subscription['id'],
+            'plan_name' => (string) ($subscription['plan_name'] ?? 'Subscription'),
+            'billing_cycle' => $billingCycle ?: 'one-time',
+            'amount' => (float) ($subscription['price'] ?? 0),
+            'currency' => $this->normalizeCurrencyValue($subscription['currency'] ?? null),
+            'invoice_no' => 'INV-' . strtoupper(substr(md5($appKey . '-' . $subscription['id'] . '-' . ($subscription['started_at'] ?? '')), 0, 8)),
+            'paid_at' => $subscription['started_at'] ?? null,
+            'created_at' => $subscription['started_at'] ?? date('Y-m-d H:i:s'),
+            'expires_at' => $subscription['expires_at'] ?? null,
+            'status' => $subscription['status'] ?? 'active',
+        ];
+    }
+
     public function cancelSubscriptionByPayment(int $paymentId, int $userId): bool
     {
         $payment = $this->getUserPayment($paymentId, $userId);
@@ -950,9 +1069,9 @@ class SubscriptionService
             };
             $dashboardUrl = match ($payment['app_key']) {
                 'resumex' => '/projects/resumex/plans',
-                'qr' => '/projects/qr/plan',
-                'convertx' => '/projects/convertx/plan',
-                'whatsapp' => '/projects/whatsapp/subscription',
+                'qr' => '/projects/qr/plans',
+                'convertx' => '/projects/convertx/plans',
+                'whatsapp' => '/projects/whatsapp/plans',
                 default => '/plans',
             };
             $expiresAt = $this->resolveSubscriptionExpiry((string) $payment['app_key'], (int) $payment['subscription_id']);
@@ -972,7 +1091,7 @@ class SubscriptionService
                     'invoice_url' => $this->absoluteUrl($invoiceUrl),
                     'dashboard_url' => $this->absoluteUrl($dashboardUrl),
                 ],
-                true
+                false
             );
         } catch (\Throwable $e) {
             Logger::error('SubscriptionService::sendConfirmationEmail - ' . $e->getMessage());

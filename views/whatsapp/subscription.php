@@ -112,9 +112,7 @@
                 </div>
                 <span class="wa-badge active" style="background:rgba(0,0,0,.06);color:var(--text-primary);"><?= htmlspecialchars(ucfirst($item['status'] ?? 'unknown')) ?></span>
                 <div>
-                    <?php foreach ($paymentHistory as $payment): if ((int) ($payment['subscription_id'] ?? 0) !== (int) ($item['id'] ?? 0)) continue; ?>
-                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="wa-btn wa-btn-secondary">Invoice</a>
-                    <?php endforeach; ?>
+                    <a href="/plans/project/whatsapp/invoice/<?= (int) ($item['id'] ?? 0) ?>" class="wa-btn wa-btn-secondary">Invoice</a>
                 </div>
             </div>
             <?php endforeach; ?>

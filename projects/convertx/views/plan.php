@@ -81,9 +81,7 @@ $paymentHistory = $paymentHistory ?? [];
             </div>
             <span class="btn btn-secondary" style="cursor:default;"><?= htmlspecialchars(ucfirst($item['status'] ?? 'unknown')) ?></span>
             <div>
-                <?php foreach ($paymentHistory as $payment): if ((int) ($payment['subscription_id'] ?? 0) !== (int) ($item['id'] ?? 0)) continue; ?>
-                <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn btn-secondary">Invoice</a>
-                <?php endforeach; ?>
+                <a href="/plans/project/convertx/invoice/<?= (int) ($item['id'] ?? 0) ?>" class="btn btn-secondary">Invoice</a>
             </div>
         </div>
         <?php endforeach; ?>

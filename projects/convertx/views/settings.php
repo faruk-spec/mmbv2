@@ -50,7 +50,7 @@ $user        = $user  ?? \Core\Auth::user();
                         <i class="fa-solid fa-star"></i>
                         <?= htmlspecialchars(ucfirst($user['plan_slug'] ?? 'Free')) ?>
                     </span>
-                    <a href="/projects/convertx/plan" style="font-size:.78rem;color:var(--cx-primary);text-decoration:none;">
+                    <a href="/projects/convertx/plans" style="font-size:.78rem;color:var(--cx-primary);text-decoration:none;">
                         Upgrade <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 </div>

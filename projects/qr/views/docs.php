@@ -444,7 +444,7 @@ Authorization: Bearer YOUR_API_KEY
     <i class="fas fa-crown" style="font-size:2rem;color:var(--purple);display:block;margin-bottom:.75rem;"></i>
     <h3 style="color:var(--text-primary);margin:0 0 .5rem;">Unlock All Features</h3>
     <p style="color:var(--text-secondary);font-size:.875rem;margin:0 0 1.25rem;">Upgrade your plan to access Dynamic QR, Analytics, API, Bulk Generation and more.</p>
-    <a href="/projects/qr/plan" style="display:inline-flex;align-items:center;gap:8px;padding:10px 28px;background:linear-gradient(135deg,var(--purple),var(--cyan));border-radius:8px;color:#000;font-weight:700;font-size:.9rem;text-decoration:none;">
+    <a href="/projects/qr/plans" style="display:inline-flex;align-items:center;gap:8px;padding:10px 28px;background:linear-gradient(135deg,var(--purple),var(--cyan));border-radius:8px;color:#000;font-weight:700;font-size:.9rem;text-decoration:none;">
         <i class="fas fa-arrow-up"></i> View Plans
     </a>
 </div>

@@ -1276,7 +1276,7 @@ include BASE_PATH . '/views/layouts/navbar.php';
         <div class="sidebar-section">
             <div class="sidebar-title">Account</div>
             <nav class="sidebar-nav">
-                <?php $renderNavItem('page_plan', '/projects/convertx/plan', ($currentView === 'plan') ? 'active' : '', 'fa-solid fa-star', 'Plans & Pricing'); ?>
+                <?php $renderNavItem('page_plan', '/projects/convertx/plans', ($currentView === 'plan') ? 'active' : '', 'fa-solid fa-star', 'Plans & Pricing'); ?>
                 <?php $renderNavItem('page_settings', '/projects/convertx/settings', ($currentView === 'settings') ? 'active' : '', 'fa-solid fa-gear', 'Settings'); ?>
             </nav>
         </div>
@@ -1322,7 +1322,7 @@ include BASE_PATH . '/views/layouts/navbar.php';
                 echo '<div class="fgb-icon"><i class="fa-solid fa-lock"></i></div>';
                 echo '<div class="fgb-title">Premium Feature</div>';
                 echo '<div class="fgb-desc">This page is not included in your current plan. Upgrade to unlock it.</div>';
-                echo '<a href="/projects/convertx/plan" class="fgb-btn"><i class="fa-solid fa-crown"></i> View Plans &amp; Upgrade</a>';
+                echo '<a href="/projects/convertx/plans" class="fgb-btn"><i class="fa-solid fa-crown"></i> View Plans &amp; Upgrade</a>';
                 echo '</div><!-- /.cx-feature-gate-badge -->';
                 echo '</div><!-- /.cx-feature-gate-wrap -->';
             } else {

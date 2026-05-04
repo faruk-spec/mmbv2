@@ -216,9 +216,7 @@ use Core\Auth;
                 <?= htmlspecialchars(ucfirst($history['status'] ?? 'unknown')) ?>
             </span>
             <div style="display:flex;gap:8px;">
-                <?php foreach (($paymentHistory ?? []) as $payment): if ((int) ($payment['subscription_id'] ?? 0) !== (int) ($history['id'] ?? 0)) continue; ?>
-                <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn btn-secondary btn-sm">Invoice</a>
-                <?php endforeach; ?>
+                <a href="/plans/project/qr/invoice/<?= (int) ($history['id'] ?? 0) ?>" class="btn btn-secondary btn-sm">Invoice</a>
             </div>
         </div>
         <?php endforeach; ?>
@@ -248,4 +246,3 @@ use Core\Auth;
     </div>
 </section>
 <?php endif; ?>
-

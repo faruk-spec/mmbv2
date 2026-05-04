@@ -106,11 +106,34 @@ new QRCode(document.getElementById('resumeUpiQrCode'), {
 <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 <script>
 document.getElementById('resumeCashfreePayBtn')?.addEventListener('click', function () {
-    const cashfree = Cashfree({mode: <?= json_encode(($settings['payment_cashfree_sandbox'] ?? '1') === '1' ? 'sandbox' : 'production') ?>});
-    cashfree.checkout({
-        paymentSessionId: <?= json_encode($payment['provider_payment_session_id']) ?>,
-        redirectTarget: '_self'
-    });
+    const fallbackUrl = <?= json_encode($payment['payment_url'] ?? '') ?>;
+
+    try {
+        if (typeof Cashfree !== 'function') {
+            if (fallbackUrl) {
+                window.location.href = fallbackUrl;
+            }
+            return;
+        }
+
+        const cashfree = Cashfree({mode: <?= json_encode(($settings['payment_cashfree_sandbox'] ?? '1') === '1' ? 'sandbox' : 'production') ?>});
+        const result = cashfree.checkout({
+            paymentSessionId: <?= json_encode($payment['provider_payment_session_id']) ?>,
+            redirectTarget: '_self'
+        });
+
+        if (result && typeof result.then === 'function') {
+            result.catch(function () {
+                if (fallbackUrl) {
+                    window.location.href = fallbackUrl;
+                }
+            });
+        }
+    } catch (error) {
+        if (fallbackUrl) {
+            window.location.href = fallbackUrl;
+        }
+    }
 });
 </script>
 <?php endif; ?>

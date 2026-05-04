@@ -823,7 +823,7 @@
                     <div class="menu-section-title">Account</div>
                     
                     <div class="menu-item">
-                        <a href="/projects/whatsapp/subscription" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/subscription') === 0 ? 'active' : '' ?>">
+                        <a href="/projects/whatsapp/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/subscription') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/projects/whatsapp/plans') === 0 ? 'active' : '' ?>">
                             <i class="fas fa-crown"></i>
                             <span>Subscription</span>
                         </a>

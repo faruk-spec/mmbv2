@@ -134,9 +134,9 @@
             $expires  = $sub['expires_at']    ?? null;
             $upgradeUrl = match ($appKey) {
                 'resumex' => '/projects/resumex/plans',
-                'qr' => '/projects/qr/plan',
-                'convertx' => '/projects/convertx/plan',
-                'whatsapp' => '/projects/whatsapp/subscription',
+                'qr' => '/projects/qr/plans',
+                'convertx' => '/projects/convertx/plans',
+                'whatsapp' => '/projects/whatsapp/plans',
                 default => '#platform-plans',
             };
         ?>
