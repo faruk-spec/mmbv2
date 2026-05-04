@@ -113,6 +113,10 @@ class PlansController extends BaseController
         $plan['included_apps'] = json_decode($plan['included_apps'] ?? '[]', true) ?: [];
         $plan['app_features']  = json_decode($plan['app_features']  ?? '{}', true) ?: [];
 
+        if (!$this->checkSubscriptionPrerequisites('/plans/subscribe/' . urlencode($slug))) {
+            return;
+        }
+
         // Check if user already has this plan
         $existing = null;
         try {
@@ -328,6 +332,11 @@ class PlansController extends BaseController
         }
 
         $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
+
+        if (!$this->checkSubscriptionPrerequisites('/plans/project/' . urlencode($app) . '/' . urlencode($slug))) {
+            return;
+        }
+
         $this->view('dashboard/app-plan-subscribe', [
             'title' => 'Subscribe to ' . ucfirst($app) . ' Plan',
             'plan' => $plan,
@@ -862,5 +871,59 @@ class PlansController extends BaseController
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $scheme . '://' . $host . $path;
+    }
+
+    private function checkSubscriptionPrerequisites(string $returnPath): bool
+    {
+        $db = $this->db;
+        $userId = Auth::id();
+
+        // 1. Email must be verified
+        $user = $db->fetch("SELECT email_verified_at FROM users WHERE id = ?", [$userId]);
+        if (empty($user['email_verified_at'])) {
+            $this->flash('error', 'Please verify your email address before subscribing to a plan.');
+            $this->redirect('/profile');
+            return false;
+        }
+
+        // 2. Mobile verification (if admin requires it)
+        $requireMobile = '0';
+        try {
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = 'require_mobile_verification'");
+            if ($row) $requireMobile = $row['value'];
+        } catch (\Throwable $e) {}
+
+        if ($requireMobile === '1') {
+            $profile = $db->fetch("SELECT phone_verified_at FROM user_profiles WHERE user_id = ?", [$userId]);
+            if (empty($profile['phone_verified_at'])) {
+                $this->flash('error', 'Please verify your phone number before subscribing. Go to Profile to verify.');
+                $this->redirect('/profile');
+                return false;
+            }
+        }
+
+        // 3. Billing details must be complete
+        try {
+            $billing = $db->fetch(
+                "SELECT full_name, email, phone, address_line1, city, state, postal_code, country FROM user_billing_details WHERE user_id = ?",
+                [$userId]
+            );
+            $billingComplete = $billing
+                && !empty($billing['full_name']) && !empty($billing['email'])
+                && !empty($billing['phone']) && !empty($billing['address_line1'])
+                && !empty($billing['city']) && !empty($billing['state'])
+                && !empty($billing['postal_code']) && !empty($billing['country']);
+        } catch (\Throwable $e) {
+            $billingComplete = false;
+        }
+
+        if (!$billingComplete) {
+            $_SESSION['billing_next'] = $returnPath;
+            $this->flash('info', 'Please complete your billing details before subscribing.');
+            $this->redirect('/billing-details?next=' . urlencode($returnPath));
+            return false;
+        }
+
+        return true;
     }
 }

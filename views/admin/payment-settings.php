@@ -75,6 +75,18 @@
             </div>
             <small>When disabled, the Manual Review option is hidden from the payment method selector. Users will only see the enabled payment gateways (UPI / Cashfree).</small>
         </div>
+        <div class="form-group">
+            <label>Mobile Verification Required</label>
+            <div class="toggle-row">
+                <label class="toggle-switch">
+                    <input type="checkbox" name="require_mobile_verification" value="1"
+                           <?= ($settings['require_mobile_verification']??'0')==='1'?'checked':'' ?>>
+                    <span class="slider"></span>
+                </label>
+                <span style="font-size:.9rem;">Require users to verify their phone number before subscribing</span>
+            </div>
+            <small>When enabled, users must verify their phone via OTP before accessing any subscription plan.</small>
+        </div>
     </div>
 
     <!-- UPI / PhonePe -->

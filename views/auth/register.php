@@ -46,6 +46,12 @@
             </div>
 
             <div class="form-group">
+                <label class="form-label" for="phone">Phone Number <span style="color:var(--text-secondary);font-size:.8em;">(optional)</span></label>
+                <input type="tel" id="phone" name="phone" class="form-input"
+                       value="<?= View::old('phone') ?>" placeholder="+91 9876543210">
+            </div>
+
+            <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <input type="password" id="password" name="password" class="form-input"
                        placeholder="Min. 8 characters" required minlength="8">

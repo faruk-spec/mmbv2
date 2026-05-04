@@ -187,6 +187,42 @@ class SubscriptionService
         }
 
         $this->ensureProjectPlanPolicyColumns();
+
+        // Billing details table + phone verification columns
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS `user_billing_details` (
+              `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+              `user_id` INT UNSIGNED NOT NULL,
+              `full_name` VARCHAR(100) NOT NULL DEFAULT '',
+              `email` VARCHAR(255) NOT NULL DEFAULT '',
+              `phone` VARCHAR(20) NOT NULL DEFAULT '',
+              `address_line1` VARCHAR(255) NOT NULL DEFAULT '',
+              `address_line2` VARCHAR(255) NULL DEFAULT NULL,
+              `city` VARCHAR(100) NOT NULL DEFAULT '',
+              `state` VARCHAR(100) NOT NULL DEFAULT '',
+              `postal_code` VARCHAR(20) NOT NULL DEFAULT '',
+              `country` VARCHAR(100) NOT NULL DEFAULT '',
+              `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+              UNIQUE KEY `uniq_user` (`user_id`),
+              FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+        }
+
+        try {
+            $profCols = array_column($this->db->fetchAll("SHOW COLUMNS FROM user_profiles"), 'Field');
+            if (!in_array('phone_verified_at', $profCols, true)) {
+                $this->db->query("ALTER TABLE user_profiles ADD COLUMN `phone_verified_at` TIMESTAMP NULL DEFAULT NULL");
+            }
+            if (!in_array('phone_otp', $profCols, true)) {
+                $this->db->query("ALTER TABLE user_profiles ADD COLUMN `phone_otp` VARCHAR(10) NULL DEFAULT NULL");
+            }
+            if (!in_array('phone_otp_expires_at', $profCols, true)) {
+                $this->db->query("ALTER TABLE user_profiles ADD COLUMN `phone_otp_expires_at` TIMESTAMP NULL DEFAULT NULL");
+            }
+        } catch (\Throwable $e) {
+        }
     }
 
     public function ensureNotificationTemplates(): void
@@ -490,12 +526,17 @@ class SubscriptionService
             'payment_cashfree_sandbox' => '1',
             'payment_currency' => 'INR',
             'payment_manual_review_enabled' => '1',
+            'require_mobile_verification' => '0',
         ];
 
         try {
             $rows = $this->db->fetchAll("SELECT `key`, value FROM settings WHERE `key` LIKE 'payment_%'");
             foreach ($rows as $row) {
                 $defaults[$row['key']] = $row['value'];
+            }
+            $rmvRow = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'require_mobile_verification'");
+            if ($rmvRow) {
+                $defaults['require_mobile_verification'] = $rmvRow['value'];
             }
         } catch (\Throwable $e) {
         }
@@ -534,6 +575,15 @@ class SubscriptionService
             } else {
                 $this->db->insert('settings', ['key' => $key, 'value' => $value, 'type' => 'string', 'created_at' => date('Y-m-d H:i:s')]);
             }
+        }
+
+        // Save require_mobile_verification separately (not a payment_ prefix key)
+        $rmvValue = !empty($input['require_mobile_verification']) ? '1' : '0';
+        $rmvRow = $this->db->fetch("SELECT id FROM settings WHERE `key` = 'require_mobile_verification'");
+        if ($rmvRow) {
+            $this->db->update('settings', ['value' => $rmvValue, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', ['require_mobile_verification']);
+        } else {
+            $this->db->insert('settings', ['key' => 'require_mobile_verification', 'value' => $rmvValue, 'type' => 'string', 'created_at' => date('Y-m-d H:i:s')]);
         }
     }
 

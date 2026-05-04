@@ -192,6 +192,15 @@ class AuthController extends BaseController
         ]);
         
         if ($userId) {
+            // Save optional phone number to user profile
+            $phone = trim(Security::sanitize($this->input('phone', '')));
+            if ($phone !== '') {
+                try {
+                    $db = \Core\Database::getInstance();
+                    $db->update('user_profiles', ['phone' => $phone], 'user_id = ?', [$userId]);
+                } catch (\Throwable $e) {}
+            }
+
             // Track registration
             TrafficTracker::trackRegistration($userId);
             

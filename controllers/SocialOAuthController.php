@@ -138,6 +138,16 @@ class SocialOAuthController extends BaseController
             }
 
             $returnUrl = OAuthProvider::consumeReturnUrl($provider);
+
+            // Redirect to complete-profile if phone is missing
+            $profile = $db->fetch("SELECT phone FROM user_profiles WHERE user_id = ?", [$userId]);
+            if (!$profile || empty(trim((string)($profile['phone'] ?? '')))) {
+                $_SESSION['complete_profile_next'] = $returnUrl;
+                $this->flash('info', 'Welcome! Please complete your profile by adding your phone number.');
+                $this->redirect('/complete-profile');
+                return;
+            }
+
             $this->flash('success', 'Successfully signed in with ' . $providerName . '!');
             $this->redirect($returnUrl);
         } catch (\Exception $e) {

@@ -61,6 +61,7 @@ class PaymentSettingsController extends BaseController
                 'payment_cashfree_sandbox' => isset($_POST['payment_cashfree_sandbox']) ? '1' : '0',
                 'payment_currency' => Security::sanitize(trim($_POST['payment_currency'] ?? 'INR')),
                 'payment_manual_review_enabled' => isset($_POST['payment_manual_review_enabled']) ? '1' : '0',
+                'require_mobile_verification'   => isset($_POST['require_mobile_verification'])   ? '1' : '0',
             ]);
         } catch (\Throwable $e) {
             Logger::error('PaymentSettings save: ' . $e->getMessage());
