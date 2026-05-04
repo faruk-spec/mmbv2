@@ -895,7 +895,7 @@ class PlansController extends BaseController
         // 1. Email must be verified
         $user = $db->fetch("SELECT email_verified_at FROM users WHERE id = ?", [$userId]);
         if (empty($user['email_verified_at'])) {
-            $this->flash('error', 'Please verify your email address before subscribing to a plan.');
+            $this->flash('error', 'Please verify your email address before subscribing. Check your inbox for the verification link, or go to your profile to resend it.');
             $this->redirect('/profile');
             return false;
         }

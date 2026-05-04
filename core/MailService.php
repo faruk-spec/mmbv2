@@ -817,7 +817,7 @@ class MailService
                         return ['success' => true, 'message' => "Connected and authenticated as $user ✓ (AUTH LOGIN)"];
                     }
                     // AUTH LOGIN failed — fall through to try AUTH PLAIN.
-                    Logger::warning("MailService testSmtp: AUTH LOGIN failed ($passResp), trying AUTH PLAIN");
+                    Logger::warning("MailService testSmtp: AUTH LOGIN failed (response code: $passCode), trying AUTH PLAIN");
                 } else {
                     Logger::warning("MailService testSmtp: AUTH LOGIN not accepted ($authResp), trying AUTH PLAIN");
                 }

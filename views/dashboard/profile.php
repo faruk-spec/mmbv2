@@ -274,7 +274,7 @@
 
 <?php View::section('scripts'); ?>
 <script>
-var csrfToken = <?= json_encode(\Core\Security::generateCsrfToken()) ?>;
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 function sendPhoneOtp() {
     var btn = document.getElementById('sendPhoneOtpBtn');
     if (btn) btn.disabled = true;
