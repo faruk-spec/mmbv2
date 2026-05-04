@@ -11,6 +11,7 @@ use Controllers\BaseController;
 use Core\Database;
 use Core\Auth;
 use Core\Logger;
+use Core\MailService;
 
 class EmailController extends BaseController
 {
@@ -373,37 +374,13 @@ class EmailController extends BaseController
             return;
         }
 
-        $limit = (int)($_POST['limit'] ?? 50);
+        $limit = min(200, max(1, (int)($_POST['limit'] ?? 50)));
 
-        // Note: this endpoint marks pending emails as 'processing' so that external
-        // queue workers or cron jobs can pick them up.  The actual SMTP sending is
-        // performed by MailService::sendNow() called from those workers, not here.
-        $processed = 0;
-        try {
-            $db = Database::getInstance();
-            $this->ensureQueueTable($db);
-            $rows = $db->fetchAll(
-                "SELECT id FROM email_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?",
-                [$limit]
-            );
-            foreach ($rows as $row) {
-                try {
-                    $db->query(
-                        "UPDATE email_queue SET status = 'processing', attempts = attempts + 1 WHERE id = ?",
-                        [(int)$row['id']]
-                    );
-                    $processed++;
-                } catch (\Throwable $innerE) {
-                    // skip individual row errors
-                }
-            }
-        } catch (\Throwable $e) {
-            $this->json(['success' => false, 'message' => 'Queue unavailable: ' . $e->getMessage()]);
-            return;
-        }
+        $processed = MailService::processQueue($limit);
+
         $this->json([
-            'success' => true,
-            'message' => "Processed $processed emails",
+            'success'   => true,
+            'message'   => "Processed $processed email" . ($processed !== 1 ? 's' : ''),
             'processed' => $processed,
         ]);
     }

@@ -1187,6 +1187,7 @@ class SubscriptionService
             $rawPhone = substr($rawPhone, -10);
         }
         // Cashfree requires exactly 10 digits; use a placeholder when the user's phone is missing/invalid.
+        // '9999999999' is a generic 10-digit placeholder accepted by Cashfree for missing phone numbers.
         $customerPhone = strlen($rawPhone) === 10 ? $rawPhone : '9999999999';
 
         $payload = [
@@ -1692,7 +1693,6 @@ HTML;
         if (!empty($parts['query'])) {
             parse_str($parts['query'], $existing);
         }
-        $existing = array_merge($existing, $params);
 
         $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
         $host = $parts['host'] ?? '';
@@ -1701,8 +1701,25 @@ HTML;
         $pass = isset($parts['pass']) ? ':' . $parts['pass']  : '';
         $pass = ($user !== '' || $pass !== '') ? $pass . '@' : '';
         $path = $parts['path'] ?? '';
-        $query = http_build_query($existing);
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        // Build query string: encode existing params normally, but preserve
+        // Cashfree-style template placeholders ({order_id}, etc.) verbatim so that
+        // http_build_query / urlencode does not turn {order_id} into %7Border_id%7D.
+        // Cashfree requires the literal string {order_id} in the return_url for its
+        // server-side substitution to work; URL-encoding the braces breaks the mechanism.
+        $allParams = array_merge($existing, $params);
+        $queryParts = [];
+        foreach ($allParams as $key => $value) {
+            $encodedKey = urlencode((string) $key);
+            // Preserve any value that is exactly a {placeholder} token.
+            if (preg_match('/^\{[^{}]+\}$/', (string) $value)) {
+                $queryParts[] = $encodedKey . '=' . $value;
+            } else {
+                $queryParts[] = $encodedKey . '=' . urlencode((string) $value);
+            }
+        }
+        $query = implode('&', $queryParts);
 
         return $scheme . $user . $pass . $host . $port . $path . ($query !== '' ? '?' . $query : '') . $fragment;
     }
