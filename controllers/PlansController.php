@@ -166,21 +166,19 @@ class PlansController extends BaseController
         // If plan is free (price=0), auto-assign immediately
         if ((float)$plan['price'] === 0.0) {
             try {
-                $this->ensurePlatformTables();
-                $expiresAt = match ($plan['billing_cycle'] ?? 'monthly') {
-                    'monthly' => date('Y-m-d H:i:s', strtotime('+1 month')),
-                    'yearly' => date('Y-m-d H:i:s', strtotime('+1 year')),
-                    default => null,
-                };
-                // Cancel any existing
-                $this->db->query(
-                    "UPDATE platform_user_subscriptions SET status='cancelled', cancelled_at=NOW() WHERE user_id=? AND plan_id=? AND status='active'",
-                    [$userId, $plan['id']]
-                );
-                $this->db->query(
-                    "INSERT INTO platform_user_subscriptions (user_id, plan_id, status, started_at, expires_at) VALUES (?,?,'active',NOW(),?)",
-                    [$userId, $plan['id'], $expiresAt]
-                );
+                $payment = $this->subscriptionService->createOrReusePayment([
+                    'user_id' => $userId,
+                    'app_key' => 'platform',
+                    'plan_id' => (int) $plan['id'],
+                    'plan_name' => (string) $plan['name'],
+                    'billing_cycle' => $plan['billing_cycle'] ?? 'monthly',
+                    'gateway' => 'request',
+                    'status' => 'paid',
+                    'amount' => 0,
+                    'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
+                    'metadata' => ['message' => $message, 'plan_slug' => $plan['slug']],
+                ]);
+                $this->subscriptionService->approvePayment((int) $payment['id'], $userId);
                 Logger::activity($userId, 'subscription_auto_activated', ['plan_id' => $plan['id']]);
                 try { Notification::send($userId, 'plan_subscribed', 'You have been subscribed to the "' . $plan['name'] . '" plan.', ['plan_id' => $plan['id'], 'plan_name' => $plan['name']]); } catch (\Exception $e) {}
                 $this->flash('success', 'You have been subscribed to "' . $plan['name'] . '" successfully!');

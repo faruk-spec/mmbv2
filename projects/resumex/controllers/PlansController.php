@@ -88,7 +88,19 @@ class PlansController
 
         // Free plan — auto-activate
         if ((float)$plan['price'] === 0.0) {
-            $this->activateSubscription($plan, 'auto');
+            $payment = $this->subscriptionService->createOrReusePayment([
+                'user_id' => $this->userId,
+                'app_key' => 'resumex',
+                'plan_id' => (int) $plan['id'],
+                'plan_name' => (string) $plan['name'],
+                'billing_cycle' => $plan['billing_cycle'] ?? 'monthly',
+                'gateway' => 'request',
+                'status' => 'paid',
+                'amount' => 0,
+                'currency' => (string) ($plan['currency'] ?? ($this->getPaymentSettings()['payment_currency'] ?? 'USD')),
+                'metadata' => ['plan_slug' => $slug],
+            ]);
+            $this->subscriptionService->approvePayment((int) $payment['id'], $this->userId);
             $_SESSION['_flash']['success'] = 'You are now subscribed to the "' . $plan['name'] . '" plan!';
             Logger::activity($this->userId, 'resumex_subscription_activated', ['plan_slug' => $slug]);
             header('Location: /projects/resumex/plans');
@@ -192,8 +204,8 @@ class PlansController
             exit;
         }
 
-        $result = $this->subscriptionService->verifyCashfreePayment($payment, $this->getPaymentSettings());
-        if (!empty($result['success']) && !empty($result['paid']) && $this->subscriptionService->approvePayment($id, $this->userId)) {
+        $result = $this->subscriptionService->confirmCashfreePayment($payment, $this->getPaymentSettings(), $this->userId);
+        if (!empty($result['success']) && !empty($result['paid']) && !empty($result['approved'])) {
             $_SESSION['_flash']['success'] = 'Payment received and your ResumeX plan is now active.';
         } elseif (!empty($result['success'])) {
             $_SESSION['_flash']['error'] = 'Cashfree payment is not marked paid yet. Please try again in a moment.';
