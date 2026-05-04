@@ -28,8 +28,8 @@
         <div style="padding:24px;">
             <div style="background:rgba(231,76,60,.07);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:16px;margin-bottom:24px;font-size:.88rem;color:var(--text-secondary);line-height:1.6;">
                 <strong style="color:var(--text-primary);">Cancellation Policy</strong><br>
-                &bull; Cancelled within 7 days of activation: eligible for a full refund pending admin approval.<br>
-                &bull; Cancelled after 7 days: no refund, but access continues until the end of the paid period.
+                &bull; Cancelled within <?= (int) $refundWindowDays ?> day<?= $refundWindowDays !== 1 ? 's' : '' ?> of activation: eligible for a full refund pending admin approval.<br>
+                &bull; Cancelled after <?= (int) $refundWindowDays ?> day<?= $refundWindowDays !== 1 ? 's' : '' ?>: no refund, but access continues until the end of the paid period.
             </div>
 
             <p style="font-size:.9rem;margin-bottom:20px;">

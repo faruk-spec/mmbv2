@@ -1018,6 +1018,16 @@ class SubscriptionService
         return true;
     }
 
+    /**
+     * Return the configured refund window (in days) for a payment.
+     * Falls back to 7 days when not configured.
+     */
+    public function getCancelRefundWindowDays(array $payment): int
+    {
+        $meta = $this->decodePaymentMetadata($payment);
+        return (int) ($meta['refund_days'] ?? 7);
+    }
+
     public function canCancelPayment(array $payment): array
     {
         $metadata = $this->decodePaymentMetadata($payment);

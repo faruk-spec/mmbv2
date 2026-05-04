@@ -213,6 +213,9 @@ class PlansController extends BaseController
             'metadata' => ['message' => $message, 'plan_slug' => $plan['slug']],
         ]);
 
+        // Only create a new Cashfree order when none exists yet.
+        // If provider_order_id is already set (e.g. the user returned to the page and resubmitted),
+        // reuse the existing session to avoid a 409 conflict from Cashfree's duplicate-order check.
         if ($paymentMethod === 'cashfree'
             && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
             && !empty($paymentSettings['payment_cashfree_app_id'])
@@ -361,6 +364,7 @@ class PlansController extends BaseController
             'metadata' => array_merge($policy, ['plan_slug' => $plan['slug'] ?? $slug]),
         ]);
 
+        // Only create a new Cashfree order when none exists yet (prevents 409 on retry).
         if ($paymentMethod === 'cashfree'
             && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
             && !empty($paymentSettings['payment_cashfree_app_id'])
@@ -424,9 +428,14 @@ class PlansController extends BaseController
             return;
         }
 
+        $canCancel = $this->subscriptionService->canCancelPayment($payment);
+        $refundWindow = $this->subscriptionService->getCancelRefundWindowDays($payment);
+
         $this->view('dashboard/plans-cancel-otp', [
             'title' => 'Cancel Subscription',
             'payment' => $payment,
+            'canCancel' => $canCancel,
+            'refundWindowDays' => $refundWindow,
         ]);
     }
 
