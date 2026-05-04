@@ -27,6 +27,52 @@
     <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
 <?php endif; ?>
 
+<!-- Footer Links -->
+<div class="card" style="margin-bottom: 30px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+        <div>
+            <h2 style="margin-bottom:6px;display:flex;align-items:center;gap:10px;">
+                <i class="fas fa-shoe-prints"></i>
+                Homepage Footer Links
+            </h2>
+            <p style="color:var(--text-secondary);margin:0;font-size:.92rem;">
+                Footer links are powered by the Pages CMS. Published pages with <strong>Show Footer</strong> enabled in <a href="/admin/pages" style="color:inherit;text-decoration:underline;">Admin Pages</a> appear automatically in the homepage footer.
+            </p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="/admin/pages" class="btn btn-secondary"><i class="fas fa-cog"></i> Manage Footer Pages</a>
+            <a href="/admin/pages/create" class="btn btn-primary"><i class="fas fa-plus"></i> Create Page</a>
+        </div>
+    </div>
+
+    <?php if (empty($footerPages)): ?>
+        <div style="padding:18px;border:1px dashed var(--border-color);border-radius:12px;color:var(--text-secondary);">
+            No footer pages are configured yet. Create pages such as <strong>Privacy Policy</strong> and <strong>Terms of Service</strong>, publish them, and enable <strong>Show Footer</strong>.
+        </div>
+    <?php else: ?>
+        <div style="display:grid;gap:12px;">
+            <?php foreach ($footerPages as $footerPage): ?>
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:12px;align-items:center;padding:14px 16px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-secondary);">
+                    <div style="min-width:0;">
+                        <div style="font-weight:700;"><?= View::e($footerPage['title']) ?></div>
+                        <div style="color:var(--text-secondary);font-size:.84rem;margin-top:4px;">
+                            <a href="/pages/<?= View::e($footerPage['slug']) ?>" target="_blank" style="font-family:monospace;">/pages/<?= View::e($footerPage['slug']) ?></a>
+                        </div>
+                    </div>
+                    <span class="badge <?= ($footerPage['status'] ?? 'draft') === 'published' ? 'badge-success' : 'badge-warning' ?>">
+                        <?= View::e($footerPage['status'] ?? 'draft') ?>
+                    </span>
+                    <span style="color:var(--text-secondary);font-size:.84rem;">Sort: <?= (int) ($footerPage['sort_order'] ?? 0) ?></span>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <a href="/admin/pages/<?= (int) $footerPage['id'] ?>/edit" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i></a>
+                        <a href="/pages/<?= View::e($footerPage['slug']) ?>" target="_blank" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i></a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
 <!-- Hero Section -->
 <div class="card" style="margin-bottom: 30px;">
     <h2 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">

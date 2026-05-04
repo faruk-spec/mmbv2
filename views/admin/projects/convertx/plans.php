@@ -66,8 +66,16 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                             <input type="text" name="slug" class="form-control" placeholder="e.g. pro" required>
                         </div>
                         <div class="col-md-2 form-group">
-                            <label>Price ($)</label>
+                            <label>Price</label>
                             <input type="number" name="price" class="form-control" value="0.00" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Currency</label>
+                            <select name="currency" class="form-control">
+                                <?php foreach (['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'] as $cur): ?>
+                                <option value="<?= $cur ?>"><?= $cur ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="col-md-2 form-group">
                             <label>Billing Cycle</label>
@@ -76,6 +84,14 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                                 <option value="yearly">Yearly</option>
                                 <option value="lifetime">Lifetime</option>
                             </select>
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Cancel Days</label>
+                            <input type="number" name="cancel_days" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Refund Days</label>
+                            <input type="number" name="refund_days" class="form-control" value="0" min="0">
                         </div>
                         <div class="col-md-3 form-group">
                             <label>Description</label>
@@ -131,6 +147,12 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6 form-group">
+                            <label>Contact / Sales Page URL <small class="text-muted">(shown instead of payment for this plan — leave empty to use default payment)</small></label>
+                            <input type="url" name="contact_sale_url" class="form-control" placeholder="https://example.com/contact-sales">
+                        </div>
+                    </div>
                     <?php if (!empty($planFeatureLabels)): ?>
                     <div class="mt-3">
                         <label class="d-block mb-2"><strong>Micro Features</strong></label>
@@ -165,7 +187,8 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                     <strong><?= htmlspecialchars($plan['name']) ?></strong>
                     <span class="badge badge-secondary ml-2"><?= htmlspecialchars($plan['slug']) ?></span>
                     <span class="badge <?= $plan['status'] === 'active' ? 'badge-success' : 'badge-danger' ?> ml-1"><?= ucfirst($plan['status']) ?></span>
-                    &nbsp; $<?= number_format((float)$plan['price'], 2) ?>/<?= htmlspecialchars($plan['billing_cycle']) ?>
+                    &nbsp; <?= htmlspecialchars($plan['currency'] ?? 'USD') ?> <?= number_format((float)$plan['price'], 2) ?>/<?= htmlspecialchars($plan['billing_cycle']) ?>
+                    &nbsp; <small class="text-muted">Cancel <?= (int)($plan['cancel_days'] ?? 0) ?>d / Refund <?= (int)($plan['refund_days'] ?? 0) ?>d</small>
                     &nbsp; <small class="text-muted"><?= (int)($plan['subscriber_count'] ?? 0) ?> subscribers</small>
                 </div>
                 <div class="d-flex" style="gap:6px;">
@@ -191,8 +214,16 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                             <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($plan['name']) ?>" required>
                         </div>
                         <div class="col-md-2 form-group">
-                            <label>Price ($)</label>
+                            <label>Price</label>
                             <input type="number" name="price" class="form-control" value="<?= number_format((float)$plan['price'],2,'.','') ?>" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Currency</label>
+                            <select name="currency" class="form-control">
+                                <?php foreach (['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'] as $cur): ?>
+                                <option value="<?= $cur ?>" <?= ($plan['currency'] ?? 'USD') === $cur ? 'selected' : '' ?>><?= $cur ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="col-md-2 form-group">
                             <label>Billing Cycle</label>
@@ -201,6 +232,14 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                                 <option value="<?= $bc ?>" <?= $plan['billing_cycle'] === $bc ? 'selected' : '' ?>><?= ucfirst($bc) ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Cancel Days</label>
+                            <input type="number" name="cancel_days" class="form-control" value="<?= (int)($plan['cancel_days'] ?? 0) ?>" min="0">
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label>Refund Days</label>
+                            <input type="number" name="refund_days" class="form-control" value="<?= (int)($plan['refund_days'] ?? 0) ?>" min="0">
                         </div>
                         <div class="col-md-3 form-group">
                             <label>Description</label>
@@ -250,6 +289,14 @@ $planFeatureLabels = $planFeatureLabels ?? [];
                                 <input type="checkbox" class="custom-control-input" id="prio_<?= (int)$plan['id'] ?>" name="priority_processing" value="1" <?= $plan['priority_processing'] ? 'checked' : '' ?>>
                                 <label class="custom-control-label" for="prio_<?= (int)$plan['id'] ?>">Priority</label>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6 form-group">
+                            <label>Contact / Sales Page URL <small class="text-muted">(leave empty to use default payment)</small></label>
+                            <input type="url" name="contact_sale_url" class="form-control"
+                                   value="<?= htmlspecialchars($plan['contact_sale_url'] ?? '') ?>"
+                                   placeholder="https://example.com/contact-sales">
                         </div>
                     </div>
                     <?php if (!empty($planFeatureLabels)): ?>

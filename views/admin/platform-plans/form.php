@@ -41,9 +41,18 @@
 
         <!-- Price -->
         <div style="display:flex;flex-direction:column;gap:6px;">
-            <label style="font-size:.875rem;font-weight:600;color:var(--text-secondary);">Price (USD)</label>
+            <label style="font-size:.875rem;font-weight:600;color:var(--text-secondary);">Price</label>
             <input type="number" name="price" min="0" step="0.01" value="<?= htmlspecialchars(number_format((float)($plan['price'] ?? 0), 2, '.', '')) ?>"
                    style="padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.875rem;">
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="font-size:.875rem;font-weight:600;color:var(--text-secondary);">Currency</label>
+            <select name="currency" style="padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:.875rem;">
+                <?php foreach (['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'] as $currency): ?>
+                <option value="<?= $currency ?>" <?= ($plan['currency'] ?? 'USD') === $currency ? 'selected' : '' ?>><?= $currency ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
         <!-- Billing cycle -->

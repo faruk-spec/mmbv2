@@ -290,6 +290,7 @@ switch ($segments[0]) {
         break;
 
     case 'plan':
+    case 'plans':
         require_once PROJECT_PATH . '/controllers/DashboardController.php';
         (new \Projects\ConvertX\Controllers\DashboardController())->plan();
         break;

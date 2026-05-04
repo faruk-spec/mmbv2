@@ -256,7 +256,7 @@
                     <i class="fas fa-paper-plane"></i>
                     Send Message
                 </a>
-                <a href="/projects/whatsapp/subscription" class="btn-whatsapp" style="background: #ffaa00;">
+                <a href="/projects/whatsapp/plans" class="btn-whatsapp" style="background: #ffaa00;">
                     <i class="fas fa-crown"></i>
                     Subscription
                 </a>

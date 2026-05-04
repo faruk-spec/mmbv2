@@ -19,8 +19,10 @@ class QRCodeTest extends TestCase
         $qrCode = QRCode::generate($data, $size);
         
         $this->assertIsString($qrCode);
-        $this->assertStringContainsString('img', $qrCode);
-        $this->assertStringContainsString($size . 'x' . $size, $qrCode);
+        // QRCode::generate returns an inline SVG
+        $this->assertStringContainsString('<svg', $qrCode);
+        $this->assertStringContainsString('width="' . $size . '"', $qrCode);
+        $this->assertStringContainsString('height="' . $size . '"', $qrCode);
     }
     
     public function testGenerateWithDifferentSizes()
@@ -28,10 +30,12 @@ class QRCodeTest extends TestCase
         $data = 'https://example.com';
         
         $qr100 = QRCode::generate($data, 100);
-        $this->assertStringContainsString('100x100', $qr100);
+        $this->assertStringContainsString('width="100"', $qr100);
+        $this->assertStringContainsString('height="100"', $qr100);
         
         $qr300 = QRCode::generate($data, 300);
-        $this->assertStringContainsString('300x300', $qr300);
+        $this->assertStringContainsString('width="300"', $qr300);
+        $this->assertStringContainsString('height="300"', $qr300);
     }
     
     public function testGenerateDataUrl()
@@ -122,7 +126,9 @@ class QRCodeTest extends TestCase
         $qrCode = QRCode::generate($data);
         
         $this->assertIsString($qrCode);
-        // URL should be encoded in the generated code
-        $this->assertStringContainsString('chart.googleapis.com', $qrCode);
+        // The standalone SVG generator encodes the data into the QR matrix;
+        // verify the output is a valid SVG element.
+        $this->assertStringContainsString('<svg', $qrCode);
+        $this->assertStringContainsString('</svg>', $qrCode);
     }
 }

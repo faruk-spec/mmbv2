@@ -87,6 +87,18 @@ class HomeContentController extends BaseController
         foreach ($sectionRows as $row) {
             $sections[$row['section_key']] = $row;
         }
+
+        $footerPages = [];
+        try {
+            $footerPages = $db->fetchAll(
+                "SELECT id, title, slug, status, sort_order
+                 FROM pages
+                 WHERE show_footer = 1
+                 ORDER BY sort_order ASC, title ASC"
+            );
+        } catch (\Exception $e) {
+            // Pages table may not be available yet; keep footer manager empty
+        }
         
         $this->view('admin/home/index', [
             'title' => 'Home Page Management',
@@ -96,7 +108,8 @@ class HomeContentController extends BaseController
             'projects' => $projects,
             'stats' => $stats,
             'timelines' => $timelines,
-            'sections' => $sections
+            'sections' => $sections,
+            'footerPages' => $footerPages
         ]);
     }
     

@@ -202,6 +202,21 @@
                        value="<?= View::e($plan['duration_days'] ?? '30') ?>">
                 <small class="form-text">Number of days the plan is valid for</small>
             </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Cancel Window (Days)</label>
+                    <input type="number" name="cancel_days" class="form-control" min="0"
+                           value="<?= View::e($plan['cancel_days'] ?? '0') ?>">
+                    <small class="form-text">Users can self-cancel within this many days (0 = anytime)</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Refund Window (Days)</label>
+                    <input type="number" name="refund_days" class="form-control" min="0"
+                           value="<?= View::e($plan['refund_days'] ?? '0') ?>">
+                    <small class="form-text">Users can request refund within this many days (0 = disabled)</small>
+                </div>
+            </div>
             
             <!-- Active Status -->
             <div class="form-group">

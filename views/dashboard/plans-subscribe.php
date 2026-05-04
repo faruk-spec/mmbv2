@@ -11,6 +11,11 @@
 $planColor = View::e($plan['color'] ?? '#9945ff');
 $planApps  = $plan['included_apps'] ?? [];
 $isFree    = (float)($plan['price'] ?? 0) === 0.0;
+$defaultPaymentMethod = $paymentSettings['payment_method'] ?? 'request';
+$canUseUpi = !empty($paymentSettings['payment_upi_id'] ?? '');
+$canUseCashfree = ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+    && !empty($paymentSettings['payment_cashfree_app_id'] ?? '')
+    && !empty($paymentSettings['payment_cashfree_secret'] ?? '');
 ?>
 
 <!-- Breadcrumb -->
@@ -28,7 +33,7 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
         <div style="background:linear-gradient(135deg,<?= $planColor ?>22,<?= $planColor ?>08);padding:24px;">
             <div style="font-weight:700;font-size:1.1rem;color:<?= $planColor ?>;"><?= View::e($plan['name']) ?></div>
             <div style="font-size:1.6rem;font-weight:800;margin:10px 0 4px;">
-                <?= $isFree ? 'Free' : ('$' . number_format((float)$plan['price'], 2)) ?>
+                <?= $isFree ? 'Free' : (htmlspecialchars($plan['currency'] ?? 'USD').'&nbsp;'.number_format((float)$plan['price'], 2)) ?>
                 <?php if (!$isFree): ?>
                 <span style="font-size:.75rem;font-weight:400;color:var(--text-secondary);">/ <?= View::e($plan['billing_cycle']) ?></span>
                 <?php endif; ?>
@@ -92,6 +97,28 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
             </div>
 
             <?php if (!$isFree): ?>
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                    <?php if ($canUseUpi): ?>
+                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
+                        <input type="radio" name="payment_method" value="upi" <?= $defaultPaymentMethod === 'upi' ? 'checked' : '' ?>>
+                        <span><strong>UPI QR</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Pay exact amount using <?= View::e($paymentSettings['payment_upi_id']) ?></span></span>
+                    </label>
+                    <?php endif; ?>
+                    <?php if ($canUseCashfree): ?>
+                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
+                        <input type="radio" name="payment_method" value="cashfree" <?= $defaultPaymentMethod === 'cashfree' ? 'checked' : '' ?>>
+                        <span><strong>Cashfree Checkout</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Pay securely using Cashfree hosted checkout</span></span>
+                    </label>
+                    <?php endif; ?>
+                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);cursor:pointer;">
+                        <input type="radio" name="payment_method" value="request" <?= (!$canUseUpi && !$canUseCashfree) || $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
+                        <span><strong>Manual Review</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Submit request and let admin activate manually</span></span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Optional message for paid plans -->
             <div class="form-group">
                 <label class="form-label">Message to Admin <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
@@ -103,7 +130,7 @@ $isFree    = (float)($plan['price'] ?? 0) === 0.0;
             <!-- Pricing reminder -->
             <div style="background:rgba(153,69,255,.08);border:1px solid rgba(153,69,255,.3);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:.82rem;color:var(--text-secondary);">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                Price: <strong style="color:var(--text-primary);">$<?= number_format((float)$plan['price'],2) ?> / <?= View::e($plan['billing_cycle']) ?></strong>.
+                Price: <strong style="color:var(--text-primary);"><?= View::e($plan['currency'] ?? 'USD') ?>&nbsp;<?= number_format((float)$plan['price'],2) ?> / <?= View::e($plan['billing_cycle']) ?></strong>.
                 Payment and activation will be handled by an admin after reviewing your request.
             </div>
             <?php endif; ?>

@@ -262,7 +262,7 @@ if (!empty($_SESSION['_flash']['error'])) {
             </div>
         </div>
         <div style="margin-top:1rem;">
-            <a href="/projects/convertx/plan" class="btn btn-primary btn-sm">
+            <a href="/projects/convertx/plans" class="btn btn-primary btn-sm">
                 <i class="fa-solid fa-arrow-up"></i> Upgrade Plan
             </a>
         </div>

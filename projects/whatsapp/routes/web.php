@@ -23,6 +23,7 @@ $router->get('/projects/whatsapp/dashboard', 'Projects\WhatsApp\Controllers\Dash
 
 // Subscription routes
 $router->get('/projects/whatsapp/subscription', 'Projects\WhatsApp\Controllers\DashboardController@subscription');
+$router->get('/projects/whatsapp/plans', 'Projects\WhatsApp\Controllers\DashboardController@subscription');
 
 // Session management routes
 $router->get('/projects/whatsapp/sessions', 'Projects\WhatsApp\Controllers\SessionController@index');

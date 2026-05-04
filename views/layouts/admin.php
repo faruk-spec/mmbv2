@@ -1873,9 +1873,15 @@ window.mmbSkeleton = (function(){
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
+                            <a href="/admin/projects/resumex/plans" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/plans') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-crown"></i>
+                                <span>Plans &amp; Pro Features</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('resumex.settings')): ?>
                             <a href="/admin/projects/resumex/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/projects/resumex/settings') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-cog"></i>
-                                <span>Settings & Pro Features</span>
+                                <span>Settings</span>
                             </a>
                             <?php endif; ?>
                         </div>
@@ -2452,6 +2458,24 @@ window.mmbSkeleton = (function(){
                             <a href="/admin/settings" class="menu-link">
                                 <i class="fas fa-sliders-h"></i>
                                 <span>General</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/payment-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/payment-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-credit-card" style="width:18px;"></i>
+                                <span>Payment Settings</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/invoice-settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/invoice-settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-file-invoice"></i>
+                                <span>Invoice Settings</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/subscription-payments" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/subscription-payments') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>Subscription Payments</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.session')): ?>

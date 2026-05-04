@@ -135,4 +135,20 @@ INSERT IGNORE INTO `mail_notification_templates` (`slug`, `name`, `subject`, `bo
 '<h2>Hi {{name}},</h2>
 <p>Your password was successfully changed on {{changed_at}}.</p>
 <p>If you did not make this change, please <a href="{{reset_url}}">reset your password</a> immediately and contact support.</p>',
-'["name","changed_at","reset_url","app_name"]', 1);
+'["name","changed_at","reset_url","app_name"]', 1),
+
+('subscription-confirmed', 'Subscription Confirmed', 'Your {{plan_name}} subscription is active',
+'<h2>Hi {{user_name}},</h2><p>Your <strong>{{plan_name}}</strong> subscription for <strong>{{app_name}}</strong> is now active.</p><p><a href="{{invoice_url}}">View Invoice</a></p><p><a href="{{dashboard_url}}">Manage subscription</a></p>',
+'["user_name","plan_name","app_name","currency","amount","billing_cycle","started_at","expires_at","invoice_url","dashboard_url"]', 1),
+
+('subscription-expiring', 'Subscription Expiring Soon', 'Your {{plan_name}} subscription expires in {{days_left}} day(s)',
+'<h2>Hi {{user_name}},</h2><p>Your <strong>{{plan_name}}</strong> subscription for <strong>{{app_name}}</strong> will expire on <strong>{{expires_at}}</strong>.</p><p><a href="{{renew_url}}">Renew Now</a></p>',
+'["user_name","plan_name","app_name","expires_at","days_left","renew_url"]', 1),
+
+('subscription-expired', 'Subscription Expired', 'Your {{plan_name}} subscription has expired',
+'<h2>Hi {{user_name}},</h2><p>Your <strong>{{plan_name}}</strong> subscription for <strong>{{app_name}}</strong> expired on <strong>{{expired_at}}</strong>.</p><p><a href="{{renew_url}}">Subscribe Again</a></p>',
+'["user_name","plan_name","app_name","expired_at","renew_url"]', 1),
+
+('subscription-renewal', 'Subscription Renewal Reminder', 'Renew your {{plan_name}} subscription',
+'<h2>Hi {{user_name}},</h2><p>This is a reminder to renew your <strong>{{plan_name}}</strong> subscription for <strong>{{app_name}}</strong>.</p><p>Plan amount: <strong>{{currency}} {{amount}}</strong></p><p><a href="{{renew_url}}">Renew Subscription</a></p>',
+'["user_name","plan_name","app_name","currency","amount","renew_url"]', 1);

@@ -37,9 +37,89 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
     </div>
 <?php endif; ?>
 
+<!-- Create new plan -->
+<?php $supportedCurrencies = ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY']; ?>
+<div class="plan-card" style="margin-bottom:32px;">
+    <div class="plan-header">
+        <h3 style="margin:0;font-size:1.1rem;"><i class="fas fa-plus-circle" style="color:var(--cyan);margin-right:8px;"></i>Create New Plan</h3>
+        <button class="btn btn-secondary btn-sm" onclick="toggleNewPlanForm()"><i class="fas fa-chevron-down" id="newPlanChevron"></i></button>
+    </div>
+    <div id="new-plan-form" style="display:none;padding:20px 24px;background:var(--bg-secondary);">
+        <form method="POST" action="/admin/qr/plans/create">
+            <?= \Core\Security::csrfField() ?>
+            <div class="grid grid-3" style="gap:12px;margin-bottom:12px;">
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Plan Name <span style="color:var(--red);">*</span></label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Pro" required>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Slug <span style="color:var(--red);">*</span></label>
+                    <input type="text" name="slug" class="form-control" placeholder="e.g. pro" required>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Price</label>
+                    <input type="number" name="price" class="form-control" value="0.00" step="0.01" min="0">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Currency</label>
+                    <select name="currency" class="form-control">
+                        <?php foreach ($supportedCurrencies as $cur): ?>
+                        <option value="<?= $cur ?>"><?= $cur ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Billing Cycle</label>
+                    <select name="billing_cycle" class="form-control">
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="lifetime">Lifetime</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Cancel Window (Days)</label>
+                    <input type="number" name="cancel_days" class="form-control" value="0" min="0">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Refund Window (Days)</label>
+                    <input type="number" name="refund_days" class="form-control" value="0" min="0">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Max Static QR (-1=unlimited)</label>
+                    <input type="number" name="max_static_qr" class="form-control" value="10">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Max Dynamic QR (-1=unlimited)</label>
+                    <input type="number" name="max_dynamic_qr" class="form-control" value="5">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Max Scans/Month (-1=unlimited)</label>
+                    <input type="number" name="max_scans_per_month" class="form-control" value="1000">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Max Bulk Generation</label>
+                    <input type="number" name="max_bulk_generation" class="form-control" value="0">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--text-secondary);">Sort Order</label>
+                    <input type="number" name="sort_order" class="form-control" value="0">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Create Plan</button>
+        </form>
+    </div>
+</div>
+
 <?php if (empty($plans)): ?>
     <div class="card">
-        <p style="color:var(--text-secondary);text-align:center;padding:30px;">No subscription plans found. Check the QR database schema.</p>
+        <p style="color:var(--text-secondary);text-align:center;padding:30px;">No subscription plans found. Create one above.</p>
     </div>
 <?php endif; ?>
 
@@ -51,13 +131,31 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                 <h3 style="margin:0;font-size:1.2rem;"><?= View::e($plan['name']) ?></h3>
                 <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary);">
                     Slug: <code><?= View::e($plan['slug']) ?></code> &bull;
-                    <?= (int)($plan['subscriber_count'] ?? 0) ?> active subscriber(s) &bull;
+                    <?php
+                    $price = (float)($plan['price'] ?? 0);
+                    $cur   = View::e($plan['currency'] ?? 'USD');
+                    echo $price > 0 ? $cur . ' ' . number_format($price, 2) . ' / ' . View::e($plan['billing_cycle'] ?? '') : 'Free';
+                    ?>
+                    &bull; Cancel: <?= (int)($plan['cancel_days'] ?? 0) ?>d
+                    &bull; Refund: <?= (int)($plan['refund_days'] ?? 0) ?>d
+                    &bull; <?= (int)($plan['subscriber_count'] ?? 0) ?> active subscriber(s) &bull;
                     <span class="badge <?= $plan['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>"><?= ucfirst($plan['status']) ?></span>
                 </p>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="togglePlanForm(<?= $plan['id'] ?>)">
-                <i class="fas fa-edit"></i> Edit Limits
-            </button>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="togglePlanForm(<?= $plan['id'] ?>)">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <?php if (empty($plan['is_default'])): ?>
+                <form method="POST" action="/admin/qr/plans/<?= $plan['id'] ?>/delete" style="margin:0;"
+                      onsubmit="return confirm('Delete plan <?= addslashes(View::e($plan['name'])) ?>? This cannot be undone.')">
+                    <?= \Core\Security::csrfField() ?>
+                    <button type="submit" class="btn btn-sm" style="background:rgba(255,107,107,.1);border:1px solid var(--red);color:var(--red);cursor:pointer;">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+                <?php endif; ?>
+            </div>
         </div>
 
         <!-- Limits edit form (collapsed by default) -->
@@ -68,6 +166,34 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     <div>
                         <label style="font-size:12px;color:var(--text-secondary);">Plan Name</label>
                         <input type="text" name="name" class="form-control" value="<?= View::e($plan['name']) ?>">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Price</label>
+                        <input type="number" name="price" class="form-control" value="<?= number_format((float)($plan['price'] ?? 0), 2, '.', '') ?>" step="0.01" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Currency</label>
+                        <select name="currency" class="form-control">
+                            <?php foreach ($supportedCurrencies as $cur): ?>
+                            <option value="<?= $cur ?>" <?= ($plan['currency'] ?? 'USD') === $cur ? 'selected' : '' ?>><?= $cur ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Billing Cycle</label>
+                        <select name="billing_cycle" class="form-control">
+                            <?php foreach (['monthly', 'yearly', 'lifetime'] as $bc): ?>
+                            <option value="<?= $bc ?>" <?= ($plan['billing_cycle'] ?? 'lifetime') === $bc ? 'selected' : '' ?>><?= ucfirst($bc) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Cancel Window (Days)</label>
+                        <input type="number" name="cancel_days" class="form-control" value="<?= (int)($plan['cancel_days'] ?? 0) ?>" min="0">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-secondary);">Refund Window (Days)</label>
+                        <input type="number" name="refund_days" class="form-control" value="<?= (int)($plan['refund_days'] ?? 0) ?>" min="0">
                     </div>
                     <div>
                         <label style="font-size:12px;color:var(--text-secondary);">Max Static QR (-1 = unlimited)</label>
@@ -97,7 +223,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
                     <label style="font-size:12px;color:var(--text-secondary);">Download Formats (comma-separated: png,svg,pdf)</label>
                     <input type="text" name="feature_downloads" class="form-control" value="<?= View::e(implode(',', (array)($features['downloads'] ?? []))) ?>" placeholder="png,svg,pdf">
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Limits</button>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save Changes</button>
             </form>
         </div>
 
@@ -166,6 +292,14 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 <?php View::section('scripts'); ?>
 <script>
 const _csrf = document.getElementById('global_csrf').value;
+
+function toggleNewPlanForm() {
+    const el = document.getElementById('new-plan-form');
+    const ch = document.getElementById('newPlanChevron');
+    const open = el.style.display === 'none';
+    el.style.display = open ? 'block' : 'none';
+    ch.className = open ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+}
 
 function togglePlanForm(id) {
     const el = document.getElementById('plan-form-' + id);

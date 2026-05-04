@@ -948,10 +948,33 @@ try {
         .footer {
             background: var(--bg-secondary);
             border-top: 1px solid var(--border-color);
-            padding: 16px 0;
+            padding: 20px 0;
             text-align: center;
             color: var(--text-secondary);
             font-size: 13px;
+        }
+        .footer-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+        }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            align-items: center;
+            justify-content: center;
+        }
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color .2s ease;
+        }
+        .footer-links a:hover {
+            color: var(--cyan);
         }
         
         /* Grid */
@@ -2405,8 +2428,32 @@ window.mmbSkeleton = (function(){
         <?php endif; ?>
     </main>
     
+    <?php
+    $footerPages = [];
+    try {
+        $footerPages = $db->fetchAll(
+            "SELECT title, slug
+             FROM pages
+             WHERE status = 'published' AND show_footer = 1
+             ORDER BY sort_order ASC, title ASC
+             LIMIT 12"
+        );
+    } catch (\Exception $e) {
+        $footerPages = [];
+        \Core\Logger::error('Failed to load footer pages: ' . $e->getMessage());
+    }
+    ?>
     <footer class="footer">
-        <p>&copy; <?= date('Y') ?> <?= APP_NAME ?>. All rights reserved.</p>
+        <div class="container footer-inner">
+            <?php if (!empty($footerPages)): ?>
+                <nav class="footer-links" aria-label="Footer links">
+                    <?php foreach ($footerPages as $footerPage): ?>
+                        <a href="/pages/<?= htmlspecialchars($footerPage['slug']) ?>"><?= htmlspecialchars($footerPage['title']) ?></a>
+                    <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
+            <p>&copy; <?= date('Y') ?> <?= APP_NAME ?>. All rights reserved.</p>
+        </div>
     </footer>
     
     <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">

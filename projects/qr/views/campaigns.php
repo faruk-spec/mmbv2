@@ -493,7 +493,7 @@ function sortCampaigns() {
         <div class="fgb-icon"><i class="fas fa-bullhorn"></i></div>
         <div class="fgb-title">Campaigns — Upgrade Required</div>
         <div class="fgb-desc">Organise QR codes into campaigns and track group performance. Available on Pro and higher plans.</div>
-        <a href="/projects/qr/plan" class="fgb-btn"><i class="fas fa-crown"></i> View Plans &amp; Upgrade</a>
+        <a href="/projects/qr/plans" class="fgb-btn"><i class="fas fa-crown"></i> View Plans &amp; Upgrade</a>
     </div>
 </div><!-- /.feature-gate-wrap -->
 <?php endif; ?>

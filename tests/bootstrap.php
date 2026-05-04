@@ -17,17 +17,22 @@ if (file_exists(BASE_PATH . '/vendor/autoload.php')) {
     require_once BASE_PATH . '/vendor/autoload.php';
 }
 
-// Simple autoloader for testing
+// Load the project's own PSR-4 autoloader (handles Core\, Controllers\, Models\, Projects\)
+if (file_exists(BASE_PATH . '/core/Autoloader.php')) {
+    require_once BASE_PATH . '/core/Autoloader.php';
+}
+
+// Fallback autoloader for any remaining unresolved classes
 spl_autoload_register(function ($class) {
     // Convert namespace to file path
-    $class = str_replace('\\', '/', $class);
-    
-    // Try different paths
+    $classPath = str_replace('\\', '/', $class);
+
+    // Try different paths (case-preserved first, then lowercase)
     $paths = [
-        BASE_PATH . '/' . strtolower($class) . '.php',
-        BASE_PATH . '/' . $class . '.php',
+        BASE_PATH . '/' . $classPath . '.php',
+        BASE_PATH . '/' . strtolower($classPath) . '.php',
     ];
-    
+
     foreach ($paths as $file) {
         if (file_exists($file)) {
             require_once $file;

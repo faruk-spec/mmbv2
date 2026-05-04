@@ -132,6 +132,13 @@
             $billing  = $sub['billing_cycle'] ?? null;
             $since    = $sub['started_at']    ?? null;
             $expires  = $sub['expires_at']    ?? null;
+            $upgradeUrl = match ($appKey) {
+                'resumex' => '/projects/resumex/plans',
+                'qr' => '/projects/qr/plans',
+                'convertx' => '/projects/convertx/plans',
+                'whatsapp' => '/projects/whatsapp/plans',
+                default => '#platform-plans',
+            };
         ?>
         <div class="app-sub-row">
             <!-- Icon -->
@@ -147,7 +154,7 @@
                     <?php if ($planName): ?>
                         Plan: <strong style="color:var(--cyan);"><?= View::e($planName) ?></strong>
                         <?php if ($price !== null): ?>
-                            &mdash; <?= $price == 0 ? 'Free' : ('$'.number_format((float)$price,2).' / '.$billing) ?>
+                            &mdash; <?php $cur = $sub['currency'] ?? 'USD'; echo $price == 0 ? 'Free' : (htmlspecialchars($cur).'&nbsp;'.number_format((float)$price,2).' / '.htmlspecialchars($billing)); ?>
                         <?php endif; ?>
                         <?php if ($since): ?>
                             &middot; Active since <?= date('M j, Y', strtotime($since)) ?>
@@ -166,7 +173,7 @@
             <div class="app-actions">
                 <a href="<?= $meta['url'] ?>" class="btn-app btn-app-open">Open</a>
                 <?php if (!$planName): ?>
-                <a href="#platform-plans" class="btn-app btn-app-upgrade">Upgrade</a>
+                <a href="<?= $upgradeUrl ?>" class="btn-app btn-app-upgrade">Upgrade</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -192,8 +199,11 @@
                 <div>
                     <div style="font-weight:700;font-size:1rem;color:<?= $col ?>;"><?= View::e($sub['plan_name']) ?></div>
                     <div style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">
-                        <?= $sub['price'] == 0 ? 'Free' : ('$'.number_format((float)$sub['price'],2).' / '.$sub['billing_cycle']) ?>
+                        <?php $subCur = htmlspecialchars($sub['currency'] ?? 'USD'); echo $sub['price'] == 0 ? 'Free' : ($subCur.'&nbsp;'.number_format((float)$sub['price'],2).' / '.htmlspecialchars($sub['billing_cycle'])); ?>
                         &middot; Active since <?= date('M j, Y', strtotime($sub['started_at'])) ?>
+                        <?php if (!empty($sub['expires_at'])): ?>
+                            &middot; Expires <?= date('M j, Y', strtotime($sub['expires_at'])) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="plan-apps" style="margin-top:10px;">
                         <?php foreach ($apps as $ak):
@@ -212,6 +222,7 @@
     </section>
     <?php endif; ?>
 
+    <?php if (!empty($platformPlans)): ?>
     <hr class="plans-divider">
 
     <!-- ── Section 3: Available platform plans ── -->
@@ -224,12 +235,7 @@
         </p>
         <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:18px;">One plan covering multiple applications.</p>
 
-        <?php if (empty($platformPlans)): ?>
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:40px;text-align:center;color:var(--text-secondary);">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:.4;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <div>No platform plans available yet.</div>
-        </div>
-        <?php else: ?>
+        <?php /* $platformPlans is non-empty — loop directly */ ?>
         <div class="plan-grid">
         <?php foreach ($platformPlans as $plan):
             $isActive  = in_array($plan['id'], $activePlatformPlanIds);
@@ -245,7 +251,7 @@
                     <?php endif; ?>
                 </div>
                 <div class="plan-price">
-                    <?= $plan['price'] == 0 ? 'Free' : ('$'.number_format((float)$plan['price'],2)) ?>
+                    <?php $ppCur = htmlspecialchars($plan['currency'] ?? 'USD'); echo $plan['price'] == 0 ? 'Free' : ($ppCur.'&nbsp;'.number_format((float)$plan['price'],2)); ?>
                     <?php if ($plan['price'] > 0): ?>
                     <small>/ <?= $plan['billing_cycle'] ?></small>
                     <?php endif; ?>
@@ -284,8 +290,79 @@
         </div>
         <?php endforeach; ?>
         </div>
-        <?php endif; ?>
     </section>
+    <?php endif; ?>
+
+    <?php if (!empty($platformHistory)): ?>
+    <hr class="plans-divider">
+    <section style="margin-bottom:28px;">
+        <p class="plans-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
+                <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
+            </svg>
+            Subscription History
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <?php foreach ($platformHistory as $history): ?>
+            <div class="app-sub-row" style="grid-template-columns:1fr auto auto;">
+                <div class="app-info">
+                    <div class="app-name"><?= View::e($history['plan_name']) ?></div>
+                    <div class="app-meta">
+                        <?= View::e($history['currency'] ?? 'USD') ?>&nbsp;<?= number_format((float) ($history['price'] ?? 0), 2) ?> / <?= View::e($history['billing_cycle'] ?? 'monthly') ?>
+                        &middot; Started <?= date('M j, Y', strtotime($history['started_at'])) ?>
+                        <?php if (!empty($history['expires_at'])): ?>
+                            &middot; Expires <?= date('M j, Y', strtotime($history['expires_at'])) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <span class="sub-badge <?= ($history['status'] ?? '') === 'active' ? 'sub-badge-active' : 'sub-badge-free' ?>">
+                    <?= View::e(ucfirst($history['status'] ?? 'unknown')) ?>
+                </span>
+                <div class="app-actions">
+                    <a href="/plans/invoice/<?= (int) $history['id'] ?>" class="btn-app btn-app-open">Invoice</a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if (!empty($paymentHistory)): ?>
+    <hr class="plans-divider">
+    <section style="margin-bottom:28px;">
+        <p class="plans-section-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            Payment History
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <?php foreach ($paymentHistory as $payment): ?>
+            <div class="app-sub-row" style="grid-template-columns:1fr auto auto;">
+                <div class="app-info">
+                    <div class="app-name"><?= View::e($payment['plan_name']) ?></div>
+                    <div class="app-meta">
+                        <?= View::e($payment['currency']) ?>&nbsp;<?= number_format((float) $payment['amount'], 2) ?>
+                        &middot; <?= View::e(strtoupper($payment['app_key'])) ?>
+                        &middot; <?= strtoupper(View::e($payment['gateway'])) ?>
+                        &middot; Ref <?= View::e($payment['reference']) ?>
+                        &middot; <?= date('M j, Y', strtotime($payment['created_at'])) ?>
+                    </div>
+                </div>
+                <span class="sub-badge <?= ($payment['status'] ?? '') === 'paid' ? 'sub-badge-active' : 'sub-badge-free' ?>">
+                    <?= View::e(str_replace('_', ' ', ucfirst($payment['status'] ?? 'pending'))) ?>
+                </span>
+                <div class="app-actions">
+                    <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn-app btn-app-open">View</a>
+                    <?php if (($payment['status'] ?? '') === 'paid'): ?>
+                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn-app btn-app-open">Invoice</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 
 </div>
 

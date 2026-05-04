@@ -10,6 +10,7 @@ namespace Projects\QR\Controllers;
 use Core\Auth;
 use Core\View;
 use Core\Database;
+use Core\SubscriptionService;
 use Projects\QR\Models\QRModel;
 
 class DashboardController
@@ -189,25 +190,12 @@ class DashboardController
     {
         $userId = Auth::id();
         $db     = Database::getInstance();
+        $subscriptionService = new SubscriptionService($db);
+        $subscriptionService->ensureInfrastructure();
 
         // ── QR-specific subscription ────────────────────────────────────────
-        $qrSub = null;
-        try {
-            $qrSub = $db->fetch(
-                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.billing_cycle,
-                        p.max_static_qr, p.max_dynamic_qr, p.max_scans_per_month, p.features
-                 FROM qr_user_subscriptions s
-                 JOIN qr_subscription_plans p ON p.id = s.plan_id
-                 WHERE s.user_id = ? AND s.status = 'active'
-                 ORDER BY s.started_at DESC LIMIT 1",
-                [$userId]
-            );
-        } catch (\Exception $e) {
-            // Table may not exist yet
-        }
-
-        // Decode features JSON if present
-        if ($qrSub && !empty($qrSub['features'])) {
+        $qrSub = $subscriptionService->getCurrentSubscription('qr', $userId);
+        if ($qrSub && !empty($qrSub['features']) && is_string($qrSub['features'])) {
             $decoded = json_decode($qrSub['features'], true);
             $qrSub['features'] = is_array($decoded) ? $decoded : [];
         }
@@ -228,22 +216,15 @@ class DashboardController
 
         // ── QR-specific upgrade plans ────────────────────────────────────────
         // All active QR subscription plans (shown as upgrade options to users without a subscription)
-        $qrUpgradePlans = [];
-        try {
-            $qrUpgradePlans = $db->fetchAll(
-                "SELECT id, name, slug, price, billing_cycle, max_static_qr, max_dynamic_qr,
-                        max_scans_per_month, features, description
-                 FROM qr_subscription_plans
-                 WHERE status = 'active'
-                 ORDER BY price ASC, sort_order ASC, id ASC"
-            ) ?: [];
-            foreach ($qrUpgradePlans as &$p) {
-                $p['features_arr'] = is_string($p['features'])
-                    ? (json_decode($p['features'], true) ?: [])
-                    : [];
-            }
-            unset($p);
-        } catch (\Exception $e) { /* ignore */ }
+        $qrUpgradePlans = $subscriptionService->getActivePlans('qr');
+        foreach ($qrUpgradePlans as &$p) {
+            $p['features_arr'] = is_string($p['features'] ?? null)
+                ? (json_decode($p['features'], true) ?: [])
+                : (($p['features'] ?? []) ?: []);
+        }
+        unset($p);
+        $qrHistory = $subscriptionService->getSubscriptionHistory('qr', $userId);
+        $paymentHistory = $subscriptionService->getUserPayments($userId, 'qr');
 
         // ── Contact email ────────────────────────────────────────────────────
         $contactEmail = 'support@mmbtech.online';
@@ -259,9 +240,11 @@ class DashboardController
         $this->render('plan', [
             'title'                 => 'My QR Plan',
             'qrSub'                 => $qrSub,
+            'qrHistory'             => $qrHistory,
             'staticCount'           => $staticCount,
             'dynamicCount'          => $dynamicCount,
             'qrUpgradePlans'        => $qrUpgradePlans,
+            'paymentHistory'        => $paymentHistory,
             'contactEmail'          => $contactEmail,
         ]);
     }

@@ -354,6 +354,351 @@ class ResumeXAdminController extends BaseController
 
 
     // ──────────────────────────────────────────────────────────────────────────
+    //  Plans (Subscription Plan Management — like QR admin plans)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function plans(): void
+    {
+        $this->requirePermission('resumex.settings');
+        $this->ensureResumeXTables();
+
+        $plans = [];
+        try {
+            $plans = $this->db->fetchAll(
+                "SELECT p.*, COUNT(s.id) AS subscriber_count
+                 FROM resumex_subscription_plans p
+                 LEFT JOIN resumex_user_subscriptions s ON s.plan_id = p.id AND s.status = 'active'
+                 GROUP BY p.id
+                 ORDER BY p.sort_order ASC, p.price ASC"
+            );
+        } catch (\Exception $e) {}
+
+        // Pre-populate missing feature keys for each plan
+        $allFeatureKeys  = array_keys($this->getResumeXPlanFeatures());
+        $freePlanDefaults = $this->getResumeXFreePlanFeatures();
+        foreach ($plans as &$plan) {
+            $feats   = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $changed = false;
+            foreach ($allFeatureKeys as $key) {
+                if (!array_key_exists($key, $feats)) {
+                    $feats[$key] = !empty($plan['is_default']) ? ($freePlanDefaults[$key] ?? false) : false;
+                    $changed     = true;
+                }
+            }
+            if ($changed) {
+                try {
+                    $this->db->query(
+                        "UPDATE resumex_subscription_plans SET features = ?, updated_at = NOW() WHERE id = ?",
+                        [json_encode($feats), $plan['id']]
+                    );
+                } catch (\Exception $e) {}
+                $plan['features'] = json_encode($feats);
+            }
+        }
+        unset($plan);
+
+        $this->view('admin/projects/resumex/plans', [
+            'title'  => 'ResumeX — Subscription Plans',
+            'plans'  => $plans,
+        ]);
+    }
+
+    public function createPlan(): void
+    {
+        $this->requirePermission('resumex.settings');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/projects/resumex/plans');
+            return;
+        }
+
+        $this->ensureResumeXTables();
+
+        $name = Security::sanitize(trim($this->input('name', '')));
+        $slug = strtolower(trim(preg_replace('/[^a-z0-9_\-]/', '-', $this->input('slug', ''))));
+        if (!$name || !$slug) {
+            $this->flash('error', 'Name and slug are required.');
+            $this->redirect('/admin/projects/resumex/plans');
+            return;
+        }
+
+        $currency = $this->input('currency', 'USD');
+        if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
+            $currency = 'USD';
+        }
+        $billingCycle = $this->input('billing_cycle', 'monthly');
+        if (!in_array($billingCycle, ['monthly', 'yearly', 'lifetime'], true)) {
+            $billingCycle = 'monthly';
+        }
+
+        try {
+            $this->db->query(
+                "INSERT INTO resumex_subscription_plans
+                    (name, slug, price, currency, billing_cycle, cancel_days, refund_days, max_resumes, features, status, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    $name,
+                    $slug,
+                    max(0, (float) $this->input('price', 0)),
+                    $currency,
+                    $billingCycle,
+                    max(0, (int) $this->input('cancel_days', 0)),
+                    max(0, (int) $this->input('refund_days', 0)),
+                    (int) $this->input('max_resumes', 5),
+                    json_encode([]),
+                    in_array($this->input('status', 'active'), ['active', 'inactive']) ? $this->input('status') : 'active',
+                    (int) $this->input('sort_order', 0),
+                ]
+            );
+            Logger::activity(Auth::id(), 'admin_resumex_plan_created', ['slug' => $slug]);
+            $this->flash('success', 'Plan "' . $name . '" created successfully.');
+        } catch (\Exception $e) {
+            Logger::error('ResumeX createPlan error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to create plan: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/projects/resumex/plans');
+    }
+
+    public function updatePlan(string $id): void
+    {
+        $this->requirePermission('resumex.settings');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/projects/resumex/plans');
+            return;
+        }
+
+        $planId = (int) $id;
+        try {
+            $plan = $this->db->fetch("SELECT * FROM resumex_subscription_plans WHERE id = ?", [$planId]);
+            if (!$plan) {
+                $this->flash('error', 'Plan not found.');
+                $this->redirect('/admin/projects/resumex/plans');
+                return;
+            }
+
+            // Preserve existing features — feature toggling is handled via togglePlanFeature() (AJAX)
+            $existingFeatures = $plan['features'] ?? '{}';
+
+            $currency = $this->input('currency', 'USD');
+            if (!in_array($currency, $this->getAllowedCurrencies(), true)) {
+                $currency = 'USD';
+            }
+            $billingCycle = $this->input('billing_cycle', $plan['billing_cycle'] ?? 'monthly');
+            if (!in_array($billingCycle, ['monthly', 'yearly', 'lifetime'], true)) {
+                $billingCycle = 'monthly';
+            }
+
+            $this->db->query(
+                "UPDATE resumex_subscription_plans SET
+                    name          = ?,
+                    price         = ?,
+                    currency      = ?,
+                    billing_cycle = ?,
+                    cancel_days   = ?,
+                    refund_days   = ?,
+                    max_resumes   = ?,
+                    features      = ?,
+                    status        = ?,
+                    sort_order    = ?,
+                    updated_at    = NOW()
+                 WHERE id = ?",
+                [
+                    Security::sanitize(trim($this->input('name', $plan['name']))),
+                    max(0, (float) $this->input('price', $plan['price'] ?? 0)),
+                    $currency,
+                    $billingCycle,
+                    max(0, (int) $this->input('cancel_days', $plan['cancel_days'] ?? 0)),
+                    max(0, (int) $this->input('refund_days', $plan['refund_days'] ?? 0)),
+                    (int) $this->input('max_resumes', $plan['max_resumes'] ?? 5),
+                    $existingFeatures,
+                    in_array($this->input('status', $plan['status']), ['active', 'inactive']) ? $this->input('status') : 'active',
+                    (int) $this->input('sort_order', $plan['sort_order'] ?? 0),
+                    $planId,
+                ]
+            );
+            Logger::activity(Auth::id(), 'admin_resumex_plan_updated', ['plan_id' => $planId]);
+            $this->flash('success', 'Plan updated.');
+        } catch (\Exception $e) {
+            Logger::error('ResumeX updatePlan error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update plan.');
+        }
+
+        $this->redirect('/admin/projects/resumex/plans');
+    }
+
+    public function togglePlanFeature(string $id): void
+    {
+        $this->requirePermission('resumex.settings');
+        header('Content-Type: application/json');
+
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            echo json_encode(['success' => false, 'message' => 'Invalid token.']);
+            exit;
+        }
+
+        $planId  = (int) $id;
+        $feature = preg_replace('/[^a-z0-9_]/', '', $_POST['feature'] ?? '');
+        $enabled = ($_POST['enabled'] ?? '0') === '1';
+
+        try {
+            $plan = $this->db->fetch("SELECT features FROM resumex_subscription_plans WHERE id = ?", [$planId]);
+            if (!$plan) {
+                echo json_encode(['success' => false, 'message' => 'Plan not found.']);
+                exit;
+            }
+            $feats          = json_decode($plan['features'] ?? '{}', true) ?: [];
+            $feats[$feature] = $enabled;
+            $this->db->query(
+                "UPDATE resumex_subscription_plans SET features = ?, updated_at = NOW() WHERE id = ?",
+                [json_encode($feats), $planId]
+            );
+            echo json_encode(['success' => true]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    public function deletePlan(string $id): void
+    {
+        $this->requirePermission('resumex.settings');
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/projects/resumex/plans');
+            return;
+        }
+
+        $planId = (int) $id;
+        try {
+            $plan = $this->db->fetch("SELECT * FROM resumex_subscription_plans WHERE id = ?", [$planId]);
+            if (!$plan) {
+                $this->flash('error', 'Plan not found.');
+                $this->redirect('/admin/projects/resumex/plans');
+                return;
+            }
+            if (!empty($plan['is_default'])) {
+                $this->flash('error', 'The default free plan cannot be deleted.');
+                $this->redirect('/admin/projects/resumex/plans');
+                return;
+            }
+            $this->db->query("DELETE FROM resumex_subscription_plans WHERE id = ?", [$planId]);
+            Logger::activity(Auth::id(), 'admin_resumex_plan_deleted', ['plan_id' => $planId]);
+            $this->flash('success', 'Plan deleted.');
+        } catch (\Exception $e) {
+            Logger::error('ResumeX deletePlan error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to delete plan.');
+        }
+
+        $this->redirect('/admin/projects/resumex/plans');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    //  ResumeX plan helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private function ensureResumeXTables(): void
+    {
+        try {
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `resumex_subscription_plans` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(100) NOT NULL,
+                    `slug` VARCHAR(50) NOT NULL,
+                    `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+                    `billing_cycle` ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
+                    `cancel_days` INT NOT NULL DEFAULT 0,
+                    `refund_days` INT NOT NULL DEFAULT 0,
+                    `max_resumes` INT DEFAULT 5,
+                    `features` TEXT NULL,
+                    `is_default` TINYINT(1) DEFAULT 0,
+                    `status` ENUM('active','inactive') DEFAULT 'active',
+                    `sort_order` INT DEFAULT 0,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY `unique_slug` (`slug`),
+                    INDEX `idx_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            try {
+                $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM resumex_subscription_plans"), 'Field');
+                if (!in_array('cancel_days', $cols, true)) {
+                    $this->db->query("ALTER TABLE resumex_subscription_plans ADD COLUMN `cancel_days` INT NOT NULL DEFAULT 0 AFTER `billing_cycle`");
+                }
+                if (!in_array('refund_days', $cols, true)) {
+                    $this->db->query("ALTER TABLE resumex_subscription_plans ADD COLUMN `refund_days` INT NOT NULL DEFAULT 0 AFTER `cancel_days`");
+                }
+            } catch (\Exception $e) {
+            }
+
+            $freeFeatures = $this->getResumeXFreePlanFeatures();
+            $this->db->query(
+                "INSERT IGNORE INTO `resumex_subscription_plans`
+                    (`name`,`slug`,`price`,`currency`,`billing_cycle`,`max_resumes`,`features`,`is_default`,`status`,`sort_order`)
+                 VALUES (?,?,0.00,'USD','lifetime',3,?,1,'active',0)",
+                ['Free', 'free', json_encode($freeFeatures)]
+            );
+
+            $this->db->query("
+                CREATE TABLE IF NOT EXISTS `resumex_user_subscriptions` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `plan_id` INT UNSIGNED NOT NULL,
+                    `status` ENUM('active','cancelled','expired','trial') DEFAULT 'active',
+                    `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `expires_at` TIMESTAMP NULL,
+                    `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_user_id` (`user_id`),
+                    INDEX `idx_plan_id` (`plan_id`),
+                    INDEX `idx_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Exception $e) {
+            Logger::error('ResumeX ensureResumeXTables: ' . $e->getMessage());
+        }
+    }
+
+    private function getResumeXPlanFeatures(): array
+    {
+        return [
+            'unlimited_resumes'  => 'Unlimited Resume Creation',
+            'pdf_export'         => 'PDF Export',
+            'pdf_no_watermark'   => 'PDF Without Watermark',
+            'premium_templates'  => 'Premium / Designer Templates',
+            'ai_suggestions'     => 'AI Writing Suggestions',
+            'linkedin_import'    => 'LinkedIn Import',
+            'public_sharing'     => 'Public Resume Sharing',
+            'custom_domain'      => 'Custom Domain',
+            'analytics'          => 'Resume Analytics',
+            'priority_support'   => 'Priority Support',
+        ];
+    }
+
+    private function getResumeXFreePlanFeatures(): array
+    {
+        return [
+            'unlimited_resumes'  => false,
+            'pdf_export'         => true,
+            'pdf_no_watermark'   => false,
+            'premium_templates'  => false,
+            'ai_suggestions'     => false,
+            'linkedin_import'    => true,
+            'public_sharing'     => true,
+            'custom_domain'      => false,
+            'analytics'          => false,
+            'priority_support'   => false,
+        ];
+    }
+
+    /** @return string[] */
+    private function getAllowedCurrencies(): array
+    {
+        return ['USD','EUR','GBP','INR','AED','SAR','BDT','PKR','NGN','BRL','MXN','CAD','AUD','JPY'];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     //  Settings
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -393,14 +738,6 @@ class ResumeXAdminController extends BaseController
             'resumex_openai_model',
             'resumex_ai_enabled',
             'resumex_ai_daily_limit',
-            'resumex_max_resumes_free',
-            'resumex_max_resumes_pro',
-            'resumex_pdf_watermark_free',
-            'resumex_pdf_watermark_text',
-            'resumex_pro_templates_only',
-            'resumex_linkedin_import',
-            'resumex_public_resumes',
-            'resumex_custom_domain',
         ];
 
         $oldValues = [];
@@ -415,14 +752,6 @@ class ResumeXAdminController extends BaseController
         $openaiKey         = Security::sanitize(trim($_POST['resumex_openai_api_key'] ?? ''));
         $openaiModel       = Security::sanitize(trim($_POST['resumex_openai_model'] ?? ''));
         $dailyLimit        = max(0, (int) ($_POST['resumex_ai_daily_limit'] ?? 0));
-        $maxResumesFree    = max(0, (int) ($_POST['resumex_max_resumes_free'] ?? 3));
-        $maxResumesPro     = max(0, (int) ($_POST['resumex_max_resumes_pro'] ?? 0));
-        $pdfWatermarkFree  = isset($_POST['resumex_pdf_watermark_free']) ? '1' : '0';
-        $pdfWatermarkText  = Security::sanitize(trim($_POST['resumex_pdf_watermark_text'] ?? 'ResumeX Free'));
-        $proTemplatesOnly  = isset($_POST['resumex_pro_templates_only']) ? '1' : '0';
-        $linkedinImport    = isset($_POST['resumex_linkedin_import']) ? '1' : '0';
-        $publicResumes     = isset($_POST['resumex_public_resumes']) ? '1' : '0';
-        $customDomain      = isset($_POST['resumex_custom_domain']) ? '1' : '0';
 
         // Validate key format: must be empty OR start with 'sk-'
         if (!empty($openaiKey) && !str_starts_with($openaiKey, 'sk-')) {
@@ -450,14 +779,6 @@ class ResumeXAdminController extends BaseController
             'resumex_openai_api_key'      => $openaiKey,
             'resumex_openai_model'        => $openaiModel,
             'resumex_ai_daily_limit'      => (string) $dailyLimit,
-            'resumex_max_resumes_free'    => (string) $maxResumesFree,
-            'resumex_max_resumes_pro'     => (string) $maxResumesPro,
-            'resumex_pdf_watermark_free'  => $pdfWatermarkFree,
-            'resumex_pdf_watermark_text'  => $pdfWatermarkText !== '' ? $pdfWatermarkText : 'ResumeX Free',
-            'resumex_pro_templates_only'  => $proTemplatesOnly,
-            'resumex_linkedin_import'     => $linkedinImport,
-            'resumex_public_resumes'      => $publicResumes,
-            'resumex_custom_domain'       => $customDomain,
         ];
 
         foreach ($updates as $key => $value) {

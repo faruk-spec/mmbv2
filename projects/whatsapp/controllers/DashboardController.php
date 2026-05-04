@@ -1,7 +1,7 @@
 <?php
 /**
  * WhatsApp Dashboard Controller
- * 
+ *
  * @package MMB\Projects\WhatsApp\Controllers
  */
 
@@ -10,98 +10,83 @@ namespace Projects\WhatsApp\Controllers;
 use Core\Auth;
 use Core\View;
 use Core\Database;
+use Core\SubscriptionService;
 
 class DashboardController
 {
     private $db;
     private $user;
-    
+
     public function __construct()
     {
-        $this->user = Auth::user();
         $this->db = Database::getInstance();
+        $this->user = Auth::user();
+
+        if (!Auth::check()) {
+            header('Location: /login');
+            exit;
+        }
     }
-    
+
     /**
-     * Display the WhatsApp dashboard
+     * Display dashboard
      */
     public function index()
     {
-        // Get user's WhatsApp sessions
-        $sessions = $this->getUserSessions();
-        
-        // Get recent messages
-        $recentMessages = $this->getRecentMessages();
-        
-        // Get statistics
-        $stats = $this->getStatistics();
-        
-        // Render dashboard view
+        $stats = $this->getDashboardStats();
+        $recentSessions = $this->db->fetchAll("SELECT * FROM whatsapp_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5", [$this->user['id']]);
+        $recentMessages = $this->db->fetchAll("SELECT * FROM whatsapp_messages WHERE user_id = ? ORDER BY created_at DESC LIMIT 10", [$this->user['id']]);
+
         View::render('whatsapp/dashboard', [
             'user' => $this->user,
-            'sessions' => $sessions,
-            'recentMessages' => $recentMessages,
             'stats' => $stats,
-            'pageTitle' => 'WhatsApp API Automation - Dashboard'
+            'recentSessions' => $recentSessions,
+            'recentMessages' => $recentMessages,
+            'pageTitle' => 'WhatsApp Dashboard'
         ]);
     }
-    
+
     /**
-     * Get user's WhatsApp sessions
+     * Display documentation
      */
-    private function getUserSessions()
+    public function documentation()
     {
-        return $this->db->fetchAll("
-            SELECT * FROM whatsapp_sessions 
-            WHERE user_id = ? 
-            ORDER BY created_at DESC
-        ", [$this->user['id']]);
+        View::render('whatsapp/documentation', [
+            'user' => $this->user,
+            'pageTitle' => 'WhatsApp API Documentation'
+        ]);
     }
-    
+
     /**
-     * Get recent messages
+     * Display chat interface
      */
-    private function getRecentMessages($limit = 10)
+    public function chat()
     {
-        return $this->db->fetchAll("
-            SELECT m.*, s.session_name, s.phone_number 
-            FROM whatsapp_messages m
-            JOIN whatsapp_sessions s ON m.session_id = s.id
-            WHERE s.user_id = ?
-            ORDER BY m.created_at DESC
-            LIMIT ?
-        ", [$this->user['id'], $limit]);
+        $sessions = $this->db->fetchAll("SELECT * FROM whatsapp_sessions WHERE user_id = ? ORDER BY updated_at DESC", [$this->user['id']]);
+
+        View::render('whatsapp/chat', [
+            'user' => $this->user,
+            'sessions' => $sessions,
+            'pageTitle' => 'WhatsApp Chat'
+        ]);
     }
-    
+
     /**
      * Get dashboard statistics
      */
-    private function getStatistics()
+    private function getDashboardStats()
     {
-        // Total sessions
-        $totalSessions = $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ?
-        ", [$this->user['id']]) ?? 0;
-        
-        // Active sessions
-        $activeSessions = $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_sessions 
-            WHERE user_id = ? AND status = 'connected'
-        ", [$this->user['id']]) ?? 0;
-        
-        // Total messages sent today
+        $totalSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ?", [$this->user['id']]) ?? 0;
+        $activeSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ? AND status = 'active'", [$this->user['id']]) ?? 0;
         $messagesToday = $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_messages m
-            JOIN whatsapp_sessions s ON m.session_id = s.id
-            WHERE s.user_id = ? AND DATE(m.created_at) = CURDATE()
+            SELECT COUNT(*) FROM whatsapp_messages
+            WHERE user_id = ? AND DATE(created_at) = CURDATE()
         ", [$this->user['id']]) ?? 0;
-        
-        // Total API calls today
         $apiCallsToday = $this->db->fetchColumn("
             SELECT COUNT(*) FROM whatsapp_api_logs
             WHERE user_id = ? AND DATE(created_at) = CURDATE()
         ", [$this->user['id']]) ?? 0;
-        
+
         return [
             'totalSessions' => $totalSessions,
             'activeSessions' => $activeSessions,
@@ -109,44 +94,27 @@ class DashboardController
             'apiCallsToday' => $apiCallsToday
         ];
     }
-    
+
     /**
      * Display user's subscription page
      */
     public function subscription()
     {
-        // Get user's current subscription
-        $subscription = $this->db->fetch("
-            SELECT * FROM whatsapp_subscription_details
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-        ", [$this->user['id']]);
-        
-        // Get all available plans
-        $plans = $this->db->fetchAll("
-            SELECT * FROM whatsapp_subscription_plans 
-            WHERE is_active = 1 
-            ORDER BY price ASC
-        ");
-        
-        // Calculate usage percentages
-        if ($subscription) {
-            $subscription['messages_percent'] = $subscription['messages_limit'] > 0 
-                ? min(($subscription['messages_used'] / $subscription['messages_limit']) * 100, 100) 
-                : 0;
-            $subscription['sessions_percent'] = $subscription['sessions_limit'] > 0 
-                ? min(($subscription['sessions_used'] / $subscription['sessions_limit']) * 100, 100) 
-                : 0;
-            $subscription['api_calls_percent'] = $subscription['api_calls_limit'] > 0 
-                ? min(($subscription['api_calls_used'] / $subscription['api_calls_limit']) * 100, 100) 
-                : 0;
-        }
-        
+        $subscriptionService = new SubscriptionService($this->db);
+        $subscriptionService->ensureInfrastructure();
+
+        $userId = (int) ($this->user['id'] ?? 0);
+        $subscription = $subscriptionService->getCurrentSubscription('whatsapp', $userId);
+        $plans = $subscriptionService->getActivePlans('whatsapp');
+        $history = $subscriptionService->getSubscriptionHistory('whatsapp', $userId);
+        $paymentHistory = $subscriptionService->getUserPayments($userId, 'whatsapp');
+
         View::render('whatsapp/subscription', [
             'user' => $this->user,
             'subscription' => $subscription,
             'plans' => $plans,
+            'history' => $history,
+            'paymentHistory' => $paymentHistory,
             'pageTitle' => 'My Subscription - WhatsApp API'
         ]);
     }

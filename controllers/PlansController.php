@@ -16,15 +16,18 @@ use Core\Logger;
 use Core\Security;
 use Core\Helpers;
 use Core\Notification;
+use Core\SubscriptionService;
 
 class PlansController extends BaseController
 {
     private Database $db;
+    private SubscriptionService $subscriptionService;
 
     // Registered apps with display metadata
     private const APP_META = [
         'qr'        => ['name' => 'QR Generator',   'color' => '#9945ff', 'icon' => 'qr_code',      'url' => '/projects/qr'],
         'whatsapp'  => ['name' => 'WhatsApp API',    'color' => '#25D366', 'icon' => 'chat',         'url' => '/projects/whatsapp'],
+        'convertx'  => ['name' => 'ConvertX',        'color' => '#6366f1', 'icon' => 'swap_horiz',   'url' => '/projects/convertx'],
         'proshare'  => ['name' => 'ProShare',        'color' => '#ffaa00', 'icon' => 'share',        'url' => '/projects/proshare'],
         'codexpro'  => ['name' => 'CodeXPro',        'color' => '#00f0ff', 'icon' => 'code',         'url' => '/projects/codexpro'],
         'resumex'   => ['name' => 'ResumeX',         'color' => '#ff6b6b', 'icon' => 'description', 'url' => '/projects/resumex'],
@@ -34,6 +37,9 @@ class PlansController extends BaseController
     public function __construct()
     {
         $this->db = Database::getInstance();
+        $this->subscriptionService = new SubscriptionService($this->db);
+        $this->subscriptionService->ensureInfrastructure();
+        $this->subscriptionService->ensureNotificationTemplates();
     }
 
     // -------------------------------------------------------------------------
@@ -52,6 +58,9 @@ class PlansController extends BaseController
 
         // ── User's active platform subscription(s) ────────────────────────────
         $userPlatformSubs = $this->getUserPlatformSubscriptions($userId);
+        $platformHistory = $this->getPlatformSubscriptionHistory($userId);
+        $paymentHistory = $this->subscriptionService->getUserPayments($userId);
+        $paymentSettings = $this->subscriptionService->getPaymentSettings();
 
         // Map plan_id → subscription so the view can check if a plan is active
         $activePlatformPlanIds = array_column($userPlatformSubs, 'plan_id');
@@ -77,6 +86,9 @@ class PlansController extends BaseController
             'platformPlans'         => $platformPlans,
             'userPlatformSubs'      => $userPlatformSubs,
             'activePlatformPlanIds' => $activePlatformPlanIds,
+            'platformHistory'       => $platformHistory,
+            'paymentHistory'        => $paymentHistory,
+            'paymentSettings'       => $paymentSettings,
             'appMeta'               => self::APP_META,
             'contactEmail'          => $contactEmail,
         ]);
@@ -117,6 +129,7 @@ class PlansController extends BaseController
             'plan'     => $plan,
             'appMeta'  => self::APP_META,
             'existing' => $existing,
+            'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
         ]);
     }
 
@@ -139,6 +152,8 @@ class PlansController extends BaseController
         }
 
         $message = trim(htmlspecialchars($_POST['message'] ?? '', ENT_QUOTES, 'UTF-8'));
+        $paymentSettings = $this->subscriptionService->getPaymentSettings();
+        $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
 
         // Log the request so admin can see it in activity logs
         Logger::activity($userId, 'subscription_requested', [
@@ -151,16 +166,19 @@ class PlansController extends BaseController
         // If plan is free (price=0), auto-assign immediately
         if ((float)$plan['price'] === 0.0) {
             try {
-                $this->ensurePlatformTables();
-                // Cancel any existing
-                $this->db->query(
-                    "UPDATE platform_user_subscriptions SET status='cancelled', cancelled_at=NOW() WHERE user_id=? AND plan_id=? AND status='active'",
-                    [$userId, $plan['id']]
-                );
-                $this->db->query(
-                    "INSERT INTO platform_user_subscriptions (user_id, plan_id, status, started_at) VALUES (?,?,'active',NOW())",
-                    [$userId, $plan['id']]
-                );
+                $payment = $this->subscriptionService->createOrReusePayment([
+                    'user_id' => $userId,
+                    'app_key' => 'platform',
+                    'plan_id' => (int) $plan['id'],
+                    'plan_name' => (string) $plan['name'],
+                    'billing_cycle' => $plan['billing_cycle'] ?? 'monthly',
+                    'gateway' => 'request',
+                    'status' => 'paid',
+                    'amount' => 0,
+                    'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
+                    'metadata' => ['message' => $message, 'plan_slug' => $plan['slug']],
+                ]);
+                $this->subscriptionService->approvePayment((int) $payment['id'], $userId);
                 Logger::activity($userId, 'subscription_auto_activated', ['plan_id' => $plan['id']]);
                 try { Notification::send($userId, 'plan_subscribed', 'You have been subscribed to the "' . $plan['name'] . '" plan.', ['plan_id' => $plan['id'], 'plan_name' => $plan['name']]); } catch (\Exception $e) {}
                 $this->flash('success', 'You have been subscribed to "' . $plan['name'] . '" successfully!');
@@ -172,10 +190,342 @@ class PlansController extends BaseController
             return;
         }
 
-        // Paid plan — request stored in logs, redirect back with confirmation
-        try { Notification::send($userId, 'plan_request_submitted', 'Your subscription request for the "' . $plan['name'] . '" plan has been submitted. An admin will activate it shortly.', ['plan_id' => $plan['id'], 'plan_name' => $plan['name']]); } catch (\Exception $e) {}
-        $this->flash('success', 'Your subscription request for "' . $plan['name'] . '" has been submitted. An admin will activate it for you shortly.');
-        $this->redirect('/plans');
+        $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
+        $payment = $this->subscriptionService->createOrReusePayment([
+            'user_id' => $userId,
+            'app_key' => 'platform',
+            'plan_id' => (int) $plan['id'],
+            'plan_name' => (string) $plan['name'],
+            'billing_cycle' => $plan['billing_cycle'] ?? 'monthly',
+            'gateway' => in_array($paymentMethod, ['upi', 'cashfree'], true) ? $paymentMethod : 'request',
+            'status' => $paymentMethod === 'request' ? 'verification_pending' : 'pending',
+            'amount' => (float) $plan['price'],
+            'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
+            'payment_payload' => $paymentMethod === 'upi' && !empty($paymentSettings['payment_upi_id'])
+                ? 'upi://pay?' . http_build_query([
+                    'pa' => $paymentSettings['payment_upi_id'],
+                    'pn' => 'MMB Platform',
+                    'am' => sprintf('%.2f', (float) $plan['price']),
+                    'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD'),
+                    'tn' => $paymentTitle . ' Plan',
+                ])
+                : null,
+            'metadata' => ['message' => $message, 'plan_slug' => $plan['slug']],
+        ]);
+
+        // Only create a new Cashfree order when none exists yet.
+        // If provider_order_id is already set (e.g. the user returned to the page and resubmitted),
+        // reuse the existing session to avoid a 409 conflict from Cashfree's duplicate-order check.
+        if ($paymentMethod === 'cashfree'
+            && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+            && !empty($paymentSettings['payment_cashfree_app_id'])
+            && !empty($paymentSettings['payment_cashfree_secret'])
+            && empty($payment['provider_order_id'])
+        ) {
+            $cashfreeResult = $this->subscriptionService->createCashfreeOrder(
+                $payment,
+                $paymentSettings,
+                [
+                    'name' => Auth::user()['name'] ?? 'Customer',
+                    'email' => Auth::user()['email'] ?? '',
+                    'phone' => Auth::user()['phone'] ?? '9999999999',
+                ],
+                $this->buildAbsoluteUrl('/plans/payment/' . (int) $payment['id'] . '/return')
+            );
+
+            if (!$cashfreeResult['success']) {
+                $this->flash('error', $cashfreeResult['message'] ?? 'Unable to start Cashfree payment.');
+                $this->redirect('/plans/subscribe/' . urlencode($slug));
+                return;
+            }
+        }
+
+        try { Notification::send($userId, 'plan_request_submitted', 'Your subscription request for the "' . $plan['name'] . '" plan has been submitted.', ['plan_id' => $plan['id'], 'plan_name' => $plan['name']]); } catch (\Exception $e) {}
+        $this->redirect('/plans/payment/' . (int) $payment['id']);
+    }
+
+    public function payment(string $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id());
+        if (!$payment) {
+            $this->flash('error', 'Payment record not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $this->view('dashboard/plans-payment', [
+            'title' => 'Subscription Payment',
+            'payment' => $payment,
+            'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
+            'canCancel' => $this->subscriptionService->canCancelPayment($payment),
+            'canRefund' => $this->subscriptionService->canRequestRefund($payment),
+        ]);
+    }
+
+    public function confirmPayment(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+
+        if ($this->subscriptionService->markUserPaymentSubmitted((int) $id, Auth::id())) {
+            $this->flash('success', 'Payment marked as submitted. Admin verification is pending.');
+        } else {
+            $this->flash('error', 'Unable to update payment status.');
+        }
+
+        $this->redirect('/plans/payment/' . (int) $id);
+    }
+
+    public function appSubscribe(string $app, string $slug): void
+    {
+        $plan = $this->subscriptionService->getAppPlan($app, $slug);
+        if (!$plan) {
+            $this->flash('error', 'Subscription plan not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
+        $this->view('dashboard/app-plan-subscribe', [
+            'title' => 'Subscribe to ' . ucfirst($app) . ' Plan',
+            'plan' => $plan,
+            'app' => $app,
+            'appMeta' => self::APP_META[$app] ?? ['name' => ucfirst($app), 'url' => '/plans'],
+            'existing' => $existing,
+            'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
+        ]);
+    }
+
+    public function processAppSubscribe(string $app, string $slug): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+            return;
+        }
+
+        $plan = $this->subscriptionService->getAppPlan($app, $slug);
+        if (!$plan) {
+            $this->flash('error', 'Subscription plan not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $paymentSettings = $this->subscriptionService->getPaymentSettings();
+        $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
+        $user = Auth::user();
+        $policy = [
+            'cancel_days' => (int) ($plan['cancel_days'] ?? 0),
+            'refund_days' => (int) ($plan['refund_days'] ?? 0),
+        ];
+
+        if ((float) ($plan['price'] ?? 0) === 0.0) {
+            $payment = $this->subscriptionService->createOrReusePayment([
+                'user_id' => Auth::id(),
+                'app_key' => $app,
+                'plan_id' => (int) $plan['id'],
+                'plan_name' => (string) $plan['name'],
+                'billing_cycle' => (string) ($plan['billing_cycle'] ?? 'free'),
+                'gateway' => 'request',
+                'status' => 'paid',
+                'amount' => 0,
+                'currency' => (string) ($plan['currency'] ?? 'USD'),
+                'metadata' => $policy,
+            ]);
+            $this->subscriptionService->approvePayment((int) $payment['id'], Auth::id());
+            $this->flash('success', 'Your free plan is now active.');
+            $this->redirect(self::APP_META[$app]['url'] ?? '/plans');
+            return;
+        }
+
+        $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
+        $payment = $this->subscriptionService->createOrReusePayment([
+            'user_id' => Auth::id(),
+            'app_key' => $app,
+            'plan_id' => (int) $plan['id'],
+            'plan_name' => (string) $plan['name'],
+            'billing_cycle' => (string) ($plan['billing_cycle'] ?? (($plan['duration_days'] ?? 30) . ' days')),
+            'gateway' => in_array($paymentMethod, ['upi', 'cashfree'], true) ? $paymentMethod : 'request',
+            'status' => $paymentMethod === 'request' ? 'verification_pending' : 'pending',
+            'amount' => (float) $plan['price'],
+            'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
+            'payment_payload' => $paymentMethod === 'upi' && !empty($paymentSettings['payment_upi_id'])
+                ? 'upi://pay?' . http_build_query([
+                    'pa' => $paymentSettings['payment_upi_id'],
+                    'pn' => self::APP_META[$app]['name'] ?? ucfirst($app),
+                    'am' => sprintf('%.2f', (float) $plan['price']),
+                    'cu' => $plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD'),
+                    'tn' => $paymentTitle . ' Plan',
+                ])
+                : null,
+            'metadata' => array_merge($policy, ['plan_slug' => $plan['slug'] ?? $slug]),
+        ]);
+
+        // Only create a new Cashfree order when none exists yet (prevents 409 on retry).
+        if ($paymentMethod === 'cashfree'
+            && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+            && !empty($paymentSettings['payment_cashfree_app_id'])
+            && !empty($paymentSettings['payment_cashfree_secret'])
+            && empty($payment['provider_order_id'])
+        ) {
+            $result = $this->subscriptionService->createCashfreeOrder(
+                $payment,
+                $paymentSettings,
+                [
+                    'name' => $user['name'] ?? 'Customer',
+                    'email' => $user['email'] ?? '',
+                    'phone' => $user['phone'] ?? '9999999999',
+                ],
+                $this->buildAbsoluteUrl('/plans/payment/' . (int) $payment['id'] . '/return')
+            );
+            if (!$result['success']) {
+                $this->flash('error', $result['message'] ?? 'Unable to start payment.');
+                $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+                return;
+            }
+        }
+
+        $this->flash('success', 'Subscription request created. Complete payment to activate.');
+        $this->redirect('/plans/payment/' . (int) $payment['id']);
+    }
+
+    public function paymentInvoice(string $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id());
+        if (!$payment) {
+            $this->flash('error', 'Invoice not found.');
+            $this->redirect('/plans');
+            return;
+        }
+        header('Content-Type: text/html; charset=utf-8');
+        echo $this->subscriptionService->renderInvoiceHtmlForPayment($payment, Auth::user());
+        exit;
+    }
+
+    public function appInvoice(string $app, string $id): void
+    {
+        $payment = $this->subscriptionService->getSubscriptionInvoicePayment($app, (int) $id, Auth::id());
+        if (!$payment) {
+            $this->flash('error', 'Invoice not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        header('Content-Type: text/html; charset=utf-8');
+        echo $this->subscriptionService->renderInvoiceHtmlForPayment($payment, Auth::user());
+        exit;
+    }
+
+    public function cancelOtpPage(string $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id());
+        if (!$payment || ($payment['status'] ?? '') !== 'paid' || empty($payment['subscription_id'])) {
+            $this->flash('error', 'No active subscription found for this payment.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+
+        $canCancel = $this->subscriptionService->canCancelPayment($payment);
+        $refundWindow = $this->subscriptionService->getCancelRefundWindowDays($payment);
+
+        $this->view('dashboard/plans-cancel-otp', [
+            'title' => 'Cancel Subscription',
+            'payment' => $payment,
+            'canCancel' => $canCancel,
+            'refundWindowDays' => $refundWindow,
+        ]);
+    }
+
+    public function sendCancelOtp(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id . '/cancel');
+            return;
+        }
+
+        if ($this->subscriptionService->sendCancelOtp((int) $id, Auth::id())) {
+            $this->flash('success', 'A 6-digit verification code has been sent to your email.');
+        } else {
+            $this->flash('error', 'Unable to send verification code. Please try again.');
+        }
+
+        $this->redirect('/plans/payment/' . (int) $id . '/cancel');
+    }
+
+    public function cancelPaymentSubscription(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+
+        $otp = trim((string) ($_POST['cancel_otp'] ?? ''));
+
+        // OTP-based cancel flow (for active paid subscriptions)
+        if ($otp !== '') {
+            $result = $this->subscriptionService->cancelSubscriptionWithOtp((int) $id, Auth::id(), $otp);
+            if ($result['success']) {
+                $msg = $result['refund_eligible']
+                    ? 'Subscription cancelled. A refund request has been submitted and is pending admin confirmation.'
+                    : 'Subscription cancelled. Your access remains active until the end of the billing period.';
+                $this->flash('success', $msg);
+            } else {
+                $this->flash('error', $result['message'] ?? 'Unable to cancel subscription.');
+                $this->redirect('/plans/payment/' . (int) $id . '/cancel');
+                return;
+            }
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+
+        // Legacy direct cancel (e.g. admin actions or non-paid subscriptions)
+        if ($this->subscriptionService->cancelSubscriptionByPayment((int) $id, Auth::id())) {
+            $this->flash('success', 'Subscription cancelled.');
+        } else {
+            $this->flash('error', 'Unable to cancel this subscription.');
+        }
+        $this->redirect('/plans/payment/' . (int) $id);
+    }
+
+    public function requestRefund(string $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/plans/payment/' . (int) $id);
+            return;
+        }
+        if ($this->subscriptionService->requestRefund((int) $id, Auth::id())) {
+            $this->flash('success', 'Refund request submitted.');
+        } else {
+            $this->flash('error', 'Refund request is not available for this payment.');
+        }
+        $this->redirect('/plans/payment/' . (int) $id);
+    }
+
+    public function cashfreeReturn(string $id): void
+    {
+        $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id());
+        if (!$payment) {
+            $this->flash('error', 'Payment record not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $result = $this->subscriptionService->confirmCashfreePayment($payment, $this->subscriptionService->getPaymentSettings(), Auth::id());
+        if (!empty($result['success']) && !empty($result['paid']) && !empty($result['approved'])) {
+            $this->flash('success', 'Payment received and subscription activated.');
+        } elseif (!empty($result['success'])) {
+            $this->flash('error', 'Cashfree payment is not marked paid yet. Please try again in a moment.');
+        } else {
+            $this->flash('error', $result['message'] ?? 'Unable to verify Cashfree payment.');
+        }
+
+        $this->redirect('/plans/payment/' . (int) $id);
     }
 
     // -------------------------------------------------------------------------
@@ -208,8 +558,9 @@ class PlansController extends BaseController
         // QR Generator
         try {
             $row = $this->db->fetch(
-                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.billing_cycle,
-                        p.max_static_qr, p.max_dynamic_qr, p.max_scans_per_month, p.features
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.currency, p.billing_cycle,
+                        p.max_static_qr, p.max_dynamic_qr, p.max_scans_per_month, p.features,
+                        s.expires_at
                  FROM qr_user_subscriptions s
                  JOIN qr_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
@@ -225,13 +576,35 @@ class PlansController extends BaseController
             // Table may not exist yet
         }
 
+        // ConvertX
+        try {
+            $row = $this->db->fetch(
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.currency, p.billing_cycle,
+                        p.max_jobs_per_month, p.max_file_size_mb, p.max_batch_size, p.features, s.expires_at
+                 FROM convertx_user_subscriptions s
+                 JOIN convertx_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+            if ($row) {
+                $row['app_key'] = 'convertx';
+                $row['features'] = $this->decodeFeatures($row['features'] ?? '');
+                $subs['convertx'] = $row;
+            }
+        } catch (\Exception $e) {
+        }
+
         // WhatsApp
         try {
             $row = $this->db->fetch(
-                "SELECT s.*, p.name plan_name, p.plan_type plan_slug, p.price, p.billing_cycle,
-                        p.max_sessions, p.max_messages_per_day
+                "SELECT s.*, p.id AS plan_id, p.name AS plan_name, LOWER(REPLACE(REPLACE(p.name, ' Plan', ''), ' ', '-')) AS plan_slug, p.price, p.currency,
+                        CONCAT(p.duration_days, ' days') AS billing_cycle,
+                        p.sessions_limit AS max_sessions, p.messages_limit AS max_messages_per_day,
+                        s.start_date AS started_at, s.end_date AS expires_at
                  FROM whatsapp_subscriptions s
-                 JOIN whatsapp_subscription_plans p ON p.id = s.plan_id
+                 LEFT JOIN whatsapp_subscription_plans p
+                   ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
                  WHERE s.user_id = ? AND s.status = 'active'
                  ORDER BY s.created_at DESC LIMIT 1",
                 [$userId]
@@ -240,6 +613,26 @@ class PlansController extends BaseController
                 $row['app_key']  = 'whatsapp';
                 $row['features'] = [];
                 $subs['whatsapp'] = $row;
+            }
+        } catch (\Exception $e) {
+            // Table may not exist yet
+        }
+
+        // ResumeX
+        try {
+            $row = $this->db->fetch(
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.currency, p.billing_cycle,
+                        p.max_resumes, p.features, s.expires_at
+                 FROM resumex_user_subscriptions s
+                 JOIN resumex_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+            if ($row) {
+                $row['app_key']  = 'resumex';
+                $row['features'] = $this->decodeFeatures($row['features'] ?? '');
+                $subs['resumex'] = $row;
             }
         } catch (\Exception $e) {
             // Table may not exist yet
@@ -273,11 +666,28 @@ class PlansController extends BaseController
         try {
             $this->ensurePlatformTables();
             return $this->db->fetchAll(
-                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.color, p.price, p.billing_cycle, p.included_apps
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.color, p.price, p.currency, p.billing_cycle, p.included_apps
                  FROM platform_user_subscriptions s
                  JOIN platform_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
                  ORDER BY s.started_at DESC",
+                [$userId]
+            );
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private function getPlatformSubscriptionHistory(int $userId): array
+    {
+        try {
+            return $this->db->fetchAll(
+                "SELECT s.*, p.name plan_name, p.slug plan_slug, p.price, p.currency, p.billing_cycle
+                 FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ?
+                 ORDER BY s.started_at DESC
+                 LIMIT 20",
                 [$userId]
             );
         } catch (\Exception $e) {
@@ -306,6 +716,13 @@ class PlansController extends BaseController
                 INDEX `idx_status` (`status`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
+        // Ensure currency column on platform_plans
+        try {
+            $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM platform_plans"), 'Field');
+            if (!in_array('currency', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+            }
+        } catch (\Exception $e) {}
         $this->db->query("
             CREATE TABLE IF NOT EXISTS `platform_user_subscriptions` (
                 `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -332,5 +749,71 @@ class PlansController extends BaseController
         }
         $decoded = json_decode($json, true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /** Show/download invoice for a platform subscription */
+    public function invoice(string $id): void
+    {
+        $userId = Auth::id();
+        $subId  = (int) $id;
+
+        try {
+            $sub = $this->db->fetch(
+                "SELECT s.*, p.name plan_name, p.price, p.currency, p.billing_cycle, p.description
+                 FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.id = ? AND s.user_id = ?",
+                [$subId, $userId]
+            );
+        } catch (\Exception $e) {
+            $sub = null;
+        }
+
+        if (!$sub) {
+            $this->flash('error', 'Invoice not found.');
+            $this->redirect('/plans');
+            return;
+        }
+
+        $user = Auth::user();
+        $payment = $this->db->fetch(
+            "SELECT * FROM subscription_payments
+             WHERE user_id = ? AND app_key = 'platform' AND subscription_id = ?
+             ORDER BY id DESC LIMIT 1",
+            [$userId, $subId]
+        );
+        if (!$payment) {
+            $payment = [
+                'id' => $sub['id'],
+                'app_key' => 'platform',
+                'subscription_id' => $sub['id'],
+                'plan_name' => $sub['plan_name'],
+                'billing_cycle' => $sub['billing_cycle'],
+                'amount' => $sub['price'],
+                'currency' => $sub['currency'] ?? 'USD',
+                'invoice_no' => 'INV-' . strtoupper(substr(md5($sub['id'] . $sub['started_at']), 0, 8)),
+                'paid_at' => $sub['started_at'],
+                'created_at' => $sub['started_at'],
+                'expires_at' => $sub['expires_at'],
+                'status' => $sub['status'],
+            ];
+        }
+
+        $invoiceHtml = $this->subscriptionService->renderInvoiceHtmlForPayment($payment, $user);
+        header('Content-Type: text/html; charset=utf-8');
+        echo $invoiceHtml;
+        exit;
+    }
+
+    private function buildAbsoluteUrl(string $path): string
+    {
+        $base = defined('APP_URL') && APP_URL ? rtrim(APP_URL, '/') : '';
+        if ($base !== '') {
+            return $base . $path;
+        }
+
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        return $scheme . '://' . $host . $path;
     }
 }
