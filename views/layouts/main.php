@@ -2440,6 +2440,7 @@ window.mmbSkeleton = (function(){
         );
     } catch (\Exception $e) {
         $footerPages = [];
+        \Core\Logger::error('Failed to load footer pages: ' . $e->getMessage());
     }
     ?>
     <footer class="footer">
