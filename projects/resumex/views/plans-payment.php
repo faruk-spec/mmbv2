@@ -63,6 +63,11 @@
                 <a href="<?= View::e($payment['payment_url']) ?>" rel="noopener noreferrer" class="btn btn-primary">Open Cashfree Checkout</a>
                 <?php elseif (!empty($payment['provider_payment_session_id'])): ?>
                 <button type="button" id="resumeCashfreePayBtn" class="btn btn-primary">Open Cashfree Checkout</button>
+                <?php else: ?>
+                <p style="color:var(--red);font-size:.82rem;">
+                    Cashfree session not available yet. Please retry from the
+                    <a href="/projects/resumex/plans" style="color:inherit;text-decoration:underline;">plans page</a>.
+                </p>
                 <?php endif; ?>
                 <a href="/projects/resumex/plans/payment/<?= (int) $payment['id'] ?>/return" class="btn btn-secondary" style="margin-left:10px;">Check Payment Status</a>
             </div>

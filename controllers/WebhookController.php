@@ -43,6 +43,7 @@ class WebhookController extends BaseController
         $result = $this->subscriptionService->confirmCashfreePayment(
             $payment,
             $this->subscriptionService->getPaymentSettings(),
+            // Webhooks are system-driven, so there is no authenticated admin/user actor.
             0
         );
 

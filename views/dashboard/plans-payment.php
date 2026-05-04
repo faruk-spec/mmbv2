@@ -64,7 +64,10 @@
                 <?php elseif (!empty($payment['provider_payment_session_id'])): ?>
                 <button type="button" id="cashfreePayBtn" class="btn btn-primary">Open Cashfree Checkout</button>
                 <?php else: ?>
-                <p style="color:var(--red);font-size:.82rem;">Cashfree session not available yet. Please retry from the subscribe page.</p>
+                <p style="color:var(--red);font-size:.82rem;">
+                    Cashfree session not available yet. Please retry from the
+                    <a href="/plans" style="color:inherit;text-decoration:underline;">plans page</a>.
+                </p>
                 <?php endif; ?>
                 <a href="/plans/payment/<?= (int) $payment['id'] ?>/return" class="btn btn-secondary" style="margin-left:10px;">Check Payment Status</a>
             </div>
