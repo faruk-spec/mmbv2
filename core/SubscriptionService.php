@@ -308,6 +308,20 @@ class SubscriptionService
 <p><a href=\"{{dashboard_url}}\">Go to your dashboard</a></p>',
                         '[\"user_name\",\"plan_name\",\"app_name\",\"refund_requested\",\"dashboard_url\"]',
                         1
+                    ),
+                    (
+                        'phone_otp',
+                        'Phone Number Verification OTP',
+                        'Your phone verification code',
+                        '<h2>Hi {{name}},</h2>
+<p>You requested to verify your phone number <strong>{{phone}}</strong>.</p>
+<p>Use the code below to complete verification. This code expires in <strong>{{expires_minutes}} minutes</strong>.</p>
+<div style=\"text-align:center;margin:28px 0;\">
+  <span style=\"display:inline-block;font-size:40px;font-weight:800;letter-spacing:12px;background:#f4f7fb;border:2px dashed #0077cc;border-radius:12px;padding:18px 36px;color:#1a1a2e;\">{{otp}}</span>
+</div>
+<p style=\"color:#888;font-size:.85em;\">If you did not request this, you can safely ignore this email.</p>',
+                        '[\"name\",\"otp\",\"phone\",\"expires_minutes\"]',
+                        1
                     )
             ");
         } catch (\Throwable $e) {
@@ -992,9 +1006,59 @@ class SubscriptionService
         }
     }
 
+    /**
+     * Admin-initiated subscription cancellation. Cancels the subscription regardless of
+     * cancel-day restrictions; marks payment as cancelled and notifies the user.
+     */
+    public function adminCancelSubscription(int $paymentId, int $adminId): bool
+    {
+        $payment = $this->db->fetch("SELECT * FROM subscription_payments WHERE id = ?", [$paymentId]);
+        if (!$payment) {
+            return false;
+        }
+
+        $config = $this->getAppConfig((string) $payment['app_key']);
+
+        try {
+            // Cancel the subscription row in the project table (if linked)
+            if (!empty($payment['subscription_id'])) {
+                if ($payment['app_key'] === 'whatsapp') {
+                    $this->db->query(
+                        "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        [(int) $payment['subscription_id']]
+                    );
+                } elseif ($config !== null) {
+                    $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                    $sql = "UPDATE {$config['subscription_table']}
+                            SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                    if ($cancelledColumn) {
+                        $sql .= ", {$cancelledColumn} = NOW()";
+                    }
+                    $sql .= " WHERE id = ?";
+                    $this->db->query($sql, [(int) $payment['subscription_id']]);
+                }
+            }
+
+            // Cancel the payment record
+            $this->db->query(
+                "UPDATE subscription_payments
+                 SET status = 'cancelled', cancel_requested_at = NOW(), updated_at = NOW()
+                 WHERE id = ?",
+                [$paymentId]
+            );
+
+            Logger::activity($adminId, 'admin_subscription_cancelled', ['payment_id' => $paymentId, 'user_id' => $payment['user_id']]);
+            $this->sendCancellationEmail($paymentId, false);
+            return true;
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::adminCancelSubscription - ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function cancelSubscriptionByPayment(int $paymentId, int $userId): bool
     {
-        $payment = $this->getUserPayment($paymentId, $userId);
+        $payment = $this->db->fetch("SELECT * FROM subscription_payments WHERE id = ?", [$paymentId]);
         if (!$payment || empty($payment['subscription_id'])) {
             return false;
         }

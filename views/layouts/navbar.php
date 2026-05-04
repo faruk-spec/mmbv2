@@ -126,6 +126,14 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                      style="max-height: 40px;"
                      onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode($navbarSettings['logo_text'] ?? APP_NAME) ?>);">
             </a>
+        <?php elseif ($navbarSettings['logo_type'] === 'both' && !empty($navbarSettings['logo_image_url'])): ?>
+            <a href="/" class="logo" style="display:flex;align-items:center;gap:8px;<?php if ($navbarSettings['navbar_text_color']): ?>color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;<?php endif; ?>">
+                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
+                     alt="Logo"
+                     style="max-height: 36px;"
+                     onerror="this.style.display='none';">
+                <span><?= htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME) ?></span>
+            </a>
         <?php else: ?>
             <a href="/" class="logo" <?php if ($navbarSettings['navbar_text_color']): ?>style="color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;"<?php endif; ?>><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
         <?php endif; ?>

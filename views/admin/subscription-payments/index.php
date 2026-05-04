@@ -118,6 +118,16 @@
                         <?php else: ?>
                         <span style="color:var(--text-secondary);font-size:.8rem;">No action</span>
                         <?php endif; ?>
+                        <?php if ($payment['status'] === 'paid'): ?>
+                        <form method="POST" action="/admin/subscription-payments/<?= (int) $payment['id'] ?>/cancel-plan"
+                              style="display:inline-block;margin:4px 0 0 0;"
+                              onsubmit="return confirm('Cancel this user\'s subscription? This cannot be undone.');">
+                            <?= \Core\Security::csrfField() ?>
+                            <button type="submit" class="btn btn-sm" style="background:rgba(255,170,0,.12);border:1px solid #ffaa00;color:#ffaa00;cursor:pointer;">
+                                <i class="fas fa-ban"></i> Cancel Plan
+                            </button>
+                        </form>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </td>
             </tr>
