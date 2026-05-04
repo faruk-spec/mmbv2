@@ -403,6 +403,106 @@ class MailConfigController extends BaseController
         $this->redirect('/admin/mail/templates');
     }
 
+    /**
+     * Send a test email for a specific notification template (AJAX POST).
+     *
+     * Renders the template with sample placeholder values and delivers it
+     * immediately (bypassing the queue) to the supplied recipient address.
+     */
+    public function sendTestTemplate(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->json(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+
+        $id = (int)$this->input('id', 0);
+        $to = trim($this->input('to', ''));
+
+        if (!$id) {
+            $this->json(['success' => false, 'message' => 'Invalid template ID.']);
+            return;
+        }
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['success' => false, 'message' => 'Please provide a valid recipient email address.']);
+            return;
+        }
+
+        $db       = Database::getInstance();
+        $template = $db->fetch("SELECT * FROM mail_notification_templates WHERE id = ? LIMIT 1", [$id]);
+
+        if (!$template) {
+            $this->json(['success' => false, 'message' => 'Template not found.']);
+            return;
+        }
+
+        // Build sample values for every declared variable so the preview looks real.
+        $declaredVars = json_decode($template['variables'] ?? '[]', true) ?? [];
+        $sampleValues = [
+            'app_name'          => defined('APP_NAME') ? APP_NAME : 'Platform',
+            'name'              => 'Test User',
+            'user_name'         => 'Test User',
+            'email'             => $to,
+            'otp'               => '123456',
+            'verify_url'        => defined('APP_URL') ? APP_URL . '/verify-otp' : '#',
+            'login_url'         => defined('APP_URL') ? APP_URL . '/dashboard' : '#',
+            'reset_url'         => defined('APP_URL') ? APP_URL . '/forgot-password' : '#',
+            'ip_address'        => '127.0.0.1',
+            'login_time'        => date('Y-m-d H:i:s'),
+            'changed_at'        => date('Y-m-d H:i:s'),
+            'plan_name'         => 'Pro Plan',
+            'currency'          => 'USD',
+            'amount'            => '9.99',
+            'billing_cycle'     => 'monthly',
+            'started_at'        => date('Y-m-d'),
+            'expires_at'        => date('Y-m-d', strtotime('+1 year')),
+            'expired_at'        => date('Y-m-d'),
+            'days_left'         => '7',
+            'renew_url'         => defined('APP_URL') ? APP_URL . '/plans' : '#',
+            'invoice_url'       => defined('APP_URL') ? APP_URL . '/dashboard' : '#',
+            'dashboard_url'     => defined('APP_URL') ? APP_URL . '/dashboard' : '#',
+            'refund_requested'  => 'No',
+            'expiry_minutes'    => '10',
+            'ticket_id'         => '42',
+            'subject'           => 'Sample Support Request',
+            'description'       => 'This is a sample support ticket description.',
+            'ticket_url'        => defined('APP_URL') ? APP_URL . '/support/42' : '#',
+            'reply_message'     => 'Thank you for contacting us. Our team is looking into your issue.',
+            'status'            => 'In Progress',
+            'note'              => 'We have updated the status of your ticket.',
+        ];
+
+        // Fill in any declared variable that has no sample value with a generic placeholder.
+        $vars = [];
+        foreach ($declaredVars as $var) {
+            $vars[$var] = $sampleValues[$var] ?? '[' . $var . ']';
+        }
+        // Always include app_name.
+        $vars['app_name'] = $sampleValues['app_name'];
+
+        $subject = '[TEST] ' . MailService::renderVarsPublic($template['subject'], $vars);
+        $body    = MailService::wrapBodyPublic(MailService::renderVarsPublic($template['body'], $vars), $vars);
+
+        $options = ['template_slug' => $template['slug']];
+        if (!empty($template['mail_provider_config_id'])) {
+            $options['provider_id'] = (int)$template['mail_provider_config_id'];
+        }
+
+        $sent = MailService::sendNow($to, $subject, $body, $options);
+
+        Logger::activity(Auth::id(), 'mail_template_test_sent', [
+            'template_slug' => $template['slug'],
+            'to'            => $to,
+            'success'       => $sent,
+        ]);
+
+        if ($sent) {
+            $this->json(['success' => true, 'message' => "Test email sent to $to."]);
+        } else {
+            $this->json(['success' => false, 'message' => 'Failed to send test email. Check your SMTP configuration and server logs.']);
+        }
+    }
+
     // ------------------------------------------------------------------
     // Send log
     // ------------------------------------------------------------------

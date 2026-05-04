@@ -454,6 +454,21 @@ class MailService
     {
         try {
             $db = Database::getInstance();
+
+            // Reset emails stuck in 'processing' from a previously interrupted run so
+            // they are picked up again in this batch.  This is safe because processQueue
+            // is called manually (or from a single cron slot) and any previous invocation
+            // that left rows in 'processing' has already finished.
+            try {
+                $db->query(
+                    "UPDATE email_queue SET status = 'pending'
+                     WHERE status = 'processing' AND attempts < max_attempts",
+                    []
+                );
+            } catch (\Throwable $e) {
+                Logger::warning('MailService: could not reset stuck processing emails: ' . $e->getMessage());
+            }
+
             $rows = $db->fetchAll(
                 "SELECT * FROM email_queue
                  WHERE status = 'pending' AND (scheduled_at IS NULL OR scheduled_at <= NOW())
@@ -536,6 +551,11 @@ class MailService
         $body    = self::wrapBody(self::renderVars($template['body'], $vars), $vars);
 
         $options = array_merge($vars, ['template_slug' => $slug]);
+
+        // Honour the per-template provider assignment set in /admin/mail/templates.
+        if (!empty($template['mail_provider_config_id'])) {
+            $options['provider_id'] = (int)$template['mail_provider_config_id'];
+        }
 
         return $queued
             ? self::queue($to, $subject, $body, $options)
@@ -1057,6 +1077,14 @@ class MailService
         return $template;
     }
 
+    /**
+     * Public wrapper around renderVars for use by admin controllers (e.g. test-send).
+     */
+    public static function renderVarsPublic(string $template, array $vars): string
+    {
+        return self::renderVars($template, $vars);
+    }
+
     private static function wrapBody(string $content, array $vars = []): string
     {
         $appName = $vars['app_name'] ?? (defined('APP_NAME') ? APP_NAME : 'Platform');
@@ -1087,6 +1115,14 @@ a{color:#667eea}
 </body>
 </html>
 HTML;
+    }
+
+    /**
+     * Public wrapper around wrapBody for use by admin controllers (e.g. test-send).
+     */
+    public static function wrapBodyPublic(string $content, array $vars = []): string
+    {
+        return self::wrapBody($content, $vars);
     }
 
     // ------------------------------------------------------------------
