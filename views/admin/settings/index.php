@@ -208,6 +208,55 @@
             </form>
         </div>
 
+        <div class="card" style="margin-top:16px;">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-shoe-prints" style="margin-right:8px;color:var(--cyan);"></i> Footer Settings</h4>
+            <form method="POST" action="/admin/settings/footer">
+                <?= \Core\Security::csrfField() ?>
+
+                <div class="form-group">
+                    <label class="form-label">Footer Tagline</label>
+                    <input type="text" name="footer_tagline" class="form-input"
+                           value="<?= View::e($settings['footer_tagline'] ?? '') ?>"
+                           placeholder="Your tools, all in one place.">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Footer Copyright Text</label>
+                    <input type="text" name="footer_copyright" class="form-input"
+                           value="<?= View::e($settings['footer_copyright'] ?? '') ?>"
+                           placeholder="Leave blank to use default: © YEAR APP_NAME">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Social Links</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <label style="font-size:.8rem;">Twitter/X URL</label>
+                            <input type="url" name="footer_social_twitter" class="form-input" value="<?= View::e($settings['footer_social_twitter'] ?? '') ?>" placeholder="https://twitter.com/...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;">GitHub URL</label>
+                            <input type="url" name="footer_social_github" class="form-input" value="<?= View::e($settings['footer_social_github'] ?? '') ?>" placeholder="https://github.com/...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;">LinkedIn URL</label>
+                            <input type="url" name="footer_social_linkedin" class="form-input" value="<?= View::e($settings['footer_social_linkedin'] ?? '') ?>" placeholder="https://linkedin.com/...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;">YouTube URL</label>
+                            <input type="url" name="footer_social_youtube" class="form-input" value="<?= View::e($settings['footer_social_youtube'] ?? '') ?>" placeholder="https://youtube.com/...">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" name="footer_show_social" value="1"
+                               <?= ($settings['footer_show_social'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span>Show Social Links in Footer</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Footer Settings</button>
+            </form>
+        </div>
+
         <div class="card">
             <h4 style="margin-bottom: 15px;">Quick Actions</h4>
             

@@ -24,6 +24,9 @@ class NavbarController extends BaseController
      */
     public function index()
     {
+        // Ensure the logo_type ENUM supports 'both'
+        $this->ensureLogoTypeBoth();
+
         // Get current navbar settings
         $settings = $this->db->fetch("SELECT * FROM navbar_settings WHERE id = 1");
         
@@ -60,6 +63,9 @@ class NavbarController extends BaseController
                 Helpers::flash('error', 'Invalid security token. Please try again.');
                 return $this->redirect('/admin/navbar');
             }
+
+            // Ensure ENUM supports 'both' before writing
+            $this->ensureLogoTypeBoth();
 
             // Get form data
             $logoType = $_POST['logo_type'] ?? 'text';
@@ -407,5 +413,30 @@ class NavbarController extends BaseController
 
         Logger::error('NavbarController: failed to store upload to ' . $targetPath);
         return null;
+    }
+
+    /**
+     * Ensure the logo_type ENUM column includes the 'both' value.
+     * Runs an ALTER TABLE only when needed (checked via INFORMATION_SCHEMA).
+     */
+    private function ensureLogoTypeBoth(): void
+    {
+        try {
+            $row = $this->db->fetch(
+                "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME   = 'navbar_settings'
+                   AND COLUMN_NAME  = 'logo_type'
+                 LIMIT 1"
+            );
+            if ($row && strpos((string) $row['COLUMN_TYPE'], "'both'") === false) {
+                $this->db->query(
+                    "ALTER TABLE navbar_settings
+                     MODIFY COLUMN logo_type ENUM('text','image','both') DEFAULT 'text'"
+                );
+            }
+        } catch (\Throwable $e) {
+            Logger::error('NavbarController: ensureLogoTypeBoth failed — ' . $e->getMessage());
+        }
     }
 }

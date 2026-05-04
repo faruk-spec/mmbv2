@@ -135,6 +135,51 @@ class SettingsController extends BaseController
     }
 
     /**
+     * Update footer settings only
+     */
+    public function updateFooter(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $db = Database::getInstance();
+        $footerKeys = [
+            'footer_tagline',
+            'footer_copyright',
+            'footer_show_social',
+            'footer_social_twitter',
+            'footer_social_github',
+            'footer_social_linkedin',
+            'footer_social_youtube',
+        ];
+
+        try {
+            foreach ($footerKeys as $key) {
+                if ($key === 'footer_show_social') {
+                    $value = isset($_POST[$key]) ? '1' : '0';
+                } else {
+                    $value = Security::sanitize($this->input($key, ''));
+                }
+                $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+                if ($existing) {
+                    $db->update('settings', ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', [$key]);
+                } else {
+                    $db->insert('settings', ['key' => $key, 'value' => $value, 'type' => 'string', 'created_at' => date('Y-m-d H:i:s')]);
+                }
+            }
+            $this->flash('success', 'Footer settings updated.');
+        } catch (\Exception $e) {
+            Logger::error('Footer settings update error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update footer settings.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    /**
      * Upload auth logo image
      */
     public function uploadLogo(): void

@@ -4,7 +4,7 @@
 <?php View::section('styles'); ?>
 <style>
 /* ── Plans page styles ──────────────────────────────────────────────────── */
-.plans-page { max-width: 900px; }
+.plans-page { max-width: 960px; }
 .plans-section-title {
     font-size: .95rem; font-weight: 700; margin: 0 0 14px;
     display: flex; align-items: center; gap: 8px;
@@ -36,10 +36,14 @@
 }
 .sub-badge-active  { background: rgba(0,255,136,.15); color: var(--green); }
 .sub-badge-free    { background: rgba(255,170,0,.15);  color: #ffaa00; }
-.app-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.app-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
 .btn-app { padding: 6px 14px; border-radius: 6px; font-size: .78rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; }
 .btn-app-open     { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); }
 .btn-app-open:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn-app-manage   { background: rgba(153,69,255,.12); border: 1px solid rgba(153,69,255,.25); color: var(--purple); }
+.btn-app-manage:hover { background: rgba(153,69,255,.2); }
+.btn-app-invoice  { background: rgba(0,240,255,.1); border: 1px solid rgba(0,240,255,.2); color: var(--cyan); }
+.btn-app-invoice:hover { background: rgba(0,240,255,.18); }
 .btn-app-upgrade  { background: linear-gradient(135deg,var(--purple),var(--cyan)); border: none; color: #fff; }
 .btn-app-upgrade:hover { opacity: .88; }
 /* Plan cards grid */
@@ -77,7 +81,7 @@
 /* Active platform sub cards */
 .active-sub-card {
     background: var(--bg-card);
-    border-radius: 10px; padding: 16px 20px; margin-bottom: 10px;
+    border-radius: 12px; padding: 18px 22px; margin-bottom: 12px;
     border: 2px solid;
 }
 /* Section divider */
@@ -85,11 +89,23 @@
     margin: 28px 0;
     border: none; border-top: 1px solid var(--border-color);
 }
+/* Pagination */
+.pay-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+.pay-pg-btn {
+    padding: 6px 13px; border-radius: 7px; font-size: .8rem; font-weight: 600; text-decoration: none;
+    border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary);
+    transition: all .2s;
+}
+.pay-pg-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.pay-pg-btn.active { background: var(--cyan); color: #06060a; border-color: var(--cyan); cursor: default; }
+.pay-pg-btn.disabled { opacity: .4; pointer-events: none; }
 /* Responsive */
 @media (max-width: 640px) {
     .app-sub-row { grid-template-columns: 36px 1fr; gap: 10px; padding: 12px; }
     .sub-badge, .app-actions { grid-column: 2; }
     .plan-grid { grid-template-columns: 1fr; }
+    .active-sub-card { padding: 14px 16px; }
+    .btn-app { padding: 5px 10px; font-size: .74rem; }
 }
 </style>
 <?php View::end(); ?>
@@ -193,11 +209,19 @@
         <?php foreach ($userPlatformSubs as $sub):
             $apps = json_decode($sub['included_apps'] ?? '[]', true) ?: [];
             $col  = View::e($sub['color'] ?? '#9945ff');
+            // Find most recent paid payment for this subscription
+            $subPaymentId = null;
+            foreach ($allPayments ?? [] as $ph) {
+                if (($ph['subscription_id'] ?? null) == $sub['id'] && $ph['status'] === 'paid') {
+                    $subPaymentId = $ph['id'];
+                    break;
+                }
+            }
         ?>
         <div class="active-sub-card" style="border-color:<?= $col ?>;">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                <div>
-                    <div style="font-weight:700;font-size:1rem;color:<?= $col ?>;"><?= View::e($sub['plan_name']) ?></div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:1.05rem;color:<?= $col ?>;"><?= View::e($sub['plan_name']) ?></div>
                     <div style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">
                         <?php $subCur = htmlspecialchars($sub['currency'] ?? 'USD'); echo $sub['price'] == 0 ? 'Free' : ($subCur.'&nbsp;'.number_format((float)$sub['price'],2).' / '.htmlspecialchars($sub['billing_cycle'])); ?>
                         &middot; Active since <?= date('M j, Y', strtotime($sub['started_at'])) ?>
@@ -215,7 +239,22 @@
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <span class="sub-badge sub-badge-active" style="flex-shrink:0;">Active</span>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;">
+                    <span class="sub-badge sub-badge-active">Active</span>
+                    <div class="app-actions">
+                        <a href="/plans/invoice/<?= (int) $sub['id'] ?>" class="btn-app btn-app-invoice">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+                            Invoice
+                        </a>
+                        <?php if ($subPaymentId): ?>
+                        <a href="/plans/payment/<?= (int) $subPaymentId ?>" class="btn-app btn-app-open">View</a>
+                        <?php endif; ?>
+                        <a href="/plans/payment/<?= $subPaymentId ? (int) $subPaymentId . '/cancel' : '' ?>#" class="btn-app btn-app-manage"
+                           onclick="return confirm('Are you sure you want to cancel this subscription?')">
+                            Manage
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         <?php endforeach; ?>
@@ -327,14 +366,17 @@
     </section>
     <?php endif; ?>
 
-    <?php if (!empty($paymentHistory)): ?>
+    <?php if (!empty($paymentHistory) || ($payTotal ?? 0) > 0): ?>
     <hr class="plans-divider">
-    <section style="margin-bottom:28px;">
+    <section id="payment-history" style="margin-bottom:28px;">
         <p class="plans-section-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
                 <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
             </svg>
             Payment History
+            <?php if (($payTotal ?? 0) > 0): ?>
+            <span style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:600;color:var(--text-secondary);"><?= (int) $payTotal ?> total</span>
+            <?php endif; ?>
         </p>
         <div style="display:flex;flex-direction:column;gap:10px;">
             <?php foreach ($paymentHistory as $payment): ?>
@@ -345,8 +387,7 @@
                         <?= View::e($payment['currency']) ?>&nbsp;<?= number_format((float) $payment['amount'], 2) ?>
                         &middot; <?= View::e(strtoupper($payment['app_key'])) ?>
                         &middot; <?= strtoupper(View::e($payment['gateway'])) ?>
-                        &middot; Ref <?= View::e($payment['reference']) ?>
-                        &middot; <?= date('M j, Y', strtotime($payment['created_at'])) ?>
+                        &middot; <?= date('M j, Y g:i A', strtotime($payment['created_at'])) ?>
                     </div>
                 </div>
                 <span class="sub-badge <?= ($payment['status'] ?? '') === 'paid' ? 'sub-badge-active' : 'sub-badge-free' ?>">
@@ -355,12 +396,28 @@
                 <div class="app-actions">
                     <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn-app btn-app-open">View</a>
                     <?php if (($payment['status'] ?? '') === 'paid'): ?>
-                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn-app btn-app-open">Invoice</a>
+                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn-app btn-app-invoice">Invoice</a>
                     <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>
         </div>
+        <?php if (($payTotalPages ?? 1) > 1): ?>
+        <nav class="pay-pagination" aria-label="Payment history pages">
+            <a href="?pay_page=<?= max(1, ($payPage ?? 1) - 1) ?>#payment-history" class="pay-pg-btn <?= ($payPage ?? 1) <= 1 ? 'disabled' : '' ?>">&laquo; Prev</a>
+            <?php
+            $start = max(1, ($payPage ?? 1) - 2);
+            $end   = min($payTotalPages ?? 1, ($payPage ?? 1) + 2);
+            if ($start > 1): ?><a href="?pay_page=1#payment-history" class="pay-pg-btn">1</a><?php if ($start > 2): ?><span class="pay-pg-btn disabled">&hellip;</span><?php endif; ?>
+            <?php endif;
+            for ($p = $start; $p <= $end; $p++): ?>
+            <a href="?pay_page=<?= $p ?>#payment-history" class="pay-pg-btn <?= $p === ($payPage ?? 1) ? 'active' : '' ?>"><?= $p ?></a>
+            <?php endfor;
+            if ($end < ($payTotalPages ?? 1)): ?><?php if ($end < ($payTotalPages ?? 1) - 1): ?><span class="pay-pg-btn disabled">&hellip;</span><?php endif; ?><a href="?pay_page=<?= $payTotalPages ?>#payment-history" class="pay-pg-btn"><?= $payTotalPages ?></a>
+            <?php endif; ?>
+            <a href="?pay_page=<?= min($payTotalPages ?? 1, ($payPage ?? 1) + 1) ?>#payment-history" class="pay-pg-btn <?= ($payPage ?? 1) >= ($payTotalPages ?? 1) ? 'disabled' : '' ?>">Next &raquo;</a>
+        </nav>
+        <?php endif; ?>
     </section>
     <?php endif; ?>
 

@@ -69,6 +69,24 @@ $canUseManualReview = ($paymentSettings['payment_manual_review_enabled'] ?? '1')
     </div>
 
     <?php else: ?>
+    <?php if (!empty($activePlanConflict)): ?>
+    <!-- Active plan conflict warning -->
+    <div style="background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.4);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div>
+            <div style="font-weight:700;color:#ffaa00;margin-bottom:4px;">You have an active plan</div>
+            <div style="font-size:.85rem;color:var(--text-secondary);line-height:1.5;">
+                You are currently on the <strong style="color:var(--text-primary);"><?= View::e($activePlanConflict['plan_name']) ?></strong> plan
+                (active since <?= date('M j, Y', strtotime($activePlanConflict['started_at'])) ?>).
+                Subscribing to a new plan will override your current subscription. Your existing plan will be cancelled.
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="/plans" style="padding:6px 14px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);font-size:.82rem;text-decoration:none;font-weight:600;">Keep Current Plan</a>
+                <span style="padding:6px 14px;border-radius:6px;background:rgba(255,170,0,.15);border:1px solid rgba(255,170,0,.3);color:#ffaa00;font-size:.82rem;font-weight:600;">Continue Anyway ↓</span>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
     <!-- Subscription request form -->
     <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:24px;">
         <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px;">

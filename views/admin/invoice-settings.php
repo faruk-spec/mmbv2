@@ -67,6 +67,27 @@
     </div>
 
     <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px;margin-bottom:20px;">
+        <div style="margin-bottom:16px;font-weight:700;font-size:.9rem;">Tax Settings</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;align-items:end;">
+            <div>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                    <input type="checkbox" name="invoice_tax_enabled" value="1" <?= ($settings['invoice_tax_enabled'] ?? '0') === '1' ? 'checked' : '' ?> id="taxEnabledChk">
+                    <span>Enable Tax on Invoices</span>
+                </label>
+            </div>
+            <div>
+                <label>Tax Label (e.g. GST, VAT)</label>
+                <input type="text" name="invoice_tax_label" class="form-control" value="<?= View::e($settings['invoice_tax_label'] ?? 'Tax') ?>">
+            </div>
+            <div>
+                <label>Tax Rate (%)</label>
+                <input type="number" name="invoice_tax_rate" class="form-control" min="0" max="100" step="0.01" value="<?= View::e($settings['invoice_tax_rate'] ?? '0') ?>">
+            </div>
+        </div>
+        <p style="color:var(--text-secondary);font-size:.78rem;margin-top:12px;">When enabled, tax will be shown as a line item on all invoices. The total will include the tax amount.</p>
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px;margin-bottom:20px;">
         <div style="margin-bottom:16px;">
             <label>Footer Note</label>
             <textarea name="invoice_footer_note" class="form-control" rows="3"><?= View::e($settings['invoice_footer_note'] ?? '') ?></textarea>

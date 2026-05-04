@@ -59,7 +59,16 @@ class PlansController extends BaseController
         // ── User's active platform subscription(s) ────────────────────────────
         $userPlatformSubs = $this->getUserPlatformSubscriptions($userId);
         $platformHistory = $this->getPlatformSubscriptionHistory($userId);
-        $paymentHistory = $this->subscriptionService->getUserPayments($userId);
+
+        // ── Payment History — paginated ───────────────────────────────────────
+        $payPerPage  = 10;
+        $payPage     = max(1, (int) ($_GET['pay_page'] ?? 1));
+        $allPayments = $this->subscriptionService->getUserPayments($userId);
+        $payTotal    = count($allPayments);
+        $payTotalPages = (int) ceil($payTotal / $payPerPage);
+        $payPage     = min($payPage, max(1, $payTotalPages));
+        $paymentHistory = array_slice($allPayments, ($payPage - 1) * $payPerPage, $payPerPage);
+
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
 
         // Map plan_id → subscription so the view can check if a plan is active
@@ -87,7 +96,11 @@ class PlansController extends BaseController
             'userPlatformSubs'      => $userPlatformSubs,
             'activePlatformPlanIds' => $activePlatformPlanIds,
             'platformHistory'       => $platformHistory,
+            'allPayments'           => $allPayments,
             'paymentHistory'        => $paymentHistory,
+            'payPage'               => $payPage,
+            'payTotalPages'         => $payTotalPages,
+            'payTotal'              => $payTotal,
             'paymentSettings'       => $paymentSettings,
             'appMeta'               => self::APP_META,
             'contactEmail'          => $contactEmail,
@@ -126,6 +139,18 @@ class PlansController extends BaseController
             );
         } catch (\Exception $e) {}
 
+        // Cross-check: any active platform plan (different from the one being purchased)
+        $activePlanConflict = null;
+        try {
+            $activePlanConflict = $this->db->fetch(
+                "SELECT s.*, p.name AS plan_name FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active' AND s.plan_id != ?
+                 LIMIT 1",
+                [$userId, $plan['id']]
+            );
+        } catch (\Exception $e) {}
+
         Logger::activity($userId, 'subscription_page_viewed', ['plan_slug' => $slug]);
 
         $this->view('dashboard/plans-subscribe', [
@@ -133,6 +158,7 @@ class PlansController extends BaseController
             'plan'     => $plan,
             'appMeta'  => self::APP_META,
             'existing' => $existing,
+            'activePlanConflict' => $activePlanConflict,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
         ]);
     }
