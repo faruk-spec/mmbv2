@@ -486,6 +486,7 @@ class SubscriptionService
             'payment_cashfree_secret' => '',
             'payment_cashfree_sandbox' => '1',
             'payment_currency' => 'INR',
+            'payment_manual_review_enabled' => '1',
         ];
 
         try {
@@ -520,6 +521,7 @@ class SubscriptionService
             'payment_cashfree_secret' => $storeSecret === '' ? '' : Security::encrypt($storeSecret),
             'payment_cashfree_sandbox' => !empty($input['payment_cashfree_sandbox']) ? '1' : '0',
             'payment_currency' => trim((string) ($input['payment_currency'] ?? 'INR')),
+            'payment_manual_review_enabled' => !empty($input['payment_manual_review_enabled']) ? '1' : '0',
         ];
 
         foreach ($data as $key => $value) {
@@ -550,6 +552,14 @@ class SubscriptionService
         );
 
         if ($existing) {
+            // If a fresh UPI payload is supplied but the existing record has none, update it now.
+            if (!empty($data['payment_payload']) && empty($existing['payment_payload'])) {
+                $this->db->query(
+                    "UPDATE subscription_payments SET payment_payload = ?, updated_at = NOW() WHERE id = ?",
+                    [$data['payment_payload'], (int) $existing['id']]
+                );
+                $existing['payment_payload'] = $data['payment_payload'];
+            }
             return $existing;
         }
 
@@ -1169,15 +1179,26 @@ class SubscriptionService
             : 'https://api.cashfree.com/pg/orders';
 
         $orderId = 'order_' . strtolower($payment['reference']);
+
+        // Cashfree requires exactly 10 digits for customer_phone.
+        $rawPhone = preg_replace('/\D/', '', (string) ($customer['phone'] ?? ''));
+        // Strip leading country code (e.g. 91 prefix for India) if longer than 10 digits.
+        if (strlen($rawPhone) > 10) {
+            $rawPhone = substr($rawPhone, -10);
+        }
+        // Cashfree requires exactly 10 digits; use a placeholder when the user's phone is missing/invalid.
+        $customerPhone = strlen($rawPhone) === 10 ? $rawPhone : '9999999999';
+
         $payload = [
             'order_id' => $orderId,
             'order_amount' => (float) $payment['amount'],
             'order_currency' => (string) $payment['currency'],
             'customer_details' => [
                 'customer_id' => 'user_' . (int) $payment['user_id'],
-                'customer_name' => (string) ($customer['name'] ?? 'Customer'),
+                // Use ?: so that an empty string also falls back to 'Customer' (Cashfree rejects empty names).
+                'customer_name' => (string) ($customer['name'] ?: 'Customer'),
                 'customer_email' => (string) ($customer['email'] ?? ''),
-                'customer_phone' => (string) ($customer['phone'] ?? '9999999999'),
+                'customer_phone' => $customerPhone,
             ],
             'order_meta' => [
                 'return_url' => $this->appendQueryParams($validatedReturnUrl, ['order_id' => '{order_id}']),

@@ -155,6 +155,14 @@ class PlansController extends BaseController
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
         $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
 
+        // If manual review is disabled, reject any attempt to use it.
+        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
+        if ($paymentMethod === 'request' && !$manualReviewEnabled) {
+            $this->flash('error', 'Manual review is not available. Please select a different payment method.');
+            $this->redirect('/plans/subscribe/' . urlencode($slug));
+            return;
+        }
+
         // Log the request so admin can see it in activity logs
         Logger::activity($userId, 'subscription_requested', [
             'plan_id'   => $plan['id'],
@@ -321,6 +329,14 @@ class PlansController extends BaseController
             'cancel_days' => (int) ($plan['cancel_days'] ?? 0),
             'refund_days' => (int) ($plan['refund_days'] ?? 0),
         ];
+
+        // If manual review is disabled, reject any attempt to use it.
+        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
+        if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) !== 0.0) {
+            $this->flash('error', 'Manual review is not available. Please select a different payment method.');
+            $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+            return;
+        }
 
         if ((float) ($plan['price'] ?? 0) === 0.0) {
             $payment = $this->subscriptionService->createOrReusePayment([

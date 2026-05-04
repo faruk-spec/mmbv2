@@ -33,6 +33,7 @@
             <?= \Core\Security::csrfField() ?>
             <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
                 <?php $defaultPaymentMethod = $paymentSettings['payment_method'] ?? 'request'; ?>
+                <?php $canUseManualReview = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1'; ?>
                 <?php if (!empty($paymentSettings['payment_upi_id'])): ?>
                 <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-secondary);cursor:pointer;">
                     <input type="radio" name="payment_method" value="upi" <?= $defaultPaymentMethod === 'upi' ? 'checked' : '' ?>>
@@ -45,10 +46,12 @@
                     <span><strong>Cashfree</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Hosted checkout payment</span></span>
                 </label>
                 <?php endif; ?>
+                <?php if ($canUseManualReview): ?>
                 <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-secondary);cursor:pointer;">
                     <input type="radio" name="payment_method" value="request" <?= $defaultPaymentMethod === 'request' || empty($paymentSettings['payment_upi_id']) ? 'checked' : '' ?>>
                     <span><strong>Manual Review</strong><br><span style="font-size:.78rem;color:var(--text-secondary);">Admin activates after verification</span></span>
                 </label>
+                <?php endif; ?>
             </div>
             <button type="submit" class="btn btn-primary">Continue to Payment</button>
         </form>
