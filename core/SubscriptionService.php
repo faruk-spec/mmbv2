@@ -180,6 +180,9 @@ class SubscriptionService
             if (!in_array('cancel_requested_at', $cols, true)) {
                 $this->db->query("ALTER TABLE subscription_payments ADD COLUMN `cancel_requested_at` TIMESTAMP NULL AFTER `refund_decided_at`");
             }
+            if (!in_array('payment_session_expires_at', $cols, true)) {
+                $this->db->query("ALTER TABLE subscription_payments ADD COLUMN `payment_session_expires_at` DATETIME NULL DEFAULT NULL AFTER `payment_url`");
+            }
         } catch (\Throwable $e) {
         }
 
@@ -1178,7 +1181,20 @@ class SubscriptionService
             ? 'https://sandbox.cashfree.com/pg/orders'
             : 'https://api.cashfree.com/pg/orders';
 
-        $orderId = 'order_' . strtolower($payment['reference']);
+        // Cashfree payment sessions expire after 60 minutes.  When a payment
+        // already has a provider_order_id (session regeneration after expiry),
+        // append a timestamp suffix to produce a unique order_id and avoid a
+        // 409 conflict from Cashfree's duplicate-order check.
+        $baseOrderId = 'order_' . strtolower((string)$payment['reference']);
+        $orderId = empty($payment['provider_order_id'])
+            ? $baseOrderId
+            : substr($baseOrderId, 0, 30) . '_' . time();
+
+        // Set a 60-minute session expiry for security (prevents stale sessions
+        // from being usable beyond the checkout window).
+        $sessionExpirySeconds = 3600; // 60 minutes
+        $expiryAt = gmdate('Y-m-d\TH:i:s', time() + $sessionExpirySeconds) . '+00:00';
+        $expiryDbAt = gmdate('Y-m-d H:i:s', time() + $sessionExpirySeconds);
 
         // Cashfree requires exactly 10 digits for customer_phone.
         $rawPhone = preg_replace('/\D/', '', (string) ($customer['phone'] ?? ''));
@@ -1194,6 +1210,7 @@ class SubscriptionService
             'order_id' => $orderId,
             'order_amount' => (float) $payment['amount'],
             'order_currency' => (string) $payment['currency'],
+            'order_expiry_time' => $expiryAt,
             'customer_details' => [
                 'customer_id' => 'user_' . (int) $payment['user_id'],
                 // Use ?: so that an empty string also falls back to 'Customer' (Cashfree rejects empty names).
@@ -1237,18 +1254,33 @@ class SubscriptionService
         $paymentUrl = $decoded['payment_link'] ?? $decoded['payment_url'] ?? null;
         $sessionId = $decoded['payment_session_id'] ?? null;
 
-        $this->db->query(
-            "UPDATE subscription_payments
-             SET provider_order_id = ?, provider_payment_session_id = ?, payment_url = ?, payment_payload = ?, updated_at = NOW()
-             WHERE id = ?",
-            [$orderId, $sessionId, $paymentUrl, $response, (int) $payment['id']]
-        );
+        // Persist the session ID, order ID, expiry, and the full Cashfree response.
+        try {
+            $this->db->query(
+                "UPDATE subscription_payments
+                 SET provider_order_id = ?, provider_payment_session_id = ?,
+                     payment_url = ?, payment_payload = ?,
+                     payment_session_expires_at = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$orderId, $sessionId, $paymentUrl, $response, $expiryDbAt, (int) $payment['id']]
+            );
+        } catch (\Throwable $e) {
+            // Column may not exist on older installs; fall back without expiry column.
+            $this->db->query(
+                "UPDATE subscription_payments
+                 SET provider_order_id = ?, provider_payment_session_id = ?,
+                     payment_url = ?, payment_payload = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$orderId, $sessionId, $paymentUrl, $response, (int) $payment['id']]
+            );
+        }
 
         return [
             'success' => true,
             'order_id' => $orderId,
             'payment_session_id' => $sessionId,
             'payment_url' => $paymentUrl,
+            'expires_at' => $expiryDbAt,
             'payload' => $decoded,
         ];
     }

@@ -791,35 +791,54 @@ class MailService
                 $ehloResp = self::smtpRead($socket);
             }
 
-            // AUTH LOGIN (if credentials provided)
+            // AUTH (if credentials provided) — try AUTH LOGIN first, then AUTH PLAIN.
             if ($user !== '') {
+                // ---- AUTH LOGIN ----
                 fwrite($socket, "AUTH LOGIN\r\n");
                 $authResp = self::smtpRead($socket);
                 $authCode = (int)substr(ltrim($authResp), 0, 3);
-                if ($authCode !== 334) {
-                    fclose($socket);
-                    return ['success' => false, 'message' => "AUTH LOGIN not accepted: " . trim($authResp)];
+
+                if ($authCode === 334) {
+                    // Server accepted AUTH LOGIN; send username then password.
+                    fwrite($socket, base64_encode($user) . "\r\n");
+                    $userResp = self::smtpRead($socket);
+                    $userCode = (int)substr(ltrim($userResp), 0, 3);
+                    if ($userCode !== 334) {
+                        fclose($socket);
+                        return ['success' => false, 'message' => "Username rejected: " . trim($userResp)];
+                    }
+
+                    fwrite($socket, base64_encode($pass) . "\r\n");
+                    $passResp = self::smtpRead($socket);
+                    $passCode = (int)substr(ltrim($passResp), 0, 3);
+                    if ($passCode === 235) {
+                        fwrite($socket, "QUIT\r\n");
+                        fclose($socket);
+                        return ['success' => true, 'message' => "Connected and authenticated as $user ✓ (AUTH LOGIN)"];
+                    }
+                    // AUTH LOGIN failed — fall through to try AUTH PLAIN.
+                    Logger::warning("MailService testSmtp: AUTH LOGIN failed ($passResp), trying AUTH PLAIN");
+                } else {
+                    Logger::warning("MailService testSmtp: AUTH LOGIN not accepted ($authResp), trying AUTH PLAIN");
                 }
 
-                fwrite($socket, base64_encode($user) . "\r\n");
-                $userResp = self::smtpRead($socket);
-                $userCode = (int)substr(ltrim($userResp), 0, 3);
-                if ($userCode !== 334) {
+                // ---- AUTH PLAIN fallback ----
+                // Re-send EHLO to reset the auth conversation after the failed LOGIN attempt.
+                fwrite($socket, "EHLO " . gethostname() . "\r\n");
+                self::smtpRead($socket);
+
+                $plainToken = base64_encode("\0" . $user . "\0" . $pass);
+                fwrite($socket, "AUTH PLAIN $plainToken\r\n");
+                $plainResp = self::smtpRead($socket);
+                $plainCode = (int)substr(ltrim($plainResp), 0, 3);
+                if ($plainCode === 235) {
+                    fwrite($socket, "QUIT\r\n");
                     fclose($socket);
-                    return ['success' => false, 'message' => "Username rejected: " . trim($userResp)];
+                    return ['success' => true, 'message' => "Connected and authenticated as $user ✓ (AUTH PLAIN)"];
                 }
 
-                fwrite($socket, base64_encode($pass) . "\r\n");
-                $passResp = self::smtpRead($socket);
-                $passCode = (int)substr(ltrim($passResp), 0, 3);
-                if ($passCode !== 235) {
-                    fclose($socket);
-                    return ['success' => false, 'message' => "Authentication failed: " . trim($passResp)];
-                }
-
-                fwrite($socket, "QUIT\r\n");
                 fclose($socket);
-                return ['success' => true, 'message' => "Connected and authenticated as $user ✓"];
+                return ['success' => false, 'message' => "Authentication failed: " . trim($plainResp)];
             }
 
             fwrite($socket, "QUIT\r\n");

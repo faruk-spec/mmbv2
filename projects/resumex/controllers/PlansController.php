@@ -170,10 +170,40 @@ class PlansController
             exit;
         }
 
+        $settings = $this->getPaymentSettings();
+
+        // Auto-refresh an expired Cashfree session for pending payments.
+        if ($payment['status'] === 'pending'
+            && $payment['gateway'] === 'cashfree'
+            && !empty($payment['provider_payment_session_id'])
+            && !empty($payment['payment_session_expires_at'])
+            && strtotime((string)$payment['payment_session_expires_at']) < time()
+        ) {
+            if (($settings['payment_cashfree_enabled'] ?? '0') === '1'
+                && !empty($settings['payment_cashfree_app_id'])
+                && !empty($settings['payment_cashfree_secret'])
+            ) {
+                $user = Auth::user();
+                $refreshResult = $this->subscriptionService->createCashfreeOrder(
+                    $payment,
+                    $settings,
+                    [
+                        'name'  => $user['name']  ?? 'Customer',
+                        'email' => $user['email'] ?? '',
+                        'phone' => $user['phone'] ?? '9999999999',
+                    ],
+                    $this->buildAbsoluteUrl('/projects/resumex/plans/payment/' . $id . '/return')
+                );
+                if ($refreshResult['success']) {
+                    $payment = $this->subscriptionService->getUserPayment($id, $this->userId) ?? $payment;
+                }
+            }
+        }
+
         $this->render('plans-payment', [
             'title' => 'ResumeX Payment',
             'payment' => $payment,
-            'settings' => $this->getPaymentSettings(),
+            'settings' => $settings,
         ]);
     }
 

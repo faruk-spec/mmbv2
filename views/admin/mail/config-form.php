@@ -215,6 +215,7 @@ function testSmtp() {
         headers: {'X-CSRF-Token': csrfToken},
         body: new URLSearchParams({
             _csrf_token:     csrfToken,
+            id:              data.get('id') || '',
             smtp_host:       data.get('smtp_host'),
             smtp_port:       data.get('smtp_port'),
             smtp_encryption: data.get('smtp_encryption'),

@@ -212,12 +212,33 @@ class MailConfigController extends BaseController
             return;
         }
 
+        $password   = $this->input('smtp_password', '');
+        $providerId = (int)$this->input('id', 0);
+
+        // When editing an existing provider the form password field is left blank
+        // (it shows "••••••••" as a placeholder).  In that case load the stored
+        // encrypted password from the DB and decrypt it for the test.
+        if ($password === '' && $providerId > 0) {
+            try {
+                $db    = Database::getInstance();
+                $saved = $db->fetch(
+                    "SELECT smtp_password FROM mail_provider_configs WHERE id = ? LIMIT 1",
+                    [$providerId]
+                );
+                if ($saved && !empty($saved['smtp_password'])) {
+                    $password = MailService::decryptPassword((string)$saved['smtp_password']);
+                }
+            } catch (\Throwable $e) {
+                // fall through with empty password — testSmtp will report the error
+            }
+        }
+
         $cfg = [
             'smtp_host'       => $this->input('smtp_host', ''),
             'smtp_port'       => (int)$this->input('smtp_port', 587),
             'smtp_encryption' => $this->input('smtp_encryption', 'tls'),
             'smtp_username'   => $this->input('smtp_username', ''),
-            'smtp_password'   => $this->input('smtp_password', ''),
+            'smtp_password'   => $password,
         ];
 
         $result = MailService::testSmtp($cfg);

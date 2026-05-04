@@ -261,6 +261,37 @@ class PlansController extends BaseController
             return;
         }
 
+        // Auto-refresh an expired Cashfree session for pending payments so the
+        // user always lands on a valid checkout instead of a stale/rejected one.
+        if ($payment['status'] === 'pending'
+            && $payment['gateway'] === 'cashfree'
+            && !empty($payment['provider_payment_session_id'])
+            && !empty($payment['payment_session_expires_at'])
+            && strtotime((string)$payment['payment_session_expires_at']) < time()
+        ) {
+            $paymentSettings = $this->subscriptionService->getPaymentSettings();
+            if (($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+                && !empty($paymentSettings['payment_cashfree_app_id'])
+                && !empty($paymentSettings['payment_cashfree_secret'])
+            ) {
+                $user = Auth::user();
+                $refreshResult = $this->subscriptionService->createCashfreeOrder(
+                    $payment,
+                    $paymentSettings,
+                    [
+                        'name'  => $user['name']  ?? 'Customer',
+                        'email' => $user['email'] ?? '',
+                        'phone' => $user['phone'] ?? '9999999999',
+                    ],
+                    $this->buildAbsoluteUrl('/plans/payment/' . (int) $payment['id'] . '/return')
+                );
+                if ($refreshResult['success']) {
+                    // Re-fetch payment so the view gets the fresh session id.
+                    $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id()) ?? $payment;
+                }
+            }
+        }
+
         $this->view('dashboard/plans-payment', [
             'title' => 'Subscription Payment',
             'payment' => $payment,
