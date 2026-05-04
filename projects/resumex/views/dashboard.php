@@ -84,23 +84,6 @@
         color: #fff; border-radius: 20px; padding: 1px 7px;
         font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em;
     }
-    .rx-sidebar-upgrade {
-        margin: auto 12px 0;
-        padding: 14px;
-        background: linear-gradient(135deg, rgba(153,69,255,0.15), rgba(0,240,255,0.08));
-        border: 1px solid rgba(153,69,255,0.25);
-        border-radius: 10px;
-    }
-    .rx-sidebar-upgrade h4 { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-    .rx-sidebar-upgrade p { font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 10px; line-height: 1.4; }
-    .rx-upgrade-btn {
-        display: block; text-align: center; padding: 7px 12px;
-        background: linear-gradient(135deg, var(--purple), var(--cyan));
-        color: #06060a; font-weight: 700; font-size: 0.78rem;
-        border-radius: 7px; text-decoration: none; transition: opacity 0.2s;
-    }
-    .rx-upgrade-btn:hover { opacity: 0.88; text-decoration: none; color: #06060a; }
-
     /* ++ Main */
     .rx-main { flex: 1; padding: 32px 28px; min-width: 0; }
 
@@ -288,7 +271,6 @@
         .rx-sidebar-logo { display: flex; } /* keep logo visible in drawer */
         .rx-nav-section-title { display: block; }
         .rx-nav-link { padding: 10px 16px; font-size: 0.875rem; }
-        .rx-sidebar-upgrade { display: block; }
         .rx-sidebar-toggle { display: flex; }
         .rx-main { padding: 20px 16px; margin-left: 0; width: 100%; }
         .rx-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }

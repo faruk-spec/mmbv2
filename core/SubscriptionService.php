@@ -555,25 +555,37 @@ class SubscriptionService
 
     public function getUserPayment(int $paymentId, int $userId): ?array
     {
-        return $this->db->fetch(
+        $payment = $this->db->fetch(
             "SELECT * FROM subscription_payments WHERE id = ? AND user_id = ? LIMIT 1",
             [$paymentId, $userId]
         ) ?: null;
+
+        if ($payment !== null) {
+            $payment['currency'] = $this->normalizeCurrencyValue($payment['currency'] ?? null);
+        }
+
+        return $payment;
     }
 
     public function getUserPayments(int $userId, ?string $appKey = null): array
     {
+        $rows = [];
         if ($appKey !== null) {
-            return $this->db->fetchAll(
+            $rows = $this->db->fetchAll(
                 "SELECT * FROM subscription_payments WHERE user_id = ? AND app_key = ? ORDER BY id DESC",
                 [$userId, $appKey]
             );
+        } else {
+            $rows = $this->db->fetchAll(
+                "SELECT * FROM subscription_payments WHERE user_id = ? ORDER BY id DESC",
+                [$userId]
+            );
         }
 
-        return $this->db->fetchAll(
-            "SELECT * FROM subscription_payments WHERE user_id = ? ORDER BY id DESC",
-            [$userId]
-        );
+        return array_map(function (array $row): array {
+            $row['currency'] = $this->normalizeCurrencyValue($row['currency'] ?? null);
+            return $row;
+        }, $rows);
     }
 
     public function cancelSubscriptionByPayment(int $paymentId, int $userId): bool
@@ -1366,7 +1378,7 @@ HTML;
     private function normalizePlanRow(string $appKey, array $row): array
     {
         $row['app_key'] = $appKey;
-        $row['currency'] = $row['currency'] ?? 'USD';
+        $row['currency'] = $this->normalizeCurrencyValue($row['currency'] ?? null);
         $row['cancel_days'] = (int) ($row['cancel_days'] ?? 0);
         $row['refund_days'] = (int) ($row['refund_days'] ?? 0);
         if ($appKey === 'whatsapp') {
@@ -1379,7 +1391,7 @@ HTML;
     private function normalizeSubscriptionRow(string $appKey, array $row): array
     {
         $row['app_key'] = $appKey;
-        $row['currency'] = $row['currency'] ?? 'USD';
+        $row['currency'] = $this->normalizeCurrencyValue($row['currency'] ?? null);
         return $row;
     }
 
@@ -1387,5 +1399,11 @@ HTML;
     {
         $decoded = json_decode((string) ($payment['metadata_json'] ?? '{}'), true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function normalizeCurrencyValue(mixed $currency): string
+    {
+        $value = strtoupper(trim((string) $currency));
+        return $value !== '' ? $value : 'USD';
     }
 }
