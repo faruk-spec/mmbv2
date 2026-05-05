@@ -202,7 +202,7 @@ class PlansController extends BaseController
         ]);
 
         // If plan is free (price=0), auto-assign immediately
-        if ((float)$plan['price'] === 0.0) {
+        if ((float)$plan['price'] == 0) {
             try {
                 $payment = $this->subscriptionService->createOrReusePayment([
                     'user_id' => $userId,
@@ -398,13 +398,13 @@ class PlansController extends BaseController
 
         // If manual review is disabled, reject any attempt to use it.
         $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
-        if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) !== 0.0) {
+        if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) > 0) {
             $this->flash('error', 'Manual review is not available. Please select a different payment method.');
             $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
             return;
         }
 
-        if ((float) ($plan['price'] ?? 0) === 0.0) {
+        if ((float) ($plan['price'] ?? 0) == 0) {
             $payment = $this->subscriptionService->createOrReusePayment([
                 'user_id' => Auth::id(),
                 'app_key' => $app,
