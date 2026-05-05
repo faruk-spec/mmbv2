@@ -274,18 +274,31 @@
         <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:18px;">One plan covering multiple applications.</p>
 
         <?php /* $platformPlans is non-empty — loop directly */ ?>
+        <?php
+        // Determine if user has any active PAID platform subscription
+        $userHasPaidActiveSub = false;
+        foreach ($userPlatformSubs as $_aps) {
+            if ((float)($_aps['price'] ?? 0) > 0) { $userHasPaidActiveSub = true; break; }
+        }
+        ?>
         <div class="plan-grid">
         <?php foreach ($platformPlans as $plan):
             $isActive  = in_array($plan['id'], $activePlatformPlanIds);
             $planApps  = $plan['included_apps'] ?? [];
             $planColor = $plan['color'] ?? '#9945ff';
+            $isFree    = ((float)($plan['price'] ?? 0) == 0);
+            // Disable free plan card when user has an active paid plan
+            $isDisabledFree = ($isFree && !$isActive && $userHasPaidActiveSub);
         ?>
-        <div class="plan-card" style="border-color:<?= $isActive ? $planColor : 'var(--border-color)' ?>;" onmouseover="this.style.borderColor='<?= $planColor ?>'" onmouseout="this.style.borderColor='<?= $isActive ? $planColor : 'var(--border-color)' ?>'">
+        <div class="plan-card" style="border-color:<?= $isActive ? $planColor : 'var(--border-color)' ?>;<?= $isDisabledFree ? 'opacity:.5;pointer-events:none;' : '' ?>"
+             <?= !$isDisabledFree ? "onmouseover=\"this.style.borderColor='{$planColor}'\" onmouseout=\"this.style.borderColor='" . ($isActive ? $planColor : 'var(--border-color)') . "'\"" : '' ?>>
             <div class="plan-card-header" style="background:linear-gradient(135deg,<?= $planColor ?>22,<?= $planColor ?>08);">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                     <div style="font-weight:700;font-size:1rem;color:<?= $planColor ?>;"><?= View::e($plan['name']) ?></div>
                     <?php if ($isActive): ?>
                     <span class="sub-badge sub-badge-active">Active</span>
+                    <?php elseif ($isDisabledFree): ?>
+                    <span class="sub-badge" style="background:rgba(120,120,120,.15);color:#888;">Locked</span>
                     <?php endif; ?>
                 </div>
                 <div class="plan-price">
@@ -317,6 +330,16 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     You're subscribed
                 </div>
+                <?php elseif ($isDisabledFree): ?>
+                <div class="plan-cta" style="background:rgba(120,120,120,.12);color:#888;cursor:not-allowed;">
+                    Not available with paid plan
+                </div>
+                <?php elseif ($userHasPaidActiveSub && !$isFree): ?>
+                <a href="/plans/subscribe/<?= urlencode($plan['slug']) ?>"
+                   class="plan-cta"
+                   style="background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>aa);color:#fff;">
+                    Upgrade to <?= View::e($plan['name']) ?> →
+                </a>
                 <?php else: ?>
                 <a href="/plans/subscribe/<?= urlencode($plan['slug']) ?>"
                    class="plan-cta"

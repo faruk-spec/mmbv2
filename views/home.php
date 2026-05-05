@@ -598,7 +598,7 @@ if ($showStats):
             $projectName = $project['name'] ?? '';
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
-            $projectTier = $project['tier'] ?? 'free';
+            $projectTier = strtolower(trim($project['tier'] ?? 'free'));
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
             $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;

@@ -175,6 +175,8 @@ class QRFeatureService
      */
     private function getPlanFeatures(int $userId): array
     {
+        $hadActiveSubscription = false;
+
         // Try active subscription first.
         try {
             $row = $this->db->fetch(
@@ -186,10 +188,19 @@ class QRFeatureService
                  LIMIT 1",
                 [$userId]
             );
+            if ($row !== null) {
+                $hadActiveSubscription = true;
+            }
         } catch (\Exception $e) {
             // Table may not exist yet on this install — fall through to default plan.
             Logger::error('QRFeatureService::getPlanFeatures subscription query error: ' . $e->getMessage());
             $row = null;
+        }
+
+        // If user had an active subscription but features JSON is empty/null, deny
+        // all premium features rather than falling through to permissive defaults.
+        if ($hadActiveSubscription && (!$row || empty($row['features']))) {
+            return array_fill_keys(self::ALL_FEATURES, false);
         }
 
         // No active subscription — use the default plan (is_default = 1).

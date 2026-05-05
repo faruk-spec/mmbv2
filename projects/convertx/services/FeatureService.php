@@ -47,13 +47,14 @@ class FeatureService
     public function can(int $userId, string $featureKey): bool
     {
         $features = $this->getFeatures($userId);
-        return (bool) ($features[$featureKey] ?? true);
+        return (bool) ($features[$featureKey] ?? false);
     }
 
     private function getPlanFeatures(int $userId): array
     {
         $allKeys = array_keys($this->getDefaultFeatures());
         $features = [];
+        $hadActiveSubscription = false;
 
         try {
             // Prefer explicit ConvertX subscription assignment
@@ -66,11 +67,20 @@ class FeatureService
                  LIMIT 1",
                 ['uid' => $userId]
             );
-            if ($row && !empty($row['features'])) {
-                $features = json_decode((string) $row['features'], true) ?: [];
+            if ($row !== null) {
+                $hadActiveSubscription = true;
+                if (!empty($row['features'])) {
+                    $features = json_decode((string) $row['features'], true) ?: [];
+                }
             }
         } catch (\Exception $e) {
             // ignore
+        }
+
+        // User has an active subscription but the plan has no features configured —
+        // return a restrictive set rather than falling through to permissive defaults.
+        if ($hadActiveSubscription && empty($features)) {
+            return array_fill_keys($allKeys, false);
         }
 
         if (empty($features)) {
