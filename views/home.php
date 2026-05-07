@@ -580,6 +580,13 @@ if ($showStats):
             foreach ($_allDbRows as $_row) {
                 $_dbKeys[] = $_row['project_key'];
                 if ((int) $_row['is_enabled'] === 1) {
+                    // When the DB tier is still the default 'free', use the config tier
+                    // as the canonical source so the homepage filter works even on
+                    // installs that have not yet run the add_project_tier migration.
+                    $dbTier = strtolower(trim((string)($_row['tier'] ?? 'free')));
+                    if ($dbTier === 'free' && isset($_configProjects[$_row['project_key']]['tier'])) {
+                        $_row['tier'] = $_configProjects[$_row['project_key']]['tier'];
+                    }
                     $projects[$_row['project_key']] = $_row;
                 }
             }

@@ -2488,7 +2488,7 @@ window.mmbSkeleton = (function(){
                 $hpFooterSettings[$fk] = $fr['value'] ?? '';
             }
         }
-        $hpFooterEnabled = $hpFooterSettings['hp_footer_enabled'] ?? '0';
+        $hpFooterEnabled = $hpFooterSettings['hp_footer_enabled'] ?? '1';
     } catch (\Exception $e) {}
 
     // Detect if we're on the homepage

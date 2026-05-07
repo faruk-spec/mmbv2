@@ -483,8 +483,8 @@ class SettingsController extends BaseController
                     `is_enabled` TINYINT(1) NOT NULL DEFAULT 1,
                     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-                    INDEX `idx_area_enabled` (`area`, `is_enabled`),
-                    INDEX `idx_sort` (`sort_order`)
+                    INDEX `idx_footer_links_area_sort` (`area`, `sort_order`),
+                    INDEX `idx_footer_links_enabled` (`is_enabled`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
         } catch (\Exception $e) {
