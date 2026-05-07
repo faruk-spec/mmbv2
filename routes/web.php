@@ -50,6 +50,10 @@ $router->post('/auth/{provider}/unlink', 'SocialOAuthController@unlink', ['auth'
 $router->get('/dashboard', 'DashboardController@index', ['auth']);
 $router->get('/profile', 'DashboardController@profile', ['auth']);
 $router->post('/profile', 'DashboardController@updateProfile', ['auth']);
+$router->post('/profile/send-phone-otp', 'DashboardController@sendPhoneOtp', ['auth']);
+$router->post('/profile/verify-phone', 'DashboardController@verifyPhoneOtp', ['auth']);
+$router->get('/complete-profile', 'DashboardController@completeProfile', ['auth']);
+$router->post('/complete-profile', 'DashboardController@saveCompleteProfile', ['auth']);
 $router->get('/security', 'DashboardController@security', ['auth']);
 $router->post('/security/set-password', 'DashboardController@setPassword', ['auth']);
 $router->post('/security/password', 'DashboardController@updatePassword', ['auth']);
@@ -82,6 +86,8 @@ $router->post('/mail/star', 'MailController@star', ['auth']);
 $router->post('/mail/sync', 'MailController@sync', ['auth']);
 
 // Plans & Subscriptions
+$router->get('/billing-details', 'BillingController@show', ['auth']);
+$router->post('/billing-details', 'BillingController@save', ['auth']);
 $router->get('/plans', 'PlansController@index', ['auth']);
 $router->get('/plans/project/{app}/invoice/{id}', 'PlansController@appInvoice', ['auth']);
 $router->get('/plans/subscribe/{slug}', 'PlansController@subscribe', ['auth']);

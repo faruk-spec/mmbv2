@@ -69,6 +69,33 @@ class SubscriptionPaymentsController extends BaseController
         $this->redirect('/admin/subscription-payments');
     }
 
+    public function cancelPlan(string $id): void
+    {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/admin/subscription-payments');
+            return;
+        }
+
+        $db = Database::getInstance();
+        $payment = $db->fetch("SELECT * FROM subscription_payments WHERE id = ?", [(int) $id]);
+        if (!$payment) {
+            $this->flash('error', 'Payment not found.');
+            $this->redirect('/admin/subscription-payments');
+            return;
+        }
+
+        // Cancel the subscription row in the app's own table
+        $result = $this->subscriptionService->adminCancelSubscription((int) $id, Auth::id());
+        if ($result) {
+            $this->flash('success', 'Subscription cancelled successfully.');
+        } else {
+            $this->flash('error', 'Unable to cancel subscription.');
+        }
+
+        $this->redirect('/admin/subscription-payments');
+    }
+
     public function refund(string $id): void
     {
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {

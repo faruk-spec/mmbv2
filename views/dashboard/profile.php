@@ -98,7 +98,42 @@
                                style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease;"
                                value="<?= View::e($user['phone'] ?? '') ?>" placeholder="+1 234 567 8900">
                     </div>
-                    
+                    <?php
+                    $phoneVerified = !empty($user['phone_verified_at']);
+                    $hasPhone = !empty(trim($user['phone'] ?? ''));
+                    ?>
+                    <?php if ($hasPhone): ?>
+                    <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+                        <?php if ($phoneVerified): ?>
+                            <span style="color:var(--green);font-size:.85rem;display:flex;align-items:center;gap:6px;">
+                                <i class="fas fa-check-circle"></i> Verified
+                            </span>
+                        <?php else: ?>
+                            <span style="color:#ff9800;font-size:.85rem;display:flex;align-items:center;gap:6px;">
+                                <i class="fas fa-exclamation-circle"></i> Not verified
+                            </span>
+                            <button type="button" id="sendPhoneOtpBtn" onclick="sendPhoneOtp()"
+                                    style="padding:5px 14px;border:1px solid var(--cyan);color:var(--cyan);background:transparent;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:600;">
+                                Verify Phone
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (!$phoneVerified): ?>
+                    <div id="phoneOtpSection" style="display:none;margin-top:12px;padding:14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;">
+                        <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 10px;">Enter the 6-digit code sent to your email:</p>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="text" id="phoneOtpInput" maxlength="6" placeholder="000000"
+                                   style="width:140px;padding:9px 14px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:1rem;letter-spacing:.2em;text-align:center;">
+                            <button type="button" onclick="verifyPhoneOtp()"
+                                    style="padding:9px 18px;background:var(--cyan);color:#06060a;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.85rem;">
+                                Confirm
+                            </button>
+                        </div>
+                        <div id="otpMessage" style="margin-top:8px;font-size:.82rem;"></div>
+                    </div>
+                    <?php endif; ?>
+                    <?php endif; ?>
+
                     <div class="form-group" style="margin-bottom: 12px;">
                         <label class="form-label" for="bio" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
@@ -235,4 +270,45 @@
         }
     }
 </style>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+<script>
+var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+function sendPhoneOtp() {
+    var btn = document.getElementById('sendPhoneOtpBtn');
+    if (btn) btn.disabled = true;
+    fetch('/profile/send-phone-otp', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRF-Token':csrfToken},
+        body: '_csrf_token=' + encodeURIComponent(csrfToken)
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success) {
+            document.getElementById('phoneOtpSection').style.display = 'block';
+            document.getElementById('otpMessage').innerHTML = '<span style="color:var(--green);">' + d.message + '</span>';
+        } else {
+            if (btn) btn.disabled = false;
+            var msgEl = document.getElementById('otpMessage');
+            if (msgEl) msgEl.innerHTML = '<span style="color:var(--red);">' + d.message + '</span>';
+        }
+    }).catch(function() { if (btn) btn.disabled = false; });
+}
+function verifyPhoneOtp() {
+    var otp = document.getElementById('phoneOtpInput').value.trim();
+    if (!otp) return;
+    fetch('/profile/verify-phone', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded','X-CSRF-Token':csrfToken},
+        body: '_csrf_token=' + encodeURIComponent(csrfToken) + '&otp=' + encodeURIComponent(otp)
+    }).then(function(r) { return r.json(); }).then(function(d) {
+        var msgEl = document.getElementById('otpMessage');
+        if (d.success) {
+            msgEl.innerHTML = '<span style="color:var(--green);"><i class="fas fa-check"></i> ' + d.message + '</span>';
+            setTimeout(function() { location.reload(); }, 1500);
+        } else {
+            msgEl.innerHTML = '<span style="color:var(--red);">' + d.message + '</span>';
+        }
+    });
+}
+</script>
 <?php View::endSection(); ?>

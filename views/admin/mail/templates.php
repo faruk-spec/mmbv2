@@ -76,6 +76,10 @@
                         <a href="/admin/mail/templates/edit?id=<?= $tpl['id'] ?>" class="btn btn-sm btn-primary">
                             <i class="fas fa-edit"></i> Edit
                         </a>
+                        <button class="btn btn-sm btn-secondary" style="margin-left:4px;"
+                                onclick="sendTestTemplate(<?= $tpl['id'] ?>, '<?= View::e($tpl['slug']) ?>')">
+                            <i class="fas fa-paper-plane"></i> Test
+                        </button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -98,6 +102,26 @@ function toggleTemplate(id, btn) {
             btn.innerHTML = d.enabled ? '<i class="fas fa-check"></i> Enabled' : 'Disabled';
         }
     });
+}
+
+function sendTestTemplate(id, slug) {
+    const to = prompt('Send test email for "' + slug + '" to (enter email address):');
+    if (!to || !to.includes('@')) return;
+
+    fetch('/admin/mail/templates/send-test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrfToken},
+        body: '_csrf_token=' + encodeURIComponent(csrfToken) + '&id=' + id + '&to=' + encodeURIComponent(to)
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert('✅ ' + d.message);
+        } else {
+            alert('❌ ' + d.message);
+        }
+    })
+    .catch(() => alert('❌ Request failed. Check server logs.'));
 }
 </script>
 

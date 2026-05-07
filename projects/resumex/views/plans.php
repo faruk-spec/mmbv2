@@ -178,13 +178,18 @@
                 </div>
             <?php else: ?>
             <div class="rx-plan-grid">
-            <?php foreach ($plans as $plan): ?>
+            <?php
+            // Determine if user has any active PAID subscription
+            $hasPaidActiveSub = $currentSub && (float)($currentSub['price'] ?? 0) > 0;
+            foreach ($plans as $plan): ?>
                 <?php
                 $isActive = $currentSub && $currentSub['plan_slug'] === $plan['slug'];
                 $planColor = '#9945ff';
                 $price = (float) $plan['price'];
                 $cur = htmlspecialchars($plan['currency'] ?? 'USD');
                 $features = json_decode($plan['features'] ?? '{}', true) ?: [];
+                $isFree   = ($price == 0);
+                $isLocked = $isFree && !$isActive && $hasPaidActiveSub;
                 $featureLabels = [
                     'unlimited_resumes' => 'Unlimited Resumes',
                     'pdf_export' => 'PDF Export',
@@ -195,12 +200,15 @@
                     'public_sharing' => 'Public Sharing',
                 ];
                 ?>
-                <div class="rx-plan-card" style="border-color:<?= $isActive ? '#00ff88' : 'var(--border-color)' ?>;" onmouseover="this.style.borderColor='<?= $planColor ?>'" onmouseout="this.style.borderColor='<?= $isActive ? '#00ff88' : 'var(--border-color)' ?>'">
+                <div class="rx-plan-card" style="border-color:<?= $isActive ? '#00ff88' : 'var(--border-color)' ?>;<?= $isLocked ? 'opacity:.5;pointer-events:none;' : '' ?>"
+                     <?= !$isLocked ? "onmouseover=\"this.style.borderColor='{$planColor}'\" onmouseout=\"this.style.borderColor='" . ($isActive ? '#00ff88' : 'var(--border-color)') . "'\"" : '' ?>>
                     <div class="rx-plan-header" style="background:linear-gradient(135deg,<?= $planColor ?>22,<?= $planColor ?>08);">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                             <div style="font-weight:700;font-size:1rem;color:<?= $planColor ?>;"><?= htmlspecialchars($plan['name']) ?></div>
                             <?php if ($isActive): ?>
                             <span style="background:rgba(0,255,136,.12);color:var(--green);padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;">Active</span>
+                            <?php elseif ($isLocked): ?>
+                            <span style="background:rgba(120,120,120,.15);color:#888;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;">Locked</span>
                             <?php endif; ?>
                         </div>
                         <div class="rx-plan-price">
@@ -223,9 +231,17 @@
                         <div class="rx-plan-cta rx-plan-cta-active" style="margin-top:16px;">
                             <i class="fas fa-check"></i> Current Plan
                         </div>
+                        <?php elseif ($isLocked): ?>
+                        <div class="rx-plan-cta" style="background:rgba(120,120,120,.12);color:#888;cursor:not-allowed;margin-top:16px;">
+                            Not available with paid plan
+                        </div>
+                        <?php elseif ($hasPaidActiveSub && !$isFree): ?>
+                        <a href="/projects/resumex/plans/<?= urlencode($plan['slug']) ?>" class="rx-plan-cta" style="background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>bb);color:#fff;margin-top:16px;">
+                            Upgrade &rarr;
+                        </a>
                         <?php else: ?>
                         <a href="/projects/resumex/plans/<?= urlencode($plan['slug']) ?>" class="rx-plan-cta" style="background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>bb);color:#fff;margin-top:16px;">
-                            <?= $price == 0 ? 'Activate Free' : 'Subscribe &rarr;' ?>
+                            <?= $isFree ? 'Activate Free' : 'Subscribe &rarr;' ?>
                         </a>
                         <?php endif; ?>
                     </div>

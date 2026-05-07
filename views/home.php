@@ -222,12 +222,38 @@
             grid-template-columns: 1fr;
         }
 
+        .hero-grid {
+            grid-template-columns: 1fr !important;
+        }
+
         .hero h1 {
             font-size: 1.8rem !important;
         }
 
         .hero h2 {
             font-size: 1.2rem !important;
+        }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .hero-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .grid-4 {
+            grid-template-columns: 1fr 1fr;
+        }
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (min-width: 1025px) {
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
         }
     }
 </style>
@@ -283,7 +309,7 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
 ?>
 
 <div class="hero" style="padding: 50px 20px; max-width: 1400px; margin: 0 auto;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+    <div class="hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
         <!-- Left side: Text content -->
         <div style="text-align: left;">
             <h1 style="font-size: 2.5rem; margin-bottom: 16px; background: linear-gradient(135deg, var(--cyan), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;">
@@ -572,7 +598,7 @@ if ($showStats):
             $projectName = $project['name'] ?? '';
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
-            $projectTier = $project['tier'] ?? 'free';
+            $projectTier = strtolower(trim($project['tier'] ?? 'free'));
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
             $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;

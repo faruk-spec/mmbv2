@@ -59,7 +59,16 @@ class PlansController extends BaseController
         // ── User's active platform subscription(s) ────────────────────────────
         $userPlatformSubs = $this->getUserPlatformSubscriptions($userId);
         $platformHistory = $this->getPlatformSubscriptionHistory($userId);
-        $paymentHistory = $this->subscriptionService->getUserPayments($userId);
+
+        // ── Payment History — paginated ───────────────────────────────────────
+        $payPerPage  = 10;
+        $payPage     = max(1, (int) ($_GET['pay_page'] ?? 1));
+        $allPayments = $this->subscriptionService->getUserPayments($userId);
+        $payTotal    = count($allPayments);
+        $payTotalPages = (int) ceil($payTotal / $payPerPage);
+        $payPage     = min($payPage, max(1, $payTotalPages));
+        $paymentHistory = array_slice($allPayments, ($payPage - 1) * $payPerPage, $payPerPage);
+
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
 
         // Map plan_id → subscription so the view can check if a plan is active
@@ -87,7 +96,11 @@ class PlansController extends BaseController
             'userPlatformSubs'      => $userPlatformSubs,
             'activePlatformPlanIds' => $activePlatformPlanIds,
             'platformHistory'       => $platformHistory,
+            'allPayments'           => $allPayments,
             'paymentHistory'        => $paymentHistory,
+            'payPage'               => $payPage,
+            'payTotalPages'         => $payTotalPages,
+            'payTotal'              => $payTotal,
             'paymentSettings'       => $paymentSettings,
             'appMeta'               => self::APP_META,
             'contactEmail'          => $contactEmail,
@@ -113,11 +126,27 @@ class PlansController extends BaseController
         $plan['included_apps'] = json_decode($plan['included_apps'] ?? '[]', true) ?: [];
         $plan['app_features']  = json_decode($plan['app_features']  ?? '{}', true) ?: [];
 
+        if (!$this->checkSubscriptionPrerequisites('/plans/subscribe/' . urlencode($slug))) {
+            return;
+        }
+
         // Check if user already has this plan
         $existing = null;
         try {
             $existing = $this->db->fetch(
                 "SELECT * FROM platform_user_subscriptions WHERE user_id = ? AND plan_id = ? AND status = 'active'",
+                [$userId, $plan['id']]
+            );
+        } catch (\Exception $e) {}
+
+        // Cross-check: any active platform plan (different from the one being purchased)
+        $activePlanConflict = null;
+        try {
+            $activePlanConflict = $this->db->fetch(
+                "SELECT s.*, p.name AS plan_name FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active' AND s.plan_id != ?
+                 LIMIT 1",
                 [$userId, $plan['id']]
             );
         } catch (\Exception $e) {}
@@ -129,6 +158,7 @@ class PlansController extends BaseController
             'plan'     => $plan,
             'appMeta'  => self::APP_META,
             'existing' => $existing,
+            'activePlanConflict' => $activePlanConflict,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
         ]);
     }
@@ -155,6 +185,14 @@ class PlansController extends BaseController
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
         $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
 
+        // If manual review is disabled, reject any attempt to use it.
+        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
+        if ($paymentMethod === 'request' && !$manualReviewEnabled) {
+            $this->flash('error', 'Manual review is not available. Please select a different payment method.');
+            $this->redirect('/plans/subscribe/' . urlencode($slug));
+            return;
+        }
+
         // Log the request so admin can see it in activity logs
         Logger::activity($userId, 'subscription_requested', [
             'plan_id'   => $plan['id'],
@@ -163,8 +201,29 @@ class PlansController extends BaseController
             'message'   => $message,
         ]);
 
-        // If plan is free (price=0), auto-assign immediately
-        if ((float)$plan['price'] === 0.0) {
+        // If plan is free (price=0), auto-assign immediately — but only if user has no active paid plan
+        if ((float)$plan['price'] == 0) {
+            // Cross-verification: block free plan activation when user has an active paid platform plan
+            $hasPaidPlan = false;
+            try {
+                $paid = $this->db->fetch(
+                    "SELECT s.id FROM platform_user_subscriptions s
+                     JOIN platform_plans p ON p.id = s.plan_id
+                     WHERE s.user_id = ? AND s.status = 'active'
+                     AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                     AND p.price > 0
+                     LIMIT 1",
+                    [$userId]
+                );
+                $hasPaidPlan = $paid !== null;
+            } catch (\Exception $e) {}
+
+            if ($hasPaidPlan) {
+                $this->flash('error', 'You already have an active paid plan. Free plans are not available while a paid plan is active.');
+                $this->redirect('/plans');
+                return;
+            }
+
             try {
                 $payment = $this->subscriptionService->createOrReusePayment([
                     'user_id' => $userId,
@@ -253,6 +312,37 @@ class PlansController extends BaseController
             return;
         }
 
+        // Auto-refresh an expired Cashfree session for pending payments so the
+        // user always lands on a valid checkout instead of a stale/rejected one.
+        if ($payment['status'] === 'pending'
+            && $payment['gateway'] === 'cashfree'
+            && !empty($payment['provider_payment_session_id'])
+            && !empty($payment['payment_session_expires_at'])
+            && strtotime((string)$payment['payment_session_expires_at']) < time()
+        ) {
+            $paymentSettings = $this->subscriptionService->getPaymentSettings();
+            if (($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+                && !empty($paymentSettings['payment_cashfree_app_id'])
+                && !empty($paymentSettings['payment_cashfree_secret'])
+            ) {
+                $user = Auth::user();
+                $refreshResult = $this->subscriptionService->createCashfreeOrder(
+                    $payment,
+                    $paymentSettings,
+                    [
+                        'name'  => $user['name']  ?? 'Customer',
+                        'email' => $user['email'] ?? '',
+                        'phone' => $user['phone'] ?? '9999999999',
+                    ],
+                    $this->buildAbsoluteUrl('/plans/payment/' . (int) $payment['id'] . '/return')
+                );
+                if ($refreshResult['success']) {
+                    // Re-fetch payment so the view gets the fresh session id.
+                    $payment = $this->subscriptionService->getUserPayment((int) $id, Auth::id()) ?? $payment;
+                }
+            }
+        }
+
         $this->view('dashboard/plans-payment', [
             'title' => 'Subscription Payment',
             'payment' => $payment,
@@ -289,6 +379,11 @@ class PlansController extends BaseController
         }
 
         $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
+
+        if (!$this->checkSubscriptionPrerequisites('/plans/project/' . urlencode($app) . '/' . urlencode($slug))) {
+            return;
+        }
+
         $this->view('dashboard/app-plan-subscribe', [
             'title' => 'Subscribe to ' . ucfirst($app) . ' Plan',
             'plan' => $plan,
@@ -322,7 +417,43 @@ class PlansController extends BaseController
             'refund_days' => (int) ($plan['refund_days'] ?? 0),
         ];
 
-        if ((float) ($plan['price'] ?? 0) === 0.0) {
+        // If manual review is disabled, reject any attempt to use it.
+        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
+        if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) > 0) {
+            $this->flash('error', 'Manual review is not available. Please select a different payment method.');
+            $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+            return;
+        }
+
+        if ((float) ($plan['price'] ?? 0) == 0) {
+            // Cross-verification: block free plan if user already has active paid plan for same app
+            $hasPaidAppPlan = false;
+            try {
+                $tableMap = [
+                    'resumex'  => ['table' => 'resumex_user_subscriptions',  'plan_table' => 'resumex_subscription_plans'],
+                    'convertx' => ['table' => 'convertx_user_subscriptions', 'plan_table' => 'convertx_subscription_plans'],
+                    'whatsapp' => ['table' => 'whatsapp_user_subscriptions', 'plan_table' => 'whatsapp_subscription_plans'],
+                ];
+                if (isset($tableMap[$app])) {
+                    $t  = $tableMap[$app]['table'];
+                    $pt = $tableMap[$app]['plan_table'];
+                    $paid = $this->db->fetch(
+                        "SELECT s.id FROM {$t} s JOIN {$pt} p ON p.id = s.plan_id
+                         WHERE s.user_id = ? AND s.status = 'active'
+                         AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                         AND p.price > 0 LIMIT 1",
+                        [Auth::id()]
+                    );
+                    $hasPaidAppPlan = $paid !== null;
+                }
+            } catch (\Exception $e) {}
+
+            if ($hasPaidAppPlan) {
+                $this->flash('error', 'You already have an active paid plan for this app. Free plans are not available while a paid plan is active.');
+                $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+                return;
+            }
+
             $payment = $this->subscriptionService->createOrReusePayment([
                 'user_id' => Auth::id(),
                 'app_key' => $app,
@@ -815,5 +946,73 @@ class PlansController extends BaseController
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $scheme . '://' . $host . $path;
+    }
+
+    /**
+     * Check that the user meets all prerequisites before subscribing to a plan.
+     *
+     * Verifies (in order):
+     * 1. Email is verified (email_verified_at set on the users table).
+     * 2. Phone is verified when the admin has enabled require_mobile_verification.
+     * 3. Billing details are fully completed.
+     *
+     * If any check fails the user is redirected to the appropriate page and false
+     * is returned; the caller should immediately return on false.
+     *
+     * @param string $returnPath The URL path to redirect back to after completing prerequisites.
+     * @return bool True if all prerequisites are satisfied.
+     */
+    private function checkSubscriptionPrerequisites(string $returnPath): bool
+    {
+        $db = $this->db;
+        $userId = Auth::id();
+
+        // 1. Email must be verified
+        $user = $db->fetch("SELECT email_verified_at FROM users WHERE id = ?", [$userId]);
+        if (empty($user['email_verified_at'])) {
+            $this->flash('error', 'Please verify your email address before subscribing. Check your inbox for the verification link, or go to your profile to resend it.');
+            $this->redirect('/profile');
+            return false;
+        }
+
+        // 2. Mobile verification (if admin requires it)
+        $requireMobile = '0';
+        try {
+            $row = $db->fetch("SELECT value FROM settings WHERE `key` = 'require_mobile_verification'");
+            if ($row) $requireMobile = $row['value'];
+        } catch (\Throwable $e) {}
+
+        if ($requireMobile === '1') {
+            $profile = $db->fetch("SELECT phone_verified_at FROM user_profiles WHERE user_id = ?", [$userId]);
+            if (empty($profile['phone_verified_at'])) {
+                $this->flash('error', 'Please verify your phone number before subscribing. Go to Profile to verify.');
+                $this->redirect('/profile');
+                return false;
+            }
+        }
+
+        // 3. Billing details must be complete
+        try {
+            $billing = $db->fetch(
+                "SELECT full_name, email, phone, address_line1, city, state, postal_code, country FROM user_billing_details WHERE user_id = ?",
+                [$userId]
+            );
+            $billingComplete = $billing
+                && !empty($billing['full_name']) && !empty($billing['email'])
+                && !empty($billing['phone']) && !empty($billing['address_line1'])
+                && !empty($billing['city']) && !empty($billing['state'])
+                && !empty($billing['postal_code']) && !empty($billing['country']);
+        } catch (\Throwable $e) {
+            $billingComplete = false;
+        }
+
+        if (!$billingComplete) {
+            $_SESSION['billing_next'] = $returnPath;
+            $this->flash('info', 'Please complete your billing details before subscribing.');
+            $this->redirect('/billing-details?next=' . urlencode($returnPath));
+            return false;
+        }
+
+        return true;
     }
 }

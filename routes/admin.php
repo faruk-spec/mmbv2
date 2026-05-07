@@ -248,6 +248,8 @@ $router->post('/admin/navbar/reset', 'Admin\\NavbarController@reset', ['auth', '
 // Settings
 $router->get('/admin/settings', 'Admin\\SettingsController@index', ['auth', 'admin']);
 $router->post('/admin/settings', 'Admin\\SettingsController@update', ['auth', 'admin']);
+$router->post('/admin/settings/footer', 'Admin\\SettingsController@updateFooter', ['auth', 'admin']);
+$router->post('/admin/settings/homepage-footer', 'Admin\\SettingsController@updateHomepageFooter', ['auth', 'admin']);
 $router->post('/admin/settings/upload-logo', 'Admin\\SettingsController@uploadLogo', ['auth', 'admin']);
 $router->post('/admin/settings/delete-logo', 'Admin\\SettingsController@deleteLogo', ['auth', 'admin']);
 $router->get('/admin/settings/session', 'Admin\\SettingsController@session', ['auth', 'admin']);
@@ -346,6 +348,7 @@ $router->get('/admin/mail/templates/edit', 'Admin\\MailConfigController@editTemp
 $router->post('/admin/mail/templates/update', 'Admin\\MailConfigController@updateTemplate', ['auth', 'admin']);
 $router->post('/admin/mail/templates/toggle', 'Admin\\MailConfigController@toggleTemplate', ['auth', 'admin']);
 $router->post('/admin/mail/templates/set-provider', 'Admin\\MailConfigController@setTemplateProvider', ['auth', 'admin']);
+$router->post('/admin/mail/templates/send-test', 'Admin\\MailConfigController@sendTestTemplate', ['auth', 'admin']);
 $router->get('/admin/mail/logs', 'Admin\\MailConfigController@logs', ['auth', 'admin']);
 // Mail user access management
 $router->get('/admin/mail/access', 'Admin\\MailAccessController@index', ['auth', 'admin']);
@@ -507,3 +510,4 @@ $router->get('/admin/subscription-payments', 'Admin\\SubscriptionPaymentsControl
 $router->post('/admin/subscription-payments/{id}/approve', 'Admin\\SubscriptionPaymentsController@approve', ['auth', 'admin']);
 $router->post('/admin/subscription-payments/{id}/reject', 'Admin\\SubscriptionPaymentsController@reject', ['auth', 'admin']);
 $router->post('/admin/subscription-payments/{id}/refund', 'Admin\\SubscriptionPaymentsController@refund', ['auth', 'admin']);
+$router->post('/admin/subscription-payments/{id}/cancel-plan', 'Admin\\SubscriptionPaymentsController@cancelPlan', ['auth', 'admin']);

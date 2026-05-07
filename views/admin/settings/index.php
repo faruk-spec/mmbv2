@@ -208,6 +208,94 @@
             </form>
         </div>
 
+        <div class="card" style="margin-top:16px;">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-shoe-prints" style="margin-right:8px;color:var(--cyan);"></i> Footer Settings</h4>
+            <form method="POST" action="/admin/settings/footer">
+                <?= \Core\Security::csrfField() ?>
+
+                <div class="form-group">
+                    <label class="form-label">Footer Tagline</label>
+                    <input type="text" name="footer_tagline" class="form-input"
+                           value="<?= View::e($settings['footer_tagline'] ?? '') ?>"
+                           placeholder="Your tools, all in one place.">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Footer Copyright Text</label>
+                    <input type="text" name="footer_copyright" class="form-input"
+                           value="<?= View::e($settings['footer_copyright'] ?? '') ?>"
+                           placeholder="Leave blank to use default: © YEAR APP_NAME">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Social Links</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <label style="font-size:.8rem;">Twitter/X URL</label>
+                            <input type="url" name="footer_social_twitter" class="form-input" value="<?= View::e($settings['footer_social_twitter'] ?? '') ?>" placeholder="https://twitter.com/...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;">GitHub URL</label>
+                            <input type="url" name="footer_social_github" class="form-input" value="<?= View::e($settings['footer_social_github'] ?? '') ?>" placeholder="https://github.com/...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;">LinkedIn URL</label>
+                            <input type="url" name="footer_social_linkedin" class="form-input" value="<?= View::e($settings['footer_social_linkedin'] ?? '') ?>" placeholder="https://linkedin.com/...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8rem;">YouTube URL</label>
+                            <input type="url" name="footer_social_youtube" class="form-input" value="<?= View::e($settings['footer_social_youtube'] ?? '') ?>" placeholder="https://youtube.com/...">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-checkbox">
+                        <input type="checkbox" name="footer_show_social" value="1"
+                               <?= ($settings['footer_show_social'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span>Show Social Links in Footer</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Footer Settings</button>
+            </form>
+        </div>
+
+        <!-- Homepage 3-Column Footer -->
+        <div class="card">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-columns" style="margin-right:8px;color:var(--cyan);"></i> Homepage 3-Column Footer</h4>
+            <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:14px;">Manage the rich 3-column footer shown on the home page. Dashboard, profile, and project pages use the simple single-line footer above.</p>
+            <form method="POST" action="/admin/settings/homepage-footer">
+                <?= \Core\Security::csrfField() ?>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="hp_footer_enabled" value="1" <?= ($settings['hp_footer_enabled'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        <span>Enable homepage 3-column footer</span>
+                    </label>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:12px;">
+                    <div>
+                        <label class="form-label">Column 1 — Heading</label>
+                        <input type="text" name="hp_footer_col1_heading" class="form-input" value="<?= \Core\View::e($settings['hp_footer_col1_heading'] ?? 'About Us') ?>" placeholder="About Us">
+                        <label class="form-label" style="margin-top:8px;">Column 1 — Body Text</label>
+                        <textarea name="hp_footer_col1_text" class="form-input" rows="3" placeholder="Short description..."><?= \Core\View::e($settings['hp_footer_col1_text'] ?? '') ?></textarea>
+                    </div>
+                    <div>
+                        <label class="form-label">Column 2 — Heading</label>
+                        <input type="text" name="hp_footer_col2_heading" class="form-input" value="<?= \Core\View::e($settings['hp_footer_col2_heading'] ?? 'Quick Links') ?>" placeholder="Quick Links">
+                        <p style="color:var(--text-secondary);font-size:.8rem;margin-top:6px;">Column 2 links come from published pages with <strong>Show Footer</strong> enabled. Manage them in <a href="/admin/pages" style="color:var(--cyan);">Admin Pages</a>.</p>
+                    </div>
+                    <div>
+                        <label class="form-label">Column 3 — Heading</label>
+                        <input type="text" name="hp_footer_col3_heading" class="form-input" value="<?= \Core\View::e($settings['hp_footer_col3_heading'] ?? 'Contact') ?>" placeholder="Contact">
+                        <label class="form-label" style="margin-top:8px;">Column 3 — Body Text</label>
+                        <textarea name="hp_footer_col3_text" class="form-input" rows="3" placeholder="Address, email, etc."><?= \Core\View::e($settings['hp_footer_col3_text'] ?? '') ?></textarea>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top:12px;">
+                    <label class="form-label">Bottom Bar Text (overrides default copyright)</label>
+                    <input type="text" name="hp_footer_bottom_text" class="form-input" value="<?= \Core\View::e($settings['hp_footer_bottom_text'] ?? '') ?>" placeholder="© 2025 YourBrand. All rights reserved.">
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:6px;"><i class="fas fa-save"></i> Save Homepage Footer</button>
+            </form>
+        </div>
+
         <div class="card">
             <h4 style="margin-bottom: 15px;">Quick Actions</h4>
             

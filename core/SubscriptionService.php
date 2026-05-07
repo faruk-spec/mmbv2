@@ -180,10 +180,49 @@ class SubscriptionService
             if (!in_array('cancel_requested_at', $cols, true)) {
                 $this->db->query("ALTER TABLE subscription_payments ADD COLUMN `cancel_requested_at` TIMESTAMP NULL AFTER `refund_decided_at`");
             }
+            if (!in_array('payment_session_expires_at', $cols, true)) {
+                $this->db->query("ALTER TABLE subscription_payments ADD COLUMN `payment_session_expires_at` DATETIME NULL DEFAULT NULL AFTER `payment_url`");
+            }
         } catch (\Throwable $e) {
         }
 
         $this->ensureProjectPlanPolicyColumns();
+
+        // Billing details table + phone verification columns
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS `user_billing_details` (
+              `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+              `user_id` INT UNSIGNED NOT NULL,
+              `full_name` VARCHAR(100) NOT NULL DEFAULT '',
+              `email` VARCHAR(255) NOT NULL DEFAULT '',
+              `phone` VARCHAR(20) NOT NULL DEFAULT '',
+              `address_line1` VARCHAR(255) NOT NULL DEFAULT '',
+              `address_line2` VARCHAR(255) NULL DEFAULT NULL,
+              `city` VARCHAR(100) NOT NULL DEFAULT '',
+              `state` VARCHAR(100) NOT NULL DEFAULT '',
+              `postal_code` VARCHAR(20) NOT NULL DEFAULT '',
+              `country` VARCHAR(100) NOT NULL DEFAULT '',
+              `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+              UNIQUE KEY `uniq_user` (`user_id`),
+              FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+        }
+
+        try {
+            $profCols = array_column($this->db->fetchAll("SHOW COLUMNS FROM user_profiles"), 'Field');
+            if (!in_array('phone_verified_at', $profCols, true)) {
+                $this->db->query("ALTER TABLE user_profiles ADD COLUMN `phone_verified_at` TIMESTAMP NULL DEFAULT NULL");
+            }
+            if (!in_array('phone_otp', $profCols, true)) {
+                $this->db->query("ALTER TABLE user_profiles ADD COLUMN `phone_otp` VARCHAR(10) NULL DEFAULT NULL");
+            }
+            if (!in_array('phone_otp_expires_at', $profCols, true)) {
+                $this->db->query("ALTER TABLE user_profiles ADD COLUMN `phone_otp_expires_at` TIMESTAMP NULL DEFAULT NULL");
+            }
+        } catch (\Throwable $e) {
+        }
     }
 
     public function ensureNotificationTemplates(): void
@@ -269,6 +308,20 @@ class SubscriptionService
 <p><a href=\"{{dashboard_url}}\">Go to your dashboard</a></p>',
                         '[\"user_name\",\"plan_name\",\"app_name\",\"refund_requested\",\"dashboard_url\"]',
                         1
+                    ),
+                    (
+                        'phone_otp',
+                        'Phone Number Verification OTP',
+                        'Your phone verification code',
+                        '<h2>Hi {{name}},</h2>
+<p>You requested to verify your phone number <strong>{{phone}}</strong>.</p>
+<p>Use the code below to complete verification. This code expires in <strong>{{expires_minutes}} minutes</strong>.</p>
+<div style=\"text-align:center;margin:28px 0;\">
+  <span style=\"display:inline-block;font-size:40px;font-weight:800;letter-spacing:12px;background:#f4f7fb;border:2px dashed #0077cc;border-radius:12px;padding:18px 36px;color:#1a1a2e;\">{{otp}}</span>
+</div>
+<p style=\"color:#888;font-size:.85em;\">If you did not request this, you can safely ignore this email.</p>',
+                        '[\"name\",\"otp\",\"phone\",\"expires_minutes\"]',
+                        1
                     )
             ");
         } catch (\Throwable $e) {
@@ -288,6 +341,9 @@ class SubscriptionService
             'invoice_accent_color' => '#0077cc',
             'invoice_footer_note' => 'Thank you for using our platform.',
             'invoice_terms' => 'This is a computer-generated invoice. No signature required.',
+            'invoice_tax_enabled' => '0',
+            'invoice_tax_label' => 'Tax',
+            'invoice_tax_rate' => '0',
         ];
 
         try {
@@ -319,6 +375,9 @@ class SubscriptionService
                 : '#0077cc',
             'invoice_footer_note' => trim((string) ($data['invoice_footer_note'] ?? '')),
             'invoice_terms' => trim((string) ($data['invoice_terms'] ?? '')),
+            'invoice_tax_enabled' => isset($data['invoice_tax_enabled']) && $data['invoice_tax_enabled'] ? '1' : '0',
+            'invoice_tax_label' => trim((string) ($data['invoice_tax_label'] ?? 'Tax')) ?: 'Tax',
+            'invoice_tax_rate' => (string) max(0, min(100, (float) ($data['invoice_tax_rate'] ?? 0))),
         ];
 
         foreach ($settings as $key => $value) {
@@ -486,12 +545,18 @@ class SubscriptionService
             'payment_cashfree_secret' => '',
             'payment_cashfree_sandbox' => '1',
             'payment_currency' => 'INR',
+            'payment_manual_review_enabled' => '1',
+            'require_mobile_verification' => '0',
         ];
 
         try {
             $rows = $this->db->fetchAll("SELECT `key`, value FROM settings WHERE `key` LIKE 'payment_%'");
             foreach ($rows as $row) {
                 $defaults[$row['key']] = $row['value'];
+            }
+            $rmvRow = $this->db->fetch("SELECT value FROM settings WHERE `key` = 'require_mobile_verification'");
+            if ($rmvRow) {
+                $defaults['require_mobile_verification'] = $rmvRow['value'];
             }
         } catch (\Throwable $e) {
         }
@@ -520,6 +585,7 @@ class SubscriptionService
             'payment_cashfree_secret' => $storeSecret === '' ? '' : Security::encrypt($storeSecret),
             'payment_cashfree_sandbox' => !empty($input['payment_cashfree_sandbox']) ? '1' : '0',
             'payment_currency' => trim((string) ($input['payment_currency'] ?? 'INR')),
+            'payment_manual_review_enabled' => !empty($input['payment_manual_review_enabled']) ? '1' : '0',
         ];
 
         foreach ($data as $key => $value) {
@@ -529,6 +595,15 @@ class SubscriptionService
             } else {
                 $this->db->insert('settings', ['key' => $key, 'value' => $value, 'type' => 'string', 'created_at' => date('Y-m-d H:i:s')]);
             }
+        }
+
+        // Save require_mobile_verification separately (not a payment_ prefix key)
+        $rmvValue = !empty($input['require_mobile_verification']) ? '1' : '0';
+        $rmvRow = $this->db->fetch("SELECT id FROM settings WHERE `key` = 'require_mobile_verification'");
+        if ($rmvRow) {
+            $this->db->update('settings', ['value' => $rmvValue, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', ['require_mobile_verification']);
+        } else {
+            $this->db->insert('settings', ['key' => 'require_mobile_verification', 'value' => $rmvValue, 'type' => 'string', 'created_at' => date('Y-m-d H:i:s')]);
         }
     }
 
@@ -550,6 +625,14 @@ class SubscriptionService
         );
 
         if ($existing) {
+            // If a fresh UPI payload is supplied but the existing record has none, update it now.
+            if (!empty($data['payment_payload']) && empty($existing['payment_payload'])) {
+                $this->db->query(
+                    "UPDATE subscription_payments SET payment_payload = ?, updated_at = NOW() WHERE id = ?",
+                    [$data['payment_payload'], (int) $existing['id']]
+                );
+                $existing['payment_payload'] = $data['payment_payload'];
+            }
             return $existing;
         }
 
@@ -929,9 +1012,59 @@ class SubscriptionService
         }
     }
 
+    /**
+     * Admin-initiated subscription cancellation. Cancels the subscription regardless of
+     * cancel-day restrictions; marks payment as cancelled and notifies the user.
+     */
+    public function adminCancelSubscription(int $paymentId, int $adminId): bool
+    {
+        $payment = $this->db->fetch("SELECT * FROM subscription_payments WHERE id = ?", [$paymentId]);
+        if (!$payment) {
+            return false;
+        }
+
+        $config = $this->getAppConfig((string) $payment['app_key']);
+
+        try {
+            // Cancel the subscription row in the project table (if linked)
+            if (!empty($payment['subscription_id'])) {
+                if ($payment['app_key'] === 'whatsapp') {
+                    $this->db->query(
+                        "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        [(int) $payment['subscription_id']]
+                    );
+                } elseif ($config !== null) {
+                    $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                    $sql = "UPDATE {$config['subscription_table']}
+                            SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                    if ($cancelledColumn) {
+                        $sql .= ", {$cancelledColumn} = NOW()";
+                    }
+                    $sql .= " WHERE id = ?";
+                    $this->db->query($sql, [(int) $payment['subscription_id']]);
+                }
+            }
+
+            // Cancel the payment record
+            $this->db->query(
+                "UPDATE subscription_payments
+                 SET status = 'cancelled', cancel_requested_at = NOW(), updated_at = NOW()
+                 WHERE id = ?",
+                [$paymentId]
+            );
+
+            Logger::activity($adminId, 'admin_subscription_cancelled', ['payment_id' => $paymentId, 'user_id' => $payment['user_id']]);
+            $this->sendCancellationEmail($paymentId, false);
+            return true;
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::adminCancelSubscription - ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function cancelSubscriptionByPayment(int $paymentId, int $userId): bool
     {
-        $payment = $this->getUserPayment($paymentId, $userId);
+        $payment = $this->db->fetch("SELECT * FROM subscription_payments WHERE id = ?", [$paymentId]);
         if (!$payment || empty($payment['subscription_id'])) {
             return false;
         }
@@ -1168,16 +1301,42 @@ class SubscriptionService
             ? 'https://sandbox.cashfree.com/pg/orders'
             : 'https://api.cashfree.com/pg/orders';
 
-        $orderId = 'order_' . strtolower($payment['reference']);
+        // Cashfree payment sessions expire after 60 minutes.  When a payment
+        // already has a provider_order_id (session regeneration after expiry),
+        // append a timestamp suffix to produce a unique order_id and avoid a
+        // 409 conflict from Cashfree's duplicate-order check.
+        $baseOrderId = 'order_' . strtolower((string)$payment['reference']);
+        $orderId = empty($payment['provider_order_id'])
+            ? $baseOrderId
+            : substr($baseOrderId, 0, 30) . '_' . time();
+
+        // Set a 60-minute session expiry for security (prevents stale sessions
+        // from being usable beyond the checkout window).
+        $sessionExpirySeconds = 3600; // 60 minutes
+        $expiryAt = gmdate('Y-m-d\TH:i:s', time() + $sessionExpirySeconds) . '+00:00';
+        $expiryDbAt = gmdate('Y-m-d H:i:s', time() + $sessionExpirySeconds);
+
+        // Cashfree requires exactly 10 digits for customer_phone.
+        $rawPhone = preg_replace('/\D/', '', (string) ($customer['phone'] ?? ''));
+        // Strip leading country code (e.g. 91 prefix for India) if longer than 10 digits.
+        if (strlen($rawPhone) > 10) {
+            $rawPhone = substr($rawPhone, -10);
+        }
+        // Cashfree requires exactly 10 digits; use a placeholder when the user's phone is missing/invalid.
+        // '9999999999' is a generic 10-digit placeholder accepted by Cashfree for missing phone numbers.
+        $customerPhone = strlen($rawPhone) === 10 ? $rawPhone : '9999999999';
+
         $payload = [
             'order_id' => $orderId,
             'order_amount' => (float) $payment['amount'],
             'order_currency' => (string) $payment['currency'],
+            'order_expiry_time' => $expiryAt,
             'customer_details' => [
                 'customer_id' => 'user_' . (int) $payment['user_id'],
-                'customer_name' => (string) ($customer['name'] ?? 'Customer'),
+                // Use ?: so that an empty string also falls back to 'Customer' (Cashfree rejects empty names).
+                'customer_name' => (string) ($customer['name'] ?: 'Customer'),
                 'customer_email' => (string) ($customer['email'] ?? ''),
-                'customer_phone' => (string) ($customer['phone'] ?? '9999999999'),
+                'customer_phone' => $customerPhone,
             ],
             'order_meta' => [
                 'return_url' => $this->appendQueryParams($validatedReturnUrl, ['order_id' => '{order_id}']),
@@ -1215,18 +1374,33 @@ class SubscriptionService
         $paymentUrl = $decoded['payment_link'] ?? $decoded['payment_url'] ?? null;
         $sessionId = $decoded['payment_session_id'] ?? null;
 
-        $this->db->query(
-            "UPDATE subscription_payments
-             SET provider_order_id = ?, provider_payment_session_id = ?, payment_url = ?, payment_payload = ?, updated_at = NOW()
-             WHERE id = ?",
-            [$orderId, $sessionId, $paymentUrl, $response, (int) $payment['id']]
-        );
+        // Persist the session ID, order ID, expiry, and the full Cashfree response.
+        try {
+            $this->db->query(
+                "UPDATE subscription_payments
+                 SET provider_order_id = ?, provider_payment_session_id = ?,
+                     payment_url = ?, payment_payload = ?,
+                     payment_session_expires_at = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$orderId, $sessionId, $paymentUrl, $response, $expiryDbAt, (int) $payment['id']]
+            );
+        } catch (\Throwable $e) {
+            // Column may not exist on older installs; fall back without expiry column.
+            $this->db->query(
+                "UPDATE subscription_payments
+                 SET provider_order_id = ?, provider_payment_session_id = ?,
+                     payment_url = ?, payment_payload = ?, updated_at = NOW()
+                 WHERE id = ?",
+                [$orderId, $sessionId, $paymentUrl, $response, (int) $payment['id']]
+            );
+        }
 
         return [
             'success' => true,
             'order_id' => $orderId,
             'payment_session_id' => $sessionId,
             'payment_url' => $paymentUrl,
+            'expires_at' => $expiryDbAt,
             'payload' => $decoded,
         ];
     }
@@ -1488,17 +1662,61 @@ class SubscriptionService
         $brandName = htmlspecialchars($settings['invoice_company_name'] ?: (defined('APP_NAME') ? APP_NAME : 'MMB Platform'));
         $brandLogo = $settings['invoice_logo_url'] ?? $settings['invoice_logo'] ?? '';
         $cur       = htmlspecialchars($payment['currency'] ?? 'USD');
-        $price     = number_format((float) ($payment['amount'] ?? 0), 2);
-        $invoiceNo = htmlspecialchars($payment['invoice_no'] ?? ('INV-' . strtoupper(substr(md5((string) ($payment['id'] ?? 0)), 0, 8))));
-        $date      = date('F j, Y', strtotime((string) ($payment['paid_at'] ?: $payment['created_at'] ?: 'now')));
+        $basePrice = (float) ($payment['amount'] ?? 0);
+
+        // Tax calculation
+        $taxEnabled = ($settings['invoice_tax_enabled'] ?? '0') === '1';
+        $taxRate    = max(0, (float) ($settings['invoice_tax_rate'] ?? 0));
+        $taxLabel   = htmlspecialchars($settings['invoice_tax_label'] ?? 'Tax');
+        $taxAmount  = $taxEnabled && $taxRate > 0 ? round($basePrice * $taxRate / 100, 2) : 0.0;
+        $totalPrice = $basePrice + $taxAmount;
+
+        $price     = number_format($basePrice, 2);
+        $taxAmtFmt = number_format($taxAmount, 2);
+        $totalFmt  = number_format($totalPrice, 2);
+
+        $invoiceNo   = htmlspecialchars($payment['invoice_no'] ?? ('INV-' . strtoupper(substr(md5((string) ($payment['id'] ?? 0)), 0, 8))));
+        $paidAt      = (string) ($payment['paid_at'] ?: $payment['created_at'] ?: 'now');
+        $dateFormatted = date('F j, Y', strtotime($paidAt));
+        $timeFormatted = date('g:i A', strtotime($paidAt));
+        $createdDate = date('F j, Y \a\t g:i A', strtotime((string) ($payment['created_at'] ?: 'now')));
         $expiry    = !empty($payment['expires_at']) ? date('F j, Y', strtotime((string) $payment['expires_at'])) : ($this->resolveSubscriptionExpiry((string) ($payment['app_key'] ?? 'platform'), (int) ($payment['subscription_id'] ?? 0)) ?: 'Lifetime');
         $userName  = htmlspecialchars($user['name'] ?? $user['username'] ?? 'User');
         $userEmail = htmlspecialchars($user['email'] ?? '');
+        $userPhone = htmlspecialchars($user['phone'] ?? '');
         $planName  = htmlspecialchars($payment['plan_name'] ?? 'Subscription');
         $billing   = htmlspecialchars((string) ($payment['billing_cycle'] ?? 'one-time'));
         $status    = htmlspecialchars((string) ($payment['status'] ?? 'paid'));
         $footer    = nl2br(htmlspecialchars($settings['invoice_footer_note'] ?? ''));
         $terms     = nl2br(htmlspecialchars($settings['invoice_terms'] ?? ''));
+        $gateway   = htmlspecialchars(strtoupper((string) ($payment['gateway'] ?? '')));
+        $reference = htmlspecialchars((string) ($payment['reference'] ?? ''));
+
+        // User billing address (from user_billing_details if available)
+        $billAddress = '';
+        try {
+            $bd = $this->db->fetch(
+                "SELECT full_name, address_line1, address_line2, city, state, postal_code, country FROM user_billing_details WHERE user_id = ? LIMIT 1",
+                [(int) ($user['id'] ?? 0)]
+            );
+            if ($bd) {
+                $parts = array_filter([
+                    htmlspecialchars($bd['address_line1'] ?? ''),
+                    htmlspecialchars($bd['address_line2'] ?? ''),
+                    implode(', ', array_filter([
+                        htmlspecialchars($bd['city'] ?? ''),
+                        htmlspecialchars($bd['state'] ?? ''),
+                        htmlspecialchars($bd['postal_code'] ?? ''),
+                    ])),
+                    htmlspecialchars($bd['country'] ?? ''),
+                ]);
+                $billAddress = implode('<br>', $parts);
+                if (!empty($bd['full_name'])) {
+                    $userName = htmlspecialchars($bd['full_name']);
+                }
+            }
+        } catch (\Throwable $e) {}
+
         $companyInfo = implode('<br>', array_filter([
             htmlspecialchars($settings['invoice_company_email'] ?? ''),
             htmlspecialchars($settings['invoice_company_phone'] ?? ''),
@@ -1506,74 +1724,143 @@ class SubscriptionService
         ]));
         $logoHtml = $brandLogo ? '<img src="' . htmlspecialchars($brandLogo) . '" alt="Invoice Logo" style="max-width:160px;max-height:64px;margin-bottom:12px;">' : '';
 
+        $taxRow = '';
+        if ($taxEnabled && $taxRate > 0) {
+            $taxRow = "<tr class=\"tax-row\"><td colspan=\"2\">{$taxLabel} ({$taxRate}%)</td><td style=\"text-align:right;\">{$cur} {$taxAmtFmt}</td></tr>";
+        }
+
+        $userPhoneRow = $userPhone ? "<p><strong>Phone</strong>{$userPhone}</p>" : '';
+        $billAddressRow = $billAddress ? "<p><strong>Address</strong><span style=\"display:block;margin-top:2px;\">{$billAddress}</span></p>" : '';
+
+        $refRow = $reference !== '' ? "<div><strong style=\"color:#aaa;font-size:.72rem;font-weight:700;\">REF</strong> {$reference}</div>" : '';
+        $statusClass = $status === 'paid' ? 'status-paid' : (in_array($status, ['pending', 'verification_pending'], true) ? 'status-pending' : 'status-other');
+        $footerContent = ($footer || $terms)
+            ? '<div class="footer-text">'
+                . ($footer ? "<div>{$footer}</div>" : '')
+                . ($terms ? "<div style=\"margin-top:8px;\">{$terms}</div>" : '')
+              . '</div>'
+            : '';
+        $appLabel = htmlspecialchars($this->getAppLabel((string) ($payment['app_key'] ?? 'platform')));
+
         return <<<HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Invoice {$invoiceNo}</title>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:'Segoe UI',Arial,sans-serif; background:#fff; color:#1a1a2e; padding:40px; max-width:760px; margin:0 auto; }
-.invoice-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:36px; border-bottom:2px solid {$accent}; padding-bottom:24px; gap:24px; }
-.brand { font-size:1.5rem; font-weight:800; color:{$accent}; }
-.company { font-size:.82rem; color:#666; margin-top:8px; line-height:1.5; }
-.inv-meta { text-align:right; }
-.inv-meta h2 { font-size:1.1rem; color:{$accent}; }
-.inv-meta p { font-size:.85rem; color:#666; margin-top:4px; }
-.section { margin-bottom:28px; }
-.section-title { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#888; margin-bottom:8px; }
-.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-.info-block p { font-size:.9rem; line-height:1.6; }
-.info-block strong { display:block; font-size:.78rem; color:#888; margin-bottom:2px; }
-table { width:100%; border-collapse:collapse; margin-bottom:20px; }
-th { background:#f0f4ff; padding:10px 14px; text-align:left; font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#444; }
-td { padding:12px 14px; border-bottom:1px solid #e8edf5; font-size:.9rem; }
-.total-row td { font-weight:700; font-size:1rem; background:#f8faff; }
-.status-badge { background:#e6ffed; color:#1a7a3e; padding:3px 12px; border-radius:20px; font-size:.78rem; font-weight:700; }
-.footer { margin-top:40px; padding-top:20px; border-top:1px solid #e8edf5; font-size:.78rem; color:#999; }
-@media print { body { padding:20px; } }
+body { font-family:'Segoe UI',Helvetica,Arial,sans-serif; background:#f5f7fc; color:#1a1a2e; min-height:100vh; }
+.page-wrap { max-width:800px; margin:0 auto; padding:32px 20px 60px; }
+.invoice-card { background:#fff; border-radius:16px; box-shadow:0 4px 32px rgba(0,0,0,.10); overflow:hidden; }
+.inv-top { background:linear-gradient(135deg,{$accent}18,{$accent}06); border-bottom:2px solid {$accent}22; padding:32px 36px; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; }
+.brand-col { display:flex; flex-direction:column; gap:6px; }
+.brand-name { font-size:1.5rem; font-weight:800; color:{$accent}; }
+.brand-sub  { font-size:.8rem; color:#888; }
+.company-info { font-size:.8rem; color:#666; line-height:1.6; margin-top:8px; }
+.inv-meta-col { text-align:right; }
+.inv-number { font-size:1.2rem; font-weight:800; color:{$accent}; }
+.inv-dates { font-size:.82rem; color:#666; margin-top:6px; line-height:1.7; }
+.status-paid   { display:inline-block; background:#e6ffed; color:#1a7a3e; padding:3px 14px; border-radius:20px; font-size:.78rem; font-weight:700; margin-top:8px; }
+.status-pending { display:inline-block; background:#fff3cd; color:#856404; padding:3px 14px; border-radius:20px; font-size:.78rem; font-weight:700; margin-top:8px; }
+.status-other  { display:inline-block; background:#f0f4ff; color:#444; padding:3px 14px; border-radius:20px; font-size:.78rem; font-weight:700; margin-top:8px; }
+.inv-body { padding:32px 36px; }
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px; }
+.info-block { }
+.info-block .block-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#aaa; margin-bottom:10px; }
+.info-block p { font-size:.87rem; line-height:1.7; color:#333; }
+.info-block strong { display:block; font-size:.72rem; color:#aaa; font-weight:600; margin-top:6px; }
+.divider { border:none; border-top:1px solid #edf0f7; margin:20px 0; }
+table { width:100%; border-collapse:collapse; font-size:.88rem; }
+thead tr { background:linear-gradient(135deg,{$accent}12,{$accent}04); }
+th { padding:11px 16px; text-align:left; font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#666; border-bottom:2px solid {$accent}22; }
+td { padding:12px 16px; border-bottom:1px solid #f0f3fa; color:#333; }
+tbody tr:last-child td { border-bottom:none; }
+.tax-row td { background:#fafbff; color:#666; font-size:.85rem; }
+.total-row { }
+.total-row td { font-weight:800; font-size:1rem; color:{$accent}; padding:14px 16px; border-top:2px solid {$accent}22; background:linear-gradient(135deg,{$accent}08,{$accent}03); }
+.inv-footer { padding:22px 36px; border-top:1px solid #edf0f7; background:#fafbff; }
+.footer-text { font-size:.78rem; color:#aaa; line-height:1.6; }
+.print-btn { margin-top:12px; padding:8px 20px; background:{$accent}; color:#fff; border:none; border-radius:7px; font-size:.82rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.print-btn:hover { opacity:.88; }
+@media (max-width:580px) {
+  .inv-top, .inv-body, .inv-footer { padding:20px; }
+  .info-grid { grid-template-columns:1fr; gap:16px; }
+  .inv-meta-col { text-align:left; }
+}
+@media print {
+  body { background:#fff; }
+  .page-wrap { padding:0; }
+  .invoice-card { box-shadow:none; border-radius:0; }
+  .print-btn { display:none; }
+}
 </style>
 </head>
 <body>
-<div class="invoice-header">
-    <div>
-        {$logoHtml}
-        <div class="brand">{$brandName}</div>
-        <div style="font-size:.82rem;color:#666;margin-top:4px;">Subscription Invoice</div>
-        <div class="company">{$companyInfo}</div>
+<div class="page-wrap">
+<div class="invoice-card">
+  <!-- Header -->
+  <div class="inv-top">
+    <div class="brand-col">
+      {$logoHtml}
+      <div class="brand-name">{$brandName}</div>
+      <div class="brand-sub">Subscription Invoice</div>
+      <div class="company-info">{$companyInfo}</div>
     </div>
-    <div class="inv-meta">
-        <h2>{$invoiceNo}</h2>
-        <p>Issued: {$date}</p>
+    <div class="inv-meta-col">
+      <div class="inv-number">{$invoiceNo}</div>
+      <div class="inv-dates">
+        <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">ISSUED</strong> {$dateFormatted}</div>
+        <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">TIME</strong> {$timeFormatted}</div>
+        <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">GATEWAY</strong> {$gateway}</div>
+        {$refRow}
+      </div>
+      <div class="{$statusClass}">{$status}</div>
     </div>
-</div>
-<div class="section info-grid">
-    <div class="info-block">
-        <div class="section-title">Bill To</div>
+  </div>
+
+  <div class="inv-body">
+    <div class="info-grid">
+      <div class="info-block">
+        <div class="block-title">Bill To</div>
         <p><strong>Name</strong>{$userName}</p>
         <p><strong>Email</strong>{$userEmail}</p>
-    </div>
-    <div class="info-block">
-        <div class="section-title">Subscription Details</div>
-        <p><strong>Application</strong>{$this->getAppLabel((string) ($payment['app_key'] ?? 'platform'))}</p>
+        {$userPhoneRow}
+        {$billAddressRow}
+      </div>
+      <div class="info-block">
+        <div class="block-title">Subscription Details</div>
+        <p><strong>Application</strong>{$appLabel}</p>
         <p><strong>Plan</strong>{$planName}</p>
-        <p><strong>Started</strong>{$date}</p>
+        <p><strong>Billing Cycle</strong>{$billing}</p>
+        <p><strong>Started</strong>{$dateFormatted}</p>
         <p><strong>Expires</strong>{$expiry}</p>
-        <p><strong>Status</strong><span class="status-badge">{$status}</span></p>
+        <p><strong>Ordered</strong>{$createdDate}</p>
+      </div>
     </div>
-</div>
-<div class="section">
+
+    <hr class="divider">
+
     <table>
-        <thead><tr><th>Description</th><th>Billing</th><th style="text-align:right;">Amount</th></tr></thead>
-        <tbody><tr><td>{$planName} Subscription</td><td>{$billing}</td><td style="text-align:right;">{$cur} {$price}</td></tr></tbody>
-        <tfoot><tr class="total-row"><td colspan="2">Total</td><td style="text-align:right;">{$cur} {$price}</td></tr></tfoot>
+      <thead>
+        <tr><th>Description</th><th>Billing</th><th style="text-align:right;">Amount</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>{$planName} Subscription</td><td>{$billing}</td><td style="text-align:right;">{$cur} {$price}</td></tr>
+      </tbody>
+      <tfoot>
+        {$taxRow}
+        <tr class="total-row"><td colspan="2">Total</td><td style="text-align:right;">{$cur} {$totalFmt}</td></tr>
+      </tfoot>
     </table>
+  </div>
+
+  <div class="inv-footer">
+    {$footerContent}
+    <button class="print-btn" onclick="window.print()">&#x1F5A8; Print / Save as PDF</button>
+  </div>
 </div>
-<div class="footer">
-    <div>{$footer}</div>
-    <div style="margin-top:10px;">{$terms}</div>
-    <div style="margin-top:10px;"><button onclick="window.print()" style="color:{$accent};background:none;border:none;cursor:pointer;font-size:.78rem;padding:0;text-decoration:underline;">🖨 Print / Save as PDF</button></div>
 </div>
 </body>
 </html>
@@ -1671,7 +1958,6 @@ HTML;
         if (!empty($parts['query'])) {
             parse_str($parts['query'], $existing);
         }
-        $existing = array_merge($existing, $params);
 
         $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
         $host = $parts['host'] ?? '';
@@ -1680,8 +1966,25 @@ HTML;
         $pass = isset($parts['pass']) ? ':' . $parts['pass']  : '';
         $pass = ($user !== '' || $pass !== '') ? $pass . '@' : '';
         $path = $parts['path'] ?? '';
-        $query = http_build_query($existing);
         $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        // Build query string: encode existing params normally, but preserve
+        // Cashfree-style template placeholders ({order_id}, etc.) verbatim so that
+        // http_build_query / urlencode does not turn {order_id} into %7Border_id%7D.
+        // Cashfree requires the literal string {order_id} in the return_url for its
+        // server-side substitution to work; URL-encoding the braces breaks the mechanism.
+        $allParams = array_merge($existing, $params);
+        $queryParts = [];
+        foreach ($allParams as $key => $value) {
+            $encodedKey = urlencode((string) $key);
+            // Preserve any value that is exactly a {placeholder} token.
+            if (preg_match('/^\{[^{}]+\}$/', (string) $value)) {
+                $queryParts[] = $encodedKey . '=' . $value;
+            } else {
+                $queryParts[] = $encodedKey . '=' . urlencode((string) $value);
+            }
+        }
+        $query = implode('&', $queryParts);
 
         return $scheme . $user . $pass . $host . $port . $path . ($query !== '' ? '?' . $query : '') . $fragment;
     }

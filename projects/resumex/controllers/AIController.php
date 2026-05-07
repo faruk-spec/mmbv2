@@ -37,6 +37,16 @@ class AIController
     {
         Security::validateCsrfToken($this->getToken());
 
+        // Enforce ai_suggestions plan feature
+        $userId = \Core\Auth::id();
+        if ($userId) {
+            $allowed = $this->getUserPlanFeature($userId, 'ai_suggestions');
+            if ($allowed === false) {
+                echo json_encode(['success' => false, 'message' => 'AI suggestions are not included in your current plan. Please upgrade.']);
+                exit;
+            }
+        }
+
         $jobTitle   = trim($_POST['job_title']        ?? '');
         $experience = trim($_POST['experience']        ?? '');
         $skills     = trim($_POST['skills']            ?? '');
@@ -984,5 +994,33 @@ class AIController
 
         // ── Generic fallback ─────────────────────────────────────────────────
         return ['Communication', 'Problem Solving', 'Team Collaboration', 'Critical Thinking', 'Microsoft Office', 'Project Management', 'Time Management', 'Leadership', 'Adaptability', 'Data Analysis', 'Presentation Skills', 'Conflict Resolution', 'Strategic Planning', 'Stakeholder Management', 'Attention to Detail'];
+    }
+
+    /**
+     * Returns whether the user's active ResumeX plan grants $featureKey.
+     * null  = no active subscription (no enforcement)
+     * true  = plan grants the feature
+     * false = plan explicitly denies the feature
+     */
+    private function getUserPlanFeature(int $userId, string $featureKey): ?bool
+    {
+        try {
+            $db  = \Core\Database::getInstance();
+            $row = $db->fetch(
+                "SELECT p.features FROM resumex_user_subscriptions s
+                 JOIN resumex_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+            if ($row === null) {
+                return null;
+            }
+            $feats = json_decode($row['features'] ?? '{}', true) ?: [];
+            return !empty($feats[$featureKey]);
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

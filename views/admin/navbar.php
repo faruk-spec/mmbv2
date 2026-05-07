@@ -320,16 +320,19 @@
                     <label>
                         <input type="radio" name="logo_type" value="image" <?= $settings['logo_type'] === 'image' ? 'checked' : '' ?> onchange="toggleLogoType(this.value)"> Image / SVG
                     </label>
+                    <label>
+                        <input type="radio" name="logo_type" value="both" <?= $settings['logo_type'] === 'both' ? 'checked' : '' ?> onchange="toggleLogoType(this.value)"> Both (Logo + Text)
+                    </label>
                 </div>
             </div>
             
-            <div id="logo-text-section" class="form-group" <?= $settings['logo_type'] === 'image' ? 'style="display:none"' : '' ?>>
+            <div id="logo-text-section" class="form-group" <?= ($settings['logo_type'] === 'image') ? 'style="display:none"' : '' ?>>
                 <label>Logo Text</label>
                 <input type="text" name="logo_text" class="form-control" value="<?= View::e($settings['logo_text']) ?>" placeholder="MyMultiBranch">
-                <small>Text displayed when logo type is set to "Text"</small>
+                <small>Text displayed when logo type is set to "Text" or "Both"</small>
             </div>
             
-            <div id="logo-image-section" class="form-group" <?= $settings['logo_type'] !== 'image' ? 'style="display:none"' : '' ?>>
+            <div id="logo-image-section" class="form-group" <?= ($settings['logo_type'] === 'text') ? 'style="display:none"' : '' ?>>
                 <label>Logo Image / SVG — Upload</label>
                 <input type="file" name="logo_image" class="form-control" accept="image/*,.svg" onchange="previewNavbarLogo(this)">
                 <small>Upload a logo image (PNG, JPG, GIF, WebP, SVG). Uploaded file takes priority over the URL below.</small>
@@ -651,8 +654,8 @@ function resetNavbarSettings(e) {
 
 <script>
 function toggleLogoType(value) {
-    document.getElementById('logo-text-section').style.display  = value === 'text'  ? '' : 'none';
-    document.getElementById('logo-image-section').style.display = value === 'image' ? '' : 'none';
+    document.getElementById('logo-text-section').style.display  = (value === 'text' || value === 'both')  ? '' : 'none';
+    document.getElementById('logo-image-section').style.display = (value === 'image' || value === 'both') ? '' : 'none';
 }
 
 function previewNavbarLogo(input) {

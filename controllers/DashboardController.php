@@ -613,4 +613,119 @@ class DashboardController extends BaseController
         
         $this->redirect('/settings');
     }
+
+    public function completeProfile(): void
+    {
+        $user = Auth::user();
+        if (!empty(trim((string)($user['phone'] ?? '')))) {
+            $this->redirect($_SESSION['complete_profile_next'] ?? '/dashboard');
+            return;
+        }
+        $this->view('auth/complete-profile', [
+            'title' => 'Complete Your Profile',
+            'user' => $user,
+            'next' => $_SESSION['complete_profile_next'] ?? '/dashboard',
+        ]);
+    }
+
+    public function saveCompleteProfile(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/complete-profile');
+            return;
+        }
+        $phone = trim(Security::sanitize($this->input('phone', '')));
+        if ($phone === '') {
+            $this->flash('error', 'Phone number is required.');
+            $this->redirect('/complete-profile');
+            return;
+        }
+        try {
+            $db = Database::getInstance();
+            $db->update('user_profiles', ['phone' => $phone, 'updated_at' => date('Y-m-d H:i:s')], 'user_id = ?', [Auth::id()]);
+        } catch (\Throwable $e) {}
+
+        $next = $_SESSION['complete_profile_next'] ?? '/dashboard';
+        unset($_SESSION['complete_profile_next']);
+        $this->flash('success', 'Profile completed!');
+        $this->redirect($next);
+    }
+
+    public function sendPhoneOtp(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->json(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+        $userId = Auth::id();
+        $user = Auth::user();
+        $db = Database::getInstance();
+
+        $otp = (string)random_int(100000, 999999);
+        $expires = date('Y-m-d H:i:s', time() + 600);
+
+        try {
+            $db->update('user_profiles', [
+                'phone_otp' => $otp,
+                'phone_otp_expires_at' => $expires,
+            ], 'user_id = ?', [$userId]);
+        } catch (\Throwable $e) {
+            $this->json(['success' => false, 'message' => 'Could not store OTP.']);
+            return;
+        }
+
+        try {
+            MailService::sendNotification($user['email'], 'phone_otp', [
+                'name' => $user['name'],
+                'otp' => $otp,
+                'phone' => $user['phone'] ?? '',
+                'expires_minutes' => 10,
+            ], false);
+        } catch (\Throwable $e) {
+            Logger::error('Phone OTP email failed: ' . $e->getMessage());
+        }
+
+        $this->json(['success' => true, 'message' => 'Verification code sent to your email.']);
+    }
+
+    public function verifyPhoneOtp(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->json(['success' => false, 'message' => 'Invalid request.']);
+            return;
+        }
+        $userId = Auth::id();
+        $otp = trim($this->input('otp', ''));
+        $db = Database::getInstance();
+
+        try {
+            $profile = $db->fetch(
+                "SELECT phone_otp, phone_otp_expires_at FROM user_profiles WHERE user_id = ?",
+                [$userId]
+            );
+            if (!$profile || empty($profile['phone_otp'])) {
+                $this->json(['success' => false, 'message' => 'No pending verification. Please request a new code.']);
+                return;
+            }
+            if ($profile['phone_otp'] !== $otp) {
+                $this->json(['success' => false, 'message' => 'Invalid verification code.']);
+                return;
+            }
+            if (strtotime($profile['phone_otp_expires_at']) < time()) {
+                $this->json(['success' => false, 'message' => 'Verification code expired. Please request a new one.']);
+                return;
+            }
+            $db->update('user_profiles', [
+                'phone_verified_at' => date('Y-m-d H:i:s'),
+                'phone_otp' => null,
+                'phone_otp_expires_at' => null,
+            ], 'user_id = ?', [$userId]);
+
+            $this->json(['success' => true, 'message' => 'Phone number verified successfully!']);
+        } catch (\Throwable $e) {
+            Logger::error('Phone OTP verify error: ' . $e->getMessage());
+            $this->json(['success' => false, 'message' => 'Verification failed. Please try again.']);
+        }
+    }
 }

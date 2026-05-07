@@ -312,7 +312,7 @@ class Auth
             try {
                 $db = Database::getInstance();
                 self::$user = $db->fetch(
-                    "SELECT u.*, up.avatar, up.bio, up.phone FROM users u 
+                    "SELECT u.*, up.avatar, up.bio, up.phone, up.phone_verified_at FROM users u 
                      LEFT JOIN user_profiles up ON u.id = up.user_id 
                      WHERE u.id = ?",
                     [$_SESSION['user_id']]
