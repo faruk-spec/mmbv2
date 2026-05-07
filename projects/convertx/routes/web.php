@@ -35,6 +35,7 @@ $featureByRoute = [
     'img-remove-bg' => 'page_img_remove_bg',
     'docs'          => 'page_docs',
     'apikeys'       => 'page_apikeys',
+    'api'           => 'page_apikeys',
     'plan'          => 'page_plan',
     'settings'      => 'page_settings',
 ];

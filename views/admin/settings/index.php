@@ -296,6 +296,87 @@
             </form>
         </div>
 
+        <?php
+        $homeFooterLinks = $footerLinks['home'] ?? [];
+        $defaultFooterLinks = $footerLinks['default'] ?? [];
+        ?>
+        <div class="card">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-link" style="margin-right:8px;color:var(--cyan);"></i> Footer Links CRUD</h4>
+            <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:14px;">Manage separate link sets for homepage footer and default dashboard/project footer.</p>
+
+            <form method="POST" action="/admin/settings/footer-links/add" style="border:1px solid var(--border-color);border-radius:10px;padding:12px;margin-bottom:14px;background:var(--bg-secondary);">
+                <?= \Core\Security::csrfField() ?>
+                <div style="display:grid;grid-template-columns:120px 1fr 1fr 90px auto auto;gap:8px;align-items:end;">
+                    <div>
+                        <label class="form-label">Area</label>
+                        <select name="area" class="form-input">
+                            <option value="home">Home</option>
+                            <option value="default">Default</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Label</label>
+                        <input type="text" name="label" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="form-label">URL</label>
+                        <input type="text" name="url" class="form-input" placeholder="/pages/privacy-policy" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Sort</label>
+                        <input type="number" name="sort_order" class="form-input" value="0">
+                    </div>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;">
+                        <input type="checkbox" name="is_enabled" value="1" checked> Enabled
+                    </label>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add</button>
+                </div>
+            </form>
+
+            <?php foreach (['home' => $homeFooterLinks, 'default' => $defaultFooterLinks] as $areaKey => $rows): ?>
+                <div style="margin-bottom:12px;">
+                    <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;color:var(--text-primary);">
+                        <?= $areaKey === 'home' ? 'Home Footer Links' : 'Default Footer Links' ?>
+                    </div>
+                    <?php if (empty($rows)): ?>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:8px;">No links configured.</p>
+                    <?php else: ?>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <?php foreach ($rows as $lnk): ?>
+                                <form method="POST" action="/admin/settings/footer-links/update" style="display:grid;grid-template-columns:1fr 1fr 90px auto auto auto;gap:8px;align-items:end;border:1px solid var(--border-color);border-radius:8px;padding:10px;background:var(--bg-secondary);">
+                                    <?= \Core\Security::csrfField() ?>
+                                    <input type="hidden" name="id" value="<?= (int) ($lnk['id'] ?? 0) ?>">
+                                    <input type="hidden" name="area" value="<?= View::e($areaKey) ?>">
+                                    <div>
+                                        <label class="form-label">Label</label>
+                                        <input type="text" name="label" class="form-input" value="<?= View::e($lnk['label'] ?? '') ?>" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">URL</label>
+                                        <input type="text" name="url" class="form-input" value="<?= View::e($lnk['url'] ?? '') ?>" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Sort</label>
+                                        <input type="number" name="sort_order" class="form-input" value="<?= (int) ($lnk['sort_order'] ?? 0) ?>">
+                                    </div>
+                                    <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;">
+                                        <input type="checkbox" name="is_enabled" value="1" <?= ((int) ($lnk['is_enabled'] ?? 0) === 1) ? 'checked' : '' ?>> Enabled
+                                    </label>
+                                    <button type="submit" class="btn btn-secondary"><i class="fas fa-save"></i> Update</button>
+                                    <button type="submit"
+                                            formaction="/admin/settings/footer-links/delete"
+                                            class="btn btn-danger"
+                                            onclick="return confirm('Delete this footer link?');">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
         <div class="card">
             <h4 style="margin-bottom: 15px;">Quick Actions</h4>
             

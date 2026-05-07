@@ -553,17 +553,17 @@ if ($showStats):
     <h2 style="margin-bottom: 20px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     
     <!-- Filter Buttons -->
-    <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
-        <button class="filter-btn active" data-filter="all">
+    <div id="projectsFilterBar" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
+        <button type="button" class="filter-btn active" data-filter="all" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('all', this)">
             All Tools
         </button>
-        <button class="filter-btn" data-filter="free">
+        <button type="button" class="filter-btn" data-filter="free" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('free', this)">
             Free Tools
         </button>
-        <button class="filter-btn" data-filter="freemium">
+        <button type="button" class="filter-btn" data-filter="freemium" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('freemium', this)">
             Freemium
         </button>
-        <button class="filter-btn" data-filter="enterprise">
+        <button type="button" class="filter-btn" data-filter="enterprise" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('enterprise', this)">
             Enterprise Grade
         </button>
     </div>
@@ -907,10 +907,7 @@ a.project-card:hover {
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Filter functionality
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const projectCards = document.querySelectorAll('.project-card');
+(function () {
     const normalizeTier = (tier) => {
         const t = String(tier || '').toLowerCase().trim();
         if (t === 'all') return 'all';
@@ -920,23 +917,40 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'free';
     };
 
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    window.applyHomeProjectFilter = function (rawFilter, activeBtn) {
+        const filterBtns = document.querySelectorAll('#projectsFilterBar .filter-btn');
+        const projectCards = document.querySelectorAll('#projectsGrid .project-card');
+        const filter = normalizeTier(rawFilter);
 
-            const filter = normalizeTier(this.dataset.filter);
-            projectCards.forEach(card => {
-                const cardTier = normalizeTier(card.dataset.tier);
-                if (filter === 'all' || cardTier === filter) {
-                    card.classList.remove('filtered-out');
-                } else {
-                    card.classList.add('filtered-out');
-                }
-            });
+        filterBtns.forEach((b) => b.classList.remove('active'));
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        } else {
+            const matchBtn = document.querySelector('#projectsFilterBar .filter-btn[data-filter="' + filter + '"]');
+            if (matchBtn) matchBtn.classList.add('active');
+        }
+
+        projectCards.forEach((card) => {
+            const cardTier = normalizeTier(card.dataset.tier);
+            if (filter === 'all' || cardTier === filter) {
+                card.classList.remove('filtered-out');
+            } else {
+                card.classList.add('filtered-out');
+            }
         });
-    });
-});
+    };
+
+    // Ensure live filter works even if inline handlers are blocked/removed.
+    document.addEventListener('click', function (e) {
+        const btn = e.target && e.target.closest ? e.target.closest('#projectsFilterBar .filter-btn') : null;
+        if (!btn) return;
+        e.preventDefault();
+        window.applyHomeProjectFilter(btn.dataset.filter, btn);
+    }, { passive: false });
+
+    // Initial render.
+    window.applyHomeProjectFilter('all');
+}());
 </script>
 
 <div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">

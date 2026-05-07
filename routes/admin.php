@@ -250,6 +250,9 @@ $router->get('/admin/settings', 'Admin\\SettingsController@index', ['auth', 'adm
 $router->post('/admin/settings', 'Admin\\SettingsController@update', ['auth', 'admin']);
 $router->post('/admin/settings/footer', 'Admin\\SettingsController@updateFooter', ['auth', 'admin']);
 $router->post('/admin/settings/homepage-footer', 'Admin\\SettingsController@updateHomepageFooter', ['auth', 'admin']);
+$router->post('/admin/settings/footer-links/add', 'Admin\\SettingsController@addFooterLink', ['auth', 'admin']);
+$router->post('/admin/settings/footer-links/update', 'Admin\\SettingsController@updateFooterLink', ['auth', 'admin']);
+$router->post('/admin/settings/footer-links/delete', 'Admin\\SettingsController@deleteFooterLink', ['auth', 'admin']);
 $router->post('/admin/settings/upload-logo', 'Admin\\SettingsController@uploadLogo', ['auth', 'admin']);
 $router->post('/admin/settings/delete-logo', 'Admin\\SettingsController@deleteLogo', ['auth', 'admin']);
 $router->get('/admin/settings/session', 'Admin\\SettingsController@session', ['auth', 'admin']);

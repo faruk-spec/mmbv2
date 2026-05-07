@@ -10,6 +10,9 @@
 namespace WhatsApp\API;
 
 use Core\Database;
+use Projects\WhatsApp\Helpers\SubscriptionHelper;
+
+require_once __DIR__ . '/../helpers/SubscriptionHelper.php';
 
 class ApiHandler
 {
@@ -58,6 +61,18 @@ class ApiHandler
                 return;
             }
 
+            // Enforce subscription/API usage entitlement
+            $usageCheck = SubscriptionHelper::canMakeApiCall((int) ($this->user['id'] ?? 0));
+            if (empty($usageCheck['allowed'])) {
+                $this->logApiRequest($endpoint, $method, 403, 'subscription_denied');
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => $usageCheck['reason'] ?? 'API access is not available on your current plan'
+                ]);
+                return;
+            }
+
             // Route to appropriate handler
             switch ($endpoint) {
                 case 'send-message':
@@ -87,6 +102,15 @@ class ApiHandler
                         'success' => false,
                         'error' => 'Endpoint not found'
                     ]);
+            }
+
+            // Count API usage after handling accepted requests.
+            if ($statusCode < 500 && !empty($this->user['id'])) {
+                try {
+                    SubscriptionHelper::incrementApiCallUsage((int) $this->user['id']);
+                } catch (\Throwable $e) {
+                    // non-fatal
+                }
             }
 
             $this->logApiRequest($endpoint, $method, $statusCode, $endpoint);

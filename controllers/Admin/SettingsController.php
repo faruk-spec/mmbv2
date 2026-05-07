@@ -30,6 +30,7 @@ class SettingsController extends BaseController
     {
         $this->requirePermission('settings');
         $db = Database::getInstance();
+        $this->ensureFooterLinksTable();
         
         // Get current settings
         $settings = $db->fetchAll("SELECT * FROM settings");
@@ -37,10 +38,22 @@ class SettingsController extends BaseController
         foreach ($settings as $setting) {
             $settingsMap[$setting['key']] = $setting['value'];
         }
+
+        $footerLinks = ['home' => [], 'default' => []];
+        try {
+            $rows = $db->fetchAll("SELECT * FROM footer_links ORDER BY area ASC, sort_order ASC, id ASC");
+            foreach ($rows as $row) {
+                $area = ($row['area'] ?? 'default') === 'home' ? 'home' : 'default';
+                $footerLinks[$area][] = $row;
+            }
+        } catch (\Exception $e) {
+            Logger::error('SettingsController footer links load error: ' . $e->getMessage());
+        }
         
         $this->view('admin/settings/index', [
             'title' => 'Site Settings',
-            'settings' => $settingsMap
+            'settings' => $settingsMap,
+            'footerLinks' => $footerLinks
         ]);
     }
     
@@ -224,6 +237,116 @@ class SettingsController extends BaseController
         $this->redirect('/admin/settings');
     }
 
+    public function addFooterLink(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $this->ensureFooterLinksTable();
+        $db = Database::getInstance();
+        $area = $this->normalizeFooterArea($this->input('area', 'default'));
+        $label = trim((string) Security::sanitize($this->input('label', '')));
+        $url = trim((string) $this->input('url', ''));
+        $sortOrder = (int) $this->input('sort_order', 0);
+        $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
+
+        if ($label === '' || $url === '') {
+            $this->flash('error', 'Footer link label and URL are required.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            $db->insert('footer_links', [
+                'area' => $area,
+                'label' => mb_substr($label, 0, 120),
+                'url' => mb_substr($url, 0, 255),
+                'sort_order' => $sortOrder,
+                'is_enabled' => $isEnabled,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->flash('success', 'Footer link added.');
+        } catch (\Exception $e) {
+            Logger::error('SettingsController addFooterLink error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to add footer link.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    public function updateFooterLink(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $this->ensureFooterLinksTable();
+        $db = Database::getInstance();
+        $id = (int) $this->input('id', 0);
+        $area = $this->normalizeFooterArea($this->input('area', 'default'));
+        $label = trim((string) Security::sanitize($this->input('label', '')));
+        $url = trim((string) $this->input('url', ''));
+        $sortOrder = (int) $this->input('sort_order', 0);
+        $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
+
+        if ($id <= 0 || $label === '' || $url === '') {
+            $this->flash('error', 'Invalid footer link update request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            $db->update('footer_links', [
+                'area' => $area,
+                'label' => mb_substr($label, 0, 120),
+                'url' => mb_substr($url, 0, 255),
+                'sort_order' => $sortOrder,
+                'is_enabled' => $isEnabled,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], 'id = ?', [$id]);
+            $this->flash('success', 'Footer link updated.');
+        } catch (\Exception $e) {
+            Logger::error('SettingsController updateFooterLink error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update footer link.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    public function deleteFooterLink(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $this->ensureFooterLinksTable();
+        $db = Database::getInstance();
+        $id = (int) $this->input('id', 0);
+        if ($id <= 0) {
+            $this->flash('error', 'Invalid footer link.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            $db->delete('footer_links', 'id = ?', [$id]);
+            $this->flash('success', 'Footer link deleted.');
+        } catch (\Exception $e) {
+            Logger::error('SettingsController deleteFooterLink error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to delete footer link.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
     /**
      * Upload auth logo image
      */
@@ -341,6 +464,34 @@ class SettingsController extends BaseController
         }
 
         $this->redirect('/admin/settings');
+    }
+
+    private function ensureFooterLinksTable(): void
+    {
+        try {
+            $db = Database::getInstance();
+            $db->query("
+                CREATE TABLE IF NOT EXISTS `footer_links` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `area` ENUM('home','default') NOT NULL DEFAULT 'default',
+                    `label` VARCHAR(120) NOT NULL,
+                    `url` VARCHAR(255) NOT NULL,
+                    `sort_order` INT NOT NULL DEFAULT 0,
+                    `is_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_area_enabled` (`area`, `is_enabled`),
+                    INDEX `idx_sort` (`sort_order`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Exception $e) {
+            Logger::error('SettingsController ensureFooterLinksTable error: ' . $e->getMessage());
+        }
+    }
+
+    private function normalizeFooterArea(string $area): string
+    {
+        return $area === 'home' ? 'home' : 'default';
     }
     
     /**

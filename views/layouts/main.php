@@ -2431,6 +2431,8 @@ window.mmbSkeleton = (function(){
     
     <?php
     $footerPages = [];
+    $homeFooterLinks = [];
+    $defaultFooterLinks = [];
     try {
         $footerPages = $db->fetchAll(
             "SELECT title, slug
@@ -2442,6 +2444,25 @@ window.mmbSkeleton = (function(){
     } catch (\Exception $e) {
         $footerPages = [];
         \Core\Logger::error('Failed to load footer pages: ' . $e->getMessage());
+    }
+    try {
+        $customLinks = $db->fetchAll(
+            "SELECT area, label, url
+             FROM footer_links
+             WHERE is_enabled = 1
+             ORDER BY area ASC, sort_order ASC, id ASC"
+        );
+        foreach ($customLinks as $lnk) {
+            $area = ($lnk['area'] ?? 'default') === 'home' ? 'home' : 'default';
+            if ($area === 'home') {
+                $homeFooterLinks[] = $lnk;
+            } else {
+                $defaultFooterLinks[] = $lnk;
+            }
+        }
+    } catch (\Exception $e) {
+        $homeFooterLinks = [];
+        $defaultFooterLinks = [];
     }
     // Footer settings from DB
     $footerTagline   = '';
@@ -2493,13 +2514,21 @@ window.mmbSkeleton = (function(){
                     <div style="font-weight:800;font-size:.95rem;color:var(--text-primary);margin-bottom:12px;letter-spacing:.02em;">
                         <?= htmlspecialchars($hpFooterSettings['hp_footer_col2_heading'] ?? 'Quick Links') ?>
                     </div>
-                    <?php if (!empty($footerPages)): ?>
+                    <?php if (!empty($homeFooterLinks) || !empty($footerPages)): ?>
                     <nav style="display:flex;flex-direction:column;gap:6px;">
-                        <?php foreach ($footerPages as $fp): ?>
-                        <a href="/pages/<?= htmlspecialchars($fp['slug']) ?>" style="color:var(--text-secondary);font-size:.85rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
-                            <i class="fas fa-chevron-right" style="font-size:.6rem;margin-right:5px;opacity:.6;"></i><?= htmlspecialchars($fp['title']) ?>
-                        </a>
-                        <?php endforeach; ?>
+                        <?php if (!empty($homeFooterLinks)): ?>
+                            <?php foreach ($homeFooterLinks as $fl): ?>
+                            <a href="<?= htmlspecialchars($fl['url']) ?>" style="color:var(--text-secondary);font-size:.85rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+                                <i class="fas fa-chevron-right" style="font-size:.6rem;margin-right:5px;opacity:.6;"></i><?= htmlspecialchars($fl['label']) ?>
+                            </a>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <?php foreach ($footerPages as $fp): ?>
+                            <a href="/pages/<?= htmlspecialchars($fp['slug']) ?>" style="color:var(--text-secondary);font-size:.85rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+                                <i class="fas fa-chevron-right" style="font-size:.6rem;margin-right:5px;opacity:.6;"></i><?= htmlspecialchars($fp['title']) ?>
+                            </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </nav>
                     <?php else: ?>
                     <p style="color:var(--text-secondary);font-size:.84rem;">No links configured yet.</p>
@@ -2551,11 +2580,17 @@ window.mmbSkeleton = (function(){
             <?php if ($footerTagline): ?>
             <p style="color:var(--text-secondary);font-size:.85rem;"><?= htmlspecialchars($footerTagline) ?></p>
             <?php endif; ?>
-            <?php if (!empty($footerPages)): ?>
+            <?php if (!empty($defaultFooterLinks) || !empty($footerPages)): ?>
                 <nav class="footer-links" aria-label="Footer links">
-                    <?php foreach ($footerPages as $footerPage): ?>
-                        <a href="/pages/<?= htmlspecialchars($footerPage['slug']) ?>"><?= htmlspecialchars($footerPage['title']) ?></a>
-                    <?php endforeach; ?>
+                    <?php if (!empty($defaultFooterLinks)): ?>
+                        <?php foreach ($defaultFooterLinks as $fl): ?>
+                            <a href="<?= htmlspecialchars($fl['url']) ?>"><?= htmlspecialchars($fl['label']) ?></a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($footerPages as $footerPage): ?>
+                            <a href="/pages/<?= htmlspecialchars($footerPage['slug']) ?>"><?= htmlspecialchars($footerPage['title']) ?></a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </nav>
             <?php endif; ?>
             <?php if ($footerShowSocial === '1' && !empty($footerSocialLinks)): ?>
