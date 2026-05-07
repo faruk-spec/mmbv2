@@ -201,8 +201,29 @@ class PlansController extends BaseController
             'message'   => $message,
         ]);
 
-        // If plan is free (price=0), auto-assign immediately
+        // If plan is free (price=0), auto-assign immediately — but only if user has no active paid plan
         if ((float)$plan['price'] == 0) {
+            // Cross-verification: block free plan activation when user has an active paid platform plan
+            $hasPaidPlan = false;
+            try {
+                $paid = $this->db->fetch(
+                    "SELECT s.id FROM platform_user_subscriptions s
+                     JOIN platform_plans p ON p.id = s.plan_id
+                     WHERE s.user_id = ? AND s.status = 'active'
+                     AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                     AND p.price > 0
+                     LIMIT 1",
+                    [$userId]
+                );
+                $hasPaidPlan = $paid !== null;
+            } catch (\Exception $e) {}
+
+            if ($hasPaidPlan) {
+                $this->flash('error', 'You already have an active paid plan. Free plans are not available while a paid plan is active.');
+                $this->redirect('/plans');
+                return;
+            }
+
             try {
                 $payment = $this->subscriptionService->createOrReusePayment([
                     'user_id' => $userId,
@@ -405,6 +426,34 @@ class PlansController extends BaseController
         }
 
         if ((float) ($plan['price'] ?? 0) == 0) {
+            // Cross-verification: block free plan if user already has active paid plan for same app
+            $hasPaidAppPlan = false;
+            try {
+                $tableMap = [
+                    'resumex'  => ['table' => 'resumex_user_subscriptions',  'plan_table' => 'resumex_subscription_plans'],
+                    'convertx' => ['table' => 'convertx_user_subscriptions', 'plan_table' => 'convertx_subscription_plans'],
+                    'whatsapp' => ['table' => 'whatsapp_user_subscriptions', 'plan_table' => 'whatsapp_subscription_plans'],
+                ];
+                if (isset($tableMap[$app])) {
+                    $t  = $tableMap[$app]['table'];
+                    $pt = $tableMap[$app]['plan_table'];
+                    $paid = $this->db->fetch(
+                        "SELECT s.id FROM {$t} s JOIN {$pt} p ON p.id = s.plan_id
+                         WHERE s.user_id = ? AND s.status = 'active'
+                         AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                         AND p.price > 0 LIMIT 1",
+                        [Auth::id()]
+                    );
+                    $hasPaidAppPlan = $paid !== null;
+                }
+            } catch (\Exception $e) {}
+
+            if ($hasPaidAppPlan) {
+                $this->flash('error', 'You already have an active paid plan for this app. Free plans are not available while a paid plan is active.');
+                $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+                return;
+            }
+
             $payment = $this->subscriptionService->createOrReusePayment([
                 'user_id' => Auth::id(),
                 'app_key' => $app,

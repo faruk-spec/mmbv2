@@ -180,6 +180,51 @@ class SettingsController extends BaseController
     }
 
     /**
+     * Update homepage 3-column footer settings
+     */
+    public function updateHomepageFooter(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $db = Database::getInstance();
+        $keys = [
+            'hp_footer_enabled'         => 'checkbox',
+            'hp_footer_col1_heading'    => 'string',
+            'hp_footer_col1_text'       => 'text',
+            'hp_footer_col2_heading'    => 'string',
+            'hp_footer_col3_heading'    => 'string',
+            'hp_footer_col3_text'       => 'text',
+            'hp_footer_bottom_text'     => 'string',
+        ];
+
+        try {
+            foreach ($keys as $key => $type) {
+                if ($type === 'checkbox') {
+                    $value = isset($_POST[$key]) ? '1' : '0';
+                } else {
+                    $value = Security::sanitize($this->input($key, ''));
+                }
+                $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
+                if ($existing) {
+                    $db->update('settings', ['value' => $value, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', [$key]);
+                } else {
+                    $db->insert('settings', ['key' => $key, 'value' => $value, 'type' => $type, 'created_at' => date('Y-m-d H:i:s')]);
+                }
+            }
+            $this->flash('success', 'Homepage footer settings updated.');
+        } catch (\Exception $e) {
+            Logger::error('Homepage footer settings update error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update homepage footer settings.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    /**
      * Upload auth logo image
      */
     public function uploadLogo(): void
