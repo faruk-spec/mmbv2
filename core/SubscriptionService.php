@@ -1678,8 +1678,8 @@ class SubscriptionService
         $invoiceNo   = htmlspecialchars($payment['invoice_no'] ?? ('INV-' . strtoupper(substr(md5((string) ($payment['id'] ?? 0)), 0, 8))));
         $paidAt      = (string) ($payment['paid_at'] ?: $payment['created_at'] ?: 'now');
         $dateFormatted = date('F j, Y', strtotime($paidAt));
-        $paymentTimeFormatted = date('g:i A', strtotime($paidAt));
-        $invoiceTimeFormatted = date('g:i A', strtotime((string) ($payment['created_at'] ?: 'now')));
+        $paidAtTimeFormatted = date('g:i A', strtotime($paidAt));
+        $createdAtTimeFormatted = date('g:i A', strtotime((string) ($payment['created_at'] ?: 'now')));
         $createdDate = date('F j, Y \a\t g:i A', strtotime((string) ($payment['created_at'] ?: 'now')));
         $expiry    = !empty($payment['expires_at']) ? date('F j, Y', strtotime((string) $payment['expires_at'])) : ($this->resolveSubscriptionExpiry((string) ($payment['app_key'] ?? 'platform'), (int) ($payment['subscription_id'] ?? 0)) ?: 'Lifetime');
         $userName  = htmlspecialchars($user['name'] ?? $user['username'] ?? 'User');
@@ -1821,8 +1821,8 @@ tbody tr:last-child td { border-bottom:none; }
       <div class="inv-number">{$invoiceNo}</div>
         <div class="inv-dates">
           <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">ISSUED</strong> {$dateFormatted}</div>
-          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">PAYMENT TIME</strong> {$paymentTimeFormatted}</div>
-          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">INVOICE TIME</strong> {$invoiceTimeFormatted}</div>
+          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">PAYMENT TIME</strong> {$paidAtTimeFormatted}</div>
+          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">INVOICE TIME</strong> {$createdAtTimeFormatted}</div>
           <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">GATEWAY</strong> {$gateway}</div>
           {$refRow}
         </div>

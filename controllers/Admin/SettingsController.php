@@ -17,6 +17,9 @@ use Core\SecureUpload;
 
 class SettingsController extends BaseController
 {
+    private const FOOTER_LINK_LABEL_MAX = 120;
+    private const FOOTER_LINK_URL_MAX = 255;
+
     public function __construct()
     {
         $this->requireAuth();
@@ -262,8 +265,8 @@ class SettingsController extends BaseController
         try {
             $db->insert('footer_links', [
                 'area' => $area,
-                'label' => mb_substr($label, 0, 120),
-                'url' => mb_substr($url, 0, 255),
+                'label' => mb_substr($label, 0, self::FOOTER_LINK_LABEL_MAX),
+                'url' => mb_substr($url, 0, self::FOOTER_LINK_URL_MAX),
                 'sort_order' => $sortOrder,
                 'is_enabled' => $isEnabled,
                 'created_at' => date('Y-m-d H:i:s'),
@@ -304,8 +307,8 @@ class SettingsController extends BaseController
         try {
             $db->update('footer_links', [
                 'area' => $area,
-                'label' => mb_substr($label, 0, 120),
-                'url' => mb_substr($url, 0, 255),
+                'label' => mb_substr($label, 0, self::FOOTER_LINK_LABEL_MAX),
+                'url' => mb_substr($url, 0, self::FOOTER_LINK_URL_MAX),
                 'sort_order' => $sortOrder,
                 'is_enabled' => $isEnabled,
                 'updated_at' => date('Y-m-d H:i:s'),

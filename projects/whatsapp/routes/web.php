@@ -9,6 +9,8 @@ use Core\Router;
 use Core\Auth;
 use Projects\WhatsApp\Helpers\SubscriptionHelper;
 
+const WHATSAPP_PROJECT_PREFIX = '/projects/whatsapp/';
+
 // Load the controllers
 require_once BASE_PATH . '/projects/whatsapp/controllers/DashboardController.php';
 require_once BASE_PATH . '/projects/whatsapp/controllers/SessionController.php';
@@ -19,7 +21,7 @@ require_once BASE_PATH . '/projects/whatsapp/controllers/ApiDocsController.php';
 require_once BASE_PATH . '/projects/whatsapp/helpers/SubscriptionHelper.php';
 
 $waUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '';
-$waPath = trim((string) preg_replace('#^/projects/whatsapp/?#', '', $waUriPath), '/');
+$waPath = trim((string) preg_replace('#^' . preg_quote(rtrim(WHATSAPP_PROJECT_PREFIX, '/'), '#') . '/?#', '', $waUriPath), '/');
 $waFirst = explode('/', $waPath)[0] ?: 'dashboard';
 $waMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 $waUserId = (int) (Auth::id() ?? 0);
