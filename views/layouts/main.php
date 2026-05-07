@@ -2463,6 +2463,7 @@ window.mmbSkeleton = (function(){
     } catch (\Exception $e) {
         $homeFooterLinks = [];
         $defaultFooterLinks = [];
+        \Core\Logger::error('Failed to load custom footer links: ' . $e->getMessage());
     }
     // Footer settings from DB
     $footerTagline   = '';
