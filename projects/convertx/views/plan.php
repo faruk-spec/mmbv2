@@ -33,14 +33,18 @@ $paymentHistory = $paymentHistory ?? [];
 <?php endif; ?>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;">
-    <?php foreach ($plans as $plan): ?>
+    <?php
+    $hasPaidActiveSub = $currentSub && (float)($currentSub['price'] ?? 0) > 0;
+    foreach ($plans as $plan): ?>
     <?php
     $isCurrent = ($currentSub['plan_slug'] ?? $currentPlanSlug) === ($plan['slug'] ?? '');
     $featureMap = json_decode($plan['features'] ?? '{}', true) ?: [];
     $highlights = array_keys(array_filter($featureMap));
+    $isPlanFree = ((float)($plan['price'] ?? 0) == 0);
+    $isLocked   = $isPlanFree && !$isCurrent && $hasPaidActiveSub;
     ?>
-    <div class="cx-price-card <?= $isCurrent ? 'cx-price-featured' : '' ?>">
-        <div class="plan-name"><?= htmlspecialchars($plan['name']) ?></div>
+    <div class="cx-price-card <?= $isCurrent ? 'cx-price-featured' : '' ?>" <?= $isLocked ? 'style="opacity:.5;pointer-events:none;"' : '' ?>>
+        <div class="plan-name"><?= htmlspecialchars($plan['name']) ?><?= $isLocked ? ' <span style="font-size:.68rem;padding:1px 7px;border-radius:20px;background:rgba(120,120,120,.15);color:#888;font-weight:700;vertical-align:middle;">Locked</span>' : '' ?></div>
         <div class="plan-price" style="background:linear-gradient(135deg,var(--cx-primary),var(--cx-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
             <?= htmlspecialchars($plan['currency'] ?? 'USD') ?> <?= number_format((float) ($plan['price'] ?? 0), 2) ?>
         </div>
@@ -58,8 +62,10 @@ $paymentHistory = $paymentHistory ?? [];
         </ul>
         <?php if ($isCurrent): ?>
         <span class="btn btn-secondary" style="width:100%;justify-content:center;cursor:default;">Current Plan</span>
+        <?php elseif ($isLocked): ?>
+        <span class="btn btn-secondary" style="width:100%;justify-content:center;cursor:not-allowed;opacity:.7;">Not Available</span>
         <?php else: ?>
-        <a href="/plans/project/convertx/<?= urlencode($plan['slug'] ?? '') ?>" class="btn btn-primary" style="width:100%;justify-content:center;">Continue</a>
+        <a href="/plans/project/convertx/<?= urlencode($plan['slug'] ?? '') ?>" class="btn btn-primary" style="width:100%;justify-content:center;"><?= $hasPaidActiveSub && !$isPlanFree ? 'Upgrade' : 'Continue' ?></a>
         <?php endif; ?>
     </div>
     <?php endforeach; ?>

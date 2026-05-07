@@ -276,6 +276,14 @@ class ResumeController
             exit;
         }
 
+        // Enforce pdf_export feature from plan
+        $pdfExportAllowed = $this->getUserPlanFeature($userId, 'pdf_export');
+        if ($pdfExportAllowed === false) {
+            // User has an active plan that explicitly does NOT include pdf_export
+            header('Location: /projects/resumex/plans?error=pdf_export_not_included');
+            exit;
+        }
+
         $resume = $this->resumeModel->get($id, $userId);
 
         if (!$resume) {
@@ -509,6 +517,20 @@ class ResumeController
     {
         try {
             $db  = \Core\Database::getInstance();
+            // First check resumex-specific subscription
+            $rxSub = $db->fetch(
+                "SELECT p.features FROM resumex_user_subscriptions s
+                 JOIN resumex_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+            if ($rxSub) {
+                $feats = json_decode($rxSub['features'] ?? '{}', true) ?: [];
+                return !empty($feats['premium_templates']) || !empty($feats['pdf_export']) || !empty($feats['unlimited_resumes']);
+            }
+            // Fallback: platform subscription
             $sub = $db->fetch(
                 "SELECT pus.id FROM platform_user_subscriptions pus
                  JOIN platform_plans pp ON pp.id = pus.plan_id
@@ -520,6 +542,34 @@ class ResumeController
             return $sub !== null && $sub !== false;
         } catch (\Exception $e) {
             return false;
+        }
+    }
+
+    /**
+     * Get plan feature value for the user's active ResumeX subscription.
+     * Returns true (allow) when user has an explicit active plan that grants the feature.
+     * Returns false (deny) when the user has an active plan that does NOT grant it.
+     * Returns null when there is no active subscription (use admin default).
+     */
+    private function getUserPlanFeature(int $userId, string $featureKey): ?bool
+    {
+        try {
+            $db = \Core\Database::getInstance();
+            $row = $db->fetch(
+                "SELECT p.features FROM resumex_user_subscriptions s
+                 JOIN resumex_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                 AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                 ORDER BY s.started_at DESC LIMIT 1",
+                [$userId]
+            );
+            if ($row === null) {
+                return null; // No active subscription — fall through to admin defaults
+            }
+            $feats = json_decode($row['features'] ?? '{}', true) ?: [];
+            return !empty($feats[$featureKey]);
+        } catch (\Exception $e) {
+            return null;
         }
     }
 
