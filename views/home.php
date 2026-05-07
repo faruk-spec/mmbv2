@@ -906,53 +906,6 @@ a.project-card:hover {
 }
 </style>
 
-<script>
-(function () {
-    const normalizeTier = (tier) => {
-        const t = String(tier || '').toLowerCase().trim();
-        if (t === 'all') return 'all';
-        if (t === 'enterprise-grade' || t === 'enterprise grade') return 'enterprise';
-        if (t === 'freemium-plan' || t === 'freemium_plan') return 'freemium';
-        if (t === 'free' || t === 'freemium' || t === 'enterprise') return t;
-        return 'free';
-    };
-
-    window.applyHomeProjectFilter = function (rawFilter, activeBtn) {
-        const filterBtns = document.querySelectorAll('#projectsFilterBar .filter-btn');
-        const projectCards = document.querySelectorAll('#projectsGrid .project-card');
-        const filter = normalizeTier(rawFilter);
-
-        filterBtns.forEach((b) => b.classList.remove('active'));
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-        } else {
-            const matchBtn = document.querySelector('#projectsFilterBar .filter-btn[data-filter="' + filter + '"]');
-            if (matchBtn) matchBtn.classList.add('active');
-        }
-
-        projectCards.forEach((card) => {
-            const cardTier = normalizeTier(card.dataset.tier);
-            if (filter === 'all' || cardTier === filter) {
-                card.classList.remove('filtered-out');
-            } else {
-                card.classList.add('filtered-out');
-            }
-        });
-    };
-
-    // Ensure live filter works even if inline handlers are blocked/removed.
-    document.addEventListener('click', function (e) {
-        const btn = e.target && e.target.closest ? e.target.closest('#projectsFilterBar .filter-btn') : null;
-        if (!btn) return;
-        e.preventDefault();
-        window.applyHomeProjectFilter(btn.dataset.filter, btn);
-    }, { passive: false });
-
-    // Initial render.
-    window.applyHomeProjectFilter('all');
-}());
-</script>
-
 <div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
     <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="margin-bottom: 12px; font-size: 1.75rem;"><?= htmlspecialchars($featuresHeading) ?></h2>
@@ -1451,5 +1404,61 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
     resize(); init(); draw();
     window.addEventListener('resize', function() { cancelAnimationFrame(raf); resize(); init(); draw(); });
 })();
+</script>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+<script>
+(function () {
+    'use strict';
+
+    var normalizeTier = function (tier) {
+        var t = String(tier || '').toLowerCase().trim();
+        if (t === 'all') return 'all';
+        if (t === 'enterprise-grade' || t === 'enterprise grade') return 'enterprise';
+        if (t === 'freemium-plan' || t === 'freemium_plan') return 'freemium';
+        if (t === 'free' || t === 'freemium' || t === 'enterprise') return t;
+        return 'free';
+    };
+
+    window.applyHomeProjectFilter = function (rawFilter, activeBtn) {
+        var filterBtns = document.querySelectorAll('#projectsFilterBar .filter-btn');
+        var projectCards = document.querySelectorAll('#projectsGrid .project-card');
+        var filter = normalizeTier(rawFilter);
+
+        filterBtns.forEach(function (b) { b.classList.remove('active'); });
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        } else {
+            var matchBtn = document.querySelector('#projectsFilterBar .filter-btn[data-filter="' + filter + '"]');
+            if (matchBtn) matchBtn.classList.add('active');
+        }
+
+        projectCards.forEach(function (card) {
+            var cardTier = normalizeTier(card.dataset.tier);
+            if (filter === 'all' || cardTier === filter) {
+                card.classList.remove('filtered-out');
+            } else {
+                card.classList.add('filtered-out');
+            }
+        });
+    };
+
+    // Delegated click handler so filter buttons work regardless of markup order.
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('#projectsFilterBar .filter-btn') : null;
+        if (!btn) return;
+        window.applyHomeProjectFilter(btn.dataset.filter, btn);
+    });
+
+    // Apply initial "all" state once DOM is ready.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            window.applyHomeProjectFilter('all');
+        });
+    } else {
+        window.applyHomeProjectFilter('all');
+    }
+}());
 </script>
 <?php View::endSection(); ?>
