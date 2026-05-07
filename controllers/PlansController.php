@@ -378,6 +378,12 @@ class PlansController extends BaseController
             return;
         }
 
+        if ((float) ($plan['price'] ?? 0) === 0.0 && $this->hasActivePaidAppSubscription($app, (int) Auth::id())) {
+            $this->flash('error', 'You already have an active paid plan for this app. Free plans are not available while a paid plan is active.');
+            $this->redirect(self::APP_META[$app]['url'] ?? '/plans');
+            return;
+        }
+
         $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
 
         if (!$this->checkSubscriptionPrerequisites('/plans/project/' . urlencode($app) . '/' . urlencode($slug))) {
@@ -427,26 +433,7 @@ class PlansController extends BaseController
 
         if ((float) ($plan['price'] ?? 0) == 0) {
             // Cross-verification: block free plan if user already has active paid plan for same app
-            $hasPaidAppPlan = false;
-            try {
-                $tableMap = [
-                    'resumex'  => ['table' => 'resumex_user_subscriptions',  'plan_table' => 'resumex_subscription_plans'],
-                    'convertx' => ['table' => 'convertx_user_subscriptions', 'plan_table' => 'convertx_subscription_plans'],
-                    'whatsapp' => ['table' => 'whatsapp_user_subscriptions', 'plan_table' => 'whatsapp_subscription_plans'],
-                ];
-                if (isset($tableMap[$app])) {
-                    $t  = $tableMap[$app]['table'];
-                    $pt = $tableMap[$app]['plan_table'];
-                    $paid = $this->db->fetch(
-                        "SELECT s.id FROM {$t} s JOIN {$pt} p ON p.id = s.plan_id
-                         WHERE s.user_id = ? AND s.status = 'active'
-                         AND (s.expires_at IS NULL OR s.expires_at > NOW())
-                         AND p.price > 0 LIMIT 1",
-                        [Auth::id()]
-                    );
-                    $hasPaidAppPlan = $paid !== null;
-                }
-            } catch (\Exception $e) {}
+            $hasPaidAppPlan = $this->hasActivePaidAppSubscription($app, (int) Auth::id());
 
             if ($hasPaidAppPlan) {
                 $this->flash('error', 'You already have an active paid plan for this app. Free plans are not available while a paid plan is active.');
@@ -770,6 +757,57 @@ class PlansController extends BaseController
         }
 
         return $subs;
+    }
+
+    private function hasActivePaidAppSubscription(string $app, int $userId): bool
+    {
+        try {
+            if ($app === 'whatsapp') {
+                $paid = $this->db->fetch(
+                    "SELECT s.id
+                     FROM whatsapp_subscriptions s
+                     LEFT JOIN whatsapp_subscription_plans p
+                       ON p.id = COALESCE(
+                           s.plan_id,
+                           (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1)
+                       )
+                     WHERE s.user_id = ? AND s.status = 'active'
+                       AND (s.end_date IS NULL OR s.end_date > NOW())
+                       AND COALESCE(p.price, 0) > 0
+                     LIMIT 1",
+                    [$userId]
+                );
+
+                return $paid !== null;
+            }
+
+            $tableMap = [
+                'resumex'  => ['table' => 'resumex_user_subscriptions',  'plan_table' => 'resumex_subscription_plans',  'expires' => 'expires_at'],
+                'convertx' => ['table' => 'convertx_user_subscriptions', 'plan_table' => 'convertx_subscription_plans', 'expires' => 'expires_at'],
+                'qr'       => ['table' => 'qr_user_subscriptions',       'plan_table' => 'qr_subscription_plans',       'expires' => 'expires_at'],
+            ];
+
+            if (!isset($tableMap[$app])) {
+                return false;
+            }
+
+            $t  = $tableMap[$app]['table'];
+            $pt = $tableMap[$app]['plan_table'];
+            $ex = $tableMap[$app]['expires'];
+            $paid = $this->db->fetch(
+                "SELECT s.id FROM {$t} s
+                 JOIN {$pt} p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.{$ex} IS NULL OR s.{$ex} > NOW())
+                   AND p.price > 0
+                 LIMIT 1",
+                [$userId]
+            );
+
+            return $paid !== null;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     /** Returns all active platform plans ordered by sort_order */

@@ -248,9 +248,11 @@
                         </a>
                         <?php if ($subPaymentId): ?>
                         <a href="/plans/payment/<?= (int) $subPaymentId ?>" class="btn-app btn-app-open">View</a>
+                        <?php else: ?>
+                        <a href="/plans" class="btn-app btn-app-open">View</a>
                         <?php endif; ?>
-                        <a href="/plans" class="btn-app btn-app-manage" style="cursor:default;opacity:.6;" title="To cancel, contact support or manage via your payment gateway.">
-                            Manage
+                        <a href="/plans" class="btn-app btn-app-manage" title="Manage your active subscriptions and billing history.">
+                            Manage Subscription
                         </a>
                     </div>
                 </div>

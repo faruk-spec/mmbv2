@@ -37,15 +37,7 @@ class AIController
     {
         Security::validateCsrfToken($this->getToken());
 
-        // Enforce ai_suggestions plan feature
-        $userId = \Core\Auth::id();
-        if ($userId) {
-            $allowed = $this->getUserPlanFeature($userId, 'ai_suggestions');
-            if ($allowed === false) {
-                echo json_encode(['success' => false, 'message' => 'AI suggestions are not included in your current plan. Please upgrade.']);
-                exit;
-            }
-        }
+        $this->enforceAiSuggestionsAccess();
 
         $jobTitle   = trim($_POST['job_title']        ?? '');
         $experience = trim($_POST['experience']        ?? '');
@@ -89,6 +81,7 @@ class AIController
     public function suggestSummary(): void
     {
         Security::validateCsrfToken($this->getToken());
+        $this->enforceAiSuggestionsAccess();
 
         $jobTitle   = trim($_POST['job_title']        ?? '');
         $experience = trim($_POST['experience']        ?? '');
@@ -125,6 +118,7 @@ class AIController
     public function suggestSkills(): void
     {
         Security::validateCsrfToken($this->getToken());
+        $this->enforceAiSuggestionsAccess();
 
         $jobTitle   = trim($_POST['job_title'] ?? '');
         $experience = trim($_POST['experience'] ?? '');
@@ -158,6 +152,7 @@ class AIController
     public function suggestBullets(): void
     {
         Security::validateCsrfToken($this->getToken());
+        $this->enforceAiSuggestionsAccess();
 
         $jobTitle   = trim($_POST['job_title'] ?? '');
         $company    = trim($_POST['company']   ?? '');
@@ -1021,6 +1016,20 @@ class AIController
             return !empty($feats[$featureKey]);
         } catch (\Exception $e) {
             return null;
+        }
+    }
+
+    private function enforceAiSuggestionsAccess(): void
+    {
+        $userId = \Core\Auth::id();
+        if (!$userId) {
+            return;
+        }
+
+        $allowed = $this->getUserPlanFeature((int) $userId, 'ai_suggestions');
+        if ($allowed === false) {
+            echo json_encode(['success' => false, 'message' => 'AI suggestions are not included in your current plan. Please upgrade.']);
+            exit;
         }
     }
 }

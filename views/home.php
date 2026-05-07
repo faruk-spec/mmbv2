@@ -598,7 +598,12 @@ if ($showStats):
             $projectName = $project['name'] ?? '';
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
-            $projectTier = strtolower(trim($project['tier'] ?? 'free'));
+            $projectTierRaw = strtolower(trim((string)($project['tier'] ?? 'free')));
+            $projectTier = match ($projectTierRaw) {
+                'enterprise-grade', 'enterprise grade', 'enterprise_plan', 'enterpriseplan' => 'enterprise',
+                'freemium_plan', 'freemium-plan' => 'freemium',
+                default => in_array($projectTierRaw, ['free', 'freemium', 'enterprise'], true) ? $projectTierRaw : 'free',
+            };
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
             $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
@@ -906,15 +911,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Filter functionality
     const filterBtns = document.querySelectorAll('.filter-btn');
     const projectCards = document.querySelectorAll('.project-card');
+    const normalizeTier = (tier) => {
+        const t = String(tier || '').toLowerCase().trim();
+        if (t === 'all') return 'all';
+        if (t === 'enterprise-grade' || t === 'enterprise grade') return 'enterprise';
+        if (t === 'freemium-plan' || t === 'freemium_plan') return 'freemium';
+        if (t === 'free' || t === 'freemium' || t === 'enterprise') return t;
+        return 'free';
+    };
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             filterBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
-            const filter = this.dataset.filter;
+            const filter = normalizeTier(this.dataset.filter);
             projectCards.forEach(card => {
-                if (filter === 'all' || card.dataset.tier === filter) {
+                const cardTier = normalizeTier(card.dataset.tier);
+                if (filter === 'all' || cardTier === filter) {
                     card.classList.remove('filtered-out');
                 } else {
                     card.classList.add('filtered-out');
