@@ -217,6 +217,7 @@
                     break;
                 }
             }
+            $subPaymentUrl = $subPaymentId ? '/plans/payment/' . (int) $subPaymentId : '/plans';
         ?>
         <div class="active-sub-card" style="border-color:<?= $col ?>;">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
@@ -247,11 +248,11 @@
                             Invoice
                         </a>
                         <?php if ($subPaymentId): ?>
-                        <a href="/plans/payment/<?= (int) $subPaymentId ?>" class="btn-app btn-app-open">View</a>
+                        <a href="<?= $subPaymentUrl ?>" class="btn-app btn-app-open">View</a>
                         <?php else: ?>
                         <a href="/plans" class="btn-app btn-app-open">View</a>
                         <?php endif; ?>
-                        <a href="<?= $subPaymentId ? '/plans/payment/' . (int) $subPaymentId : '/plans' ?>" class="btn-app btn-app-manage" title="Manage your active subscriptions and billing history.">
+                        <a href="<?= $subPaymentUrl ?>" class="btn-app btn-app-manage" title="Manage your active subscriptions and billing history.">
                             Manage Subscription
                         </a>
                     </div>
