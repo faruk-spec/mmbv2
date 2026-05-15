@@ -37,11 +37,13 @@ $extraScripts = trim(ob_get_clean());
             --auth-transition: 0.2s ease;
             --bg-card: var(--auth-panel);
             --bg-secondary: rgba(8, 18, 33, 0.92);
+            --bg-primary: #08121f;
             --border-color: var(--auth-border);
             --text-primary: var(--auth-text);
             --text-secondary: var(--auth-muted);
             --cyan: var(--auth-primary);
             --magenta: #c06dff;
+            --transition: all 0.2s ease;
         }
 
         * { box-sizing: border-box; }
@@ -50,11 +52,57 @@ $extraScripts = trim(ob_get_clean());
             margin: 0;
             min-height: 100vh;
             font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(89, 208, 255, 0.16), transparent 30%),
-                radial-gradient(circle at top right, rgba(170, 95, 255, 0.12), transparent 28%),
-                linear-gradient(180deg, #08121f 0%, #050b14 100%);
+            background: #08121f;
             color: var(--auth-text);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(89, 208, 255, 0.13) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(192, 109, 255, 0.11) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            animation: authBgFlow 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes authBgFlow {
+            0% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(89, 208, 255, 0.12) 0%, transparent 48%),
+                    radial-gradient(ellipse at 90% 90%, rgba(192, 109, 255, 0.10) 0%, transparent 48%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            33% {
+                background:
+                    radial-gradient(ellipse at 85% 15%, rgba(89, 208, 255, 0.10) 0%, transparent 48%),
+                    radial-gradient(ellipse at 15% 85%, rgba(192, 109, 255, 0.12) 0%, transparent 48%),
+                    radial-gradient(ellipse at 40% 20%, rgba(0, 245, 255, 0.07) 0%, transparent 40%);
+            }
+            66% {
+                background:
+                    radial-gradient(ellipse at 50% 90%, rgba(192, 109, 255, 0.09) 0%, transparent 48%),
+                    radial-gradient(ellipse at 60% 10%, rgba(89, 208, 255, 0.12) 0%, transparent 48%),
+                    radial-gradient(ellipse at 20% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
+            100% {
+                background:
+                    radial-gradient(ellipse at 10% 10%, rgba(89, 208, 255, 0.12) 0%, transparent 48%),
+                    radial-gradient(ellipse at 90% 90%, rgba(192, 109, 255, 0.10) 0%, transparent 48%),
+                    radial-gradient(ellipse at 60% 50%, rgba(0, 245, 255, 0.06) 0%, transparent 40%);
+            }
         }
 
         a {
@@ -71,7 +119,9 @@ $extraScripts = trim(ob_get_clean());
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 32px 16px;
+            padding: 80px 16px 32px;
+            position: relative;
+            z-index: 1;
         }
 
         .auth-page-wrap,
@@ -443,6 +493,7 @@ $extraScripts = trim(ob_get_clean());
 <?php endif; ?>
 </head>
 <body>
+    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
     <div class="auth-shell">
         <?php View::yield('content'); ?>
     </div>

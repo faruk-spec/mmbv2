@@ -708,14 +708,39 @@ class SubscriptionService
         );
 
         if ($existing) {
+            $updates = [];
+            $updateParams = [];
+
             // If a fresh UPI payload is supplied but the existing record has none, update it now.
             if (!empty($data['payment_payload']) && empty($existing['payment_payload'])) {
-                $this->db->query(
-                    "UPDATE subscription_payments SET payment_payload = ?, updated_at = NOW() WHERE id = ?",
-                    [$data['payment_payload'], (int) $existing['id']]
-                );
+                $updates[] = 'payment_payload = ?';
+                $updateParams[] = $data['payment_payload'];
                 $existing['payment_payload'] = $data['payment_payload'];
             }
+
+            // Sync amount/currency if the plan price was changed since the payment was created.
+            $newAmount = isset($data['amount']) ? (float) $data['amount'] : null;
+            if ($newAmount !== null && abs((float) $existing['amount'] - $newAmount) > 0.0001) {
+                $updates[] = 'amount = ?';
+                $updateParams[] = $newAmount;
+                $existing['amount'] = $newAmount;
+            }
+            $newCurrency = isset($data['currency']) ? (string) $data['currency'] : null;
+            if ($newCurrency !== null && $existing['currency'] !== $newCurrency) {
+                $updates[] = 'currency = ?';
+                $updateParams[] = $newCurrency;
+                $existing['currency'] = $newCurrency;
+            }
+
+            if (!empty($updates)) {
+                $updates[] = 'updated_at = NOW()';
+                $updateParams[] = (int) $existing['id'];
+                $this->db->query(
+                    "UPDATE subscription_payments SET " . implode(', ', $updates) . " WHERE id = ?",
+                    $updateParams
+                );
+            }
+
             return $existing;
         }
 

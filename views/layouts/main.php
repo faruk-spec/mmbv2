@@ -1005,6 +1005,9 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
         .footer-links a:hover {
             color: var(--cyan);
         }
+        @media (max-width: 1024px) {
+            footer { display: none !important; }
+        }
         
         /* Grid */
         .grid {
@@ -2613,17 +2616,6 @@ window.mmbSkeleton = (function(){
                     <?php endif; ?>
                 </div>
             </div>
-            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 0 20px;">
-                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);font-size:.75rem;color:var(--text-secondary);">
-                    <i class="fas fa-lock" style="color:var(--cyan);"></i> HTTPS Secure
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);font-size:.75rem;color:var(--text-secondary);">
-                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> PCI-DSS Compliant Payments
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);font-size:.75rem;color:var(--text-secondary);">
-                    <i class="fas fa-bolt" style="color:var(--cyan);"></i> Powered by Cashfree Payments
-                </span>
-            </div>
             <!-- Bottom bar -->
             <div style="border-top:1px solid var(--border-color);padding:16px 0;text-align:center;">
                 <p style="font-size:.8rem;color:var(--text-secondary);">
@@ -2685,17 +2677,6 @@ window.mmbSkeleton = (function(){
                 <?php endif; ?>
             </div>
             <?php endif; ?>
-            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;">
-                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);font-size:.75rem;color:var(--text-secondary);">
-                    <i class="fas fa-lock" style="color:var(--cyan);"></i> HTTPS Secure
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);font-size:.75rem;color:var(--text-secondary);">
-                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> PCI-DSS Compliant Payments
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border-color);background:var(--bg-card);font-size:.75rem;color:var(--text-secondary);">
-                    <i class="fas fa-bolt" style="color:var(--cyan);"></i> Powered by Cashfree Payments
-                </span>
-            </div>
             <p style="font-size:.8rem;color:var(--text-secondary);">
                 <?php
                 if (!empty($footerCopyright)) {
