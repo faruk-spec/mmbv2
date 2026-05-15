@@ -130,7 +130,14 @@
 
 <?php View::section('content'); ?>
 <?php
-$secureLogo = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
+$invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
+$appLogoUrl = $appMeta['logo_url'] ?? '';
+if ($appLogoUrl === '') {
+    $iconCandidate = (string) ($appMeta['icon'] ?? '');
+    if (preg_match('#^(https?://|/)#', $iconCandidate) === 1) {
+        $appLogoUrl = $iconCandidate;
+    }
+}
 ?>
 <div class="sub-wrap">
 
@@ -163,8 +170,8 @@ $secureLogo = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_
     <!-- Merchant header bar -->
     <div class="merchant-bar">
         <div style="display:flex;align-items:center;gap:14px;">
-            <?php if (!empty($appMeta['logo_url'])): ?>
-            <img src="<?= View::e($appMeta['logo_url']) ?>" alt="<?= View::e($appMeta['name'] ?? ucfirst($app)) ?> logo" class="merchant-logo">
+            <?php if (!empty($appLogoUrl)): ?>
+            <img src="<?= View::e($appLogoUrl) ?>" alt="<?= View::e($appMeta['name'] ?? ucfirst($app)) ?> logo" class="merchant-logo">
             <?php else: ?>
             <div class="merchant-avatar"><?= strtoupper(substr($appMeta['name'] ?? $app, 0, 1)) ?></div>
             <?php endif; ?>
@@ -179,9 +186,9 @@ $secureLogo = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_
             </div>
         </div>
         <div style="text-align:right;">
-            <?php if (!empty($secureLogo)): ?>
+            <?php if (!empty($invoiceLogoUrl)): ?>
             <div style="margin-bottom:8px;">
-                <img src="<?= View::e($secureLogo) ?>" alt="Secure brand logo" style="max-width:120px;max-height:34px;object-fit:contain;">
+                <img src="<?= View::e($invoiceLogoUrl) ?>" alt="Secure brand logo" style="max-width:120px;max-height:34px;object-fit:contain;">
             </div>
             <?php endif; ?>
             <div style="font-size:.75rem;color:var(--text-secondary);margin-bottom:3px;">Total Due</div>

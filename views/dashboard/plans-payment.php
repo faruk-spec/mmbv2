@@ -145,7 +145,7 @@
 
 <?php View::section('content'); ?>
 <?php
-$secureLogo = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
+$invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
 $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAME') ? APP_NAME : 'MMB Platform');
 ?>
 
@@ -163,8 +163,8 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
 
     <div class="secure-brand-bar">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <?php if (!empty($secureLogo)): ?>
-            <img src="<?= View::e($secureLogo) ?>" alt="Secure brand logo" class="secure-brand-logo">
+            <?php if (!empty($invoiceLogoUrl)): ?>
+            <img src="<?= View::e($invoiceLogoUrl) ?>" alt="Secure brand logo" class="secure-brand-logo">
             <?php endif; ?>
             <div>
                 <div style="font-weight:800;font-size:1rem;"><?= View::e($secureBrandName) ?> Secure Payment Desk</div>
@@ -465,4 +465,3 @@ document.getElementById('cashfreePayBtn')?.addEventListener('click', function ()
 </script>
 <?php endif; ?>
 <?php View::endSection(); ?>
-

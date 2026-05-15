@@ -33,8 +33,7 @@ class SecurityHeadersMiddleware
             "form-action 'self' https://*.cashfree.com; " .
             "base-uri 'self'; " .
             "object-src 'none'; " .
-            "upgrade-insecure-requests; " .
-            "block-all-mixed-content;"
+            "upgrade-insecure-requests;"
         );
 
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')

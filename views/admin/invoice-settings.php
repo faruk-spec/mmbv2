@@ -13,9 +13,14 @@ $layoutOrder = json_decode($settings['invoice_layout_blocks'] ?? '', true);
 if (!is_array($layoutOrder)) {
     $layoutOrder = array_keys($layoutLabels);
 }
-$layoutOrder = array_values(array_unique(array_filter(array_map('strval', $layoutOrder), static function ($k) use ($layoutLabels) {
-    return isset($layoutLabels[$k]);
-})));
+$normalizedLayoutOrder = [];
+foreach ($layoutOrder as $item) {
+    $key = (string) $item;
+    if (isset($layoutLabels[$key])) {
+        $normalizedLayoutOrder[] = $key;
+    }
+}
+$layoutOrder = array_values(array_unique($normalizedLayoutOrder));
 foreach (array_keys($layoutLabels) as $key) {
     if (!in_array($key, $layoutOrder, true)) {
         $layoutOrder[] = $key;
@@ -132,7 +137,7 @@ foreach (array_keys($layoutLabels) as $key) {
     <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px;margin-bottom:20px;">
         <div style="margin-bottom:8px;font-weight:700;font-size:.9rem;">Invoice Layout Builder (Drag &amp; Drop)</div>
         <p style="color:var(--text-secondary);font-size:.8rem;margin-bottom:12px;">Drag sections to customize invoice section order.</p>
-        <input type="hidden" name="invoice_layout_blocks" id="invoiceLayoutBlocksInput" value="<?= View::e(json_encode($layoutOrder)) ?>">
+        <input type="hidden" name="invoice_layout_blocks" id="invoiceLayoutBlocksInput" value="<?= htmlspecialchars((string) json_encode($layoutOrder), ENT_QUOTES, 'UTF-8') ?>">
         <ul id="invoiceLayoutList" style="list-style:none;padding:0;margin:0;display:grid;gap:10px;">
             <?php foreach ($layoutOrder as $blockKey): ?>
             <li draggable="true"

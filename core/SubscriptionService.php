@@ -1769,7 +1769,14 @@ class SubscriptionService
         if (!is_array($layoutOrder)) {
             $layoutOrder = $allowedLayoutKeys;
         }
-        $layoutOrder = array_values(array_unique(array_filter(array_map(static fn ($item): string => (string) $item, $layoutOrder), static fn ($item): bool => in_array($item, $allowedLayoutKeys, true))));
+        $normalizedLayoutOrder = [];
+        foreach ($layoutOrder as $item) {
+            $key = (string) $item;
+            if (in_array($key, $allowedLayoutKeys, true)) {
+                $normalizedLayoutOrder[] = $key;
+            }
+        }
+        $layoutOrder = array_values(array_unique($normalizedLayoutOrder));
         foreach ($allowedLayoutKeys as $layoutKey) {
             if (!in_array($layoutKey, $layoutOrder, true)) {
                 $layoutOrder[] = $layoutKey;

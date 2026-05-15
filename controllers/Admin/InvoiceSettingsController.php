@@ -102,6 +102,11 @@ class InvoiceSettingsController extends BaseController
             }
         }
 
-        return json_encode($ordered) ?: json_encode($allowed);
+        $encoded = json_encode($ordered);
+        if ($encoded === false) {
+            return '["bill_to","subscription_details","line_items","footer_notes"]';
+        }
+
+        return $encoded;
     }
 }
