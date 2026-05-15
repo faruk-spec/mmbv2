@@ -347,6 +347,7 @@ class PlansController extends BaseController
             'title' => 'Subscription Payment',
             'payment' => $payment,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
+            'invoiceSettings' => $this->subscriptionService->getInvoiceSettings(true),
             'canCancel' => $this->subscriptionService->canCancelPayment($payment),
             'canRefund' => $this->subscriptionService->canRequestRefund($payment),
         ]);
@@ -390,13 +391,26 @@ class PlansController extends BaseController
             return;
         }
 
+        $appMeta = self::APP_META[$app] ?? ['name' => ucfirst($app), 'url' => '/plans'];
+        $projectInfo = Helpers::getProject($app);
+        if (is_array($projectInfo)) {
+            $appMeta['logo_url'] = (string) ($projectInfo['logo_url'] ?? '');
+            if (!empty($projectInfo['color'])) {
+                $appMeta['color'] = (string) $projectInfo['color'];
+            }
+            if (!empty($projectInfo['name'])) {
+                $appMeta['name'] = (string) $projectInfo['name'];
+            }
+        }
+
         $this->view('dashboard/app-plan-subscribe', [
             'title' => 'Subscribe to ' . ucfirst($app) . ' Plan',
             'plan' => $plan,
             'app' => $app,
-            'appMeta' => self::APP_META[$app] ?? ['name' => ucfirst($app), 'url' => '/plans'],
+            'appMeta' => $appMeta,
             'existing' => $existing,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
+            'invoiceSettings' => $this->subscriptionService->getInvoiceSettings(true),
         ]);
     }
 

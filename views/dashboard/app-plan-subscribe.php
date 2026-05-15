@@ -47,6 +47,14 @@
     background: linear-gradient(135deg, var(--cyan), var(--purple));
     display: flex; align-items: center; justify-content: center; color: #06060a; font-weight: 800; font-size: 1.3rem;
 }
+.merchant-logo {
+    width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+    object-fit: cover; border: 1px solid var(--border-color); background: #fff;
+}
+.merchant-trust {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 4px;
+    font-size: .72rem; color: var(--text-secondary);
+}
 
 /* Payment method tiles */
 .pay-method-tile {
@@ -121,6 +129,9 @@
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
+<?php
+$secureLogo = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
+?>
 <div class="sub-wrap">
 
     <!-- Back link -->
@@ -152,18 +163,27 @@
     <!-- Merchant header bar -->
     <div class="merchant-bar">
         <div style="display:flex;align-items:center;gap:14px;">
-            <?php if (!empty($appMeta['icon'])): ?>
-            <img src="<?= View::e($appMeta['icon']) ?>" alt=""
-                 style="width:48px;height:48px;border-radius:12px;object-fit:cover;border:1px solid var(--border-color);">
+            <?php if (!empty($appMeta['logo_url'])): ?>
+            <img src="<?= View::e($appMeta['logo_url']) ?>" alt="<?= View::e($appMeta['name'] ?? ucfirst($app)) ?> logo" class="merchant-logo">
             <?php else: ?>
             <div class="merchant-avatar"><?= strtoupper(substr($appMeta['name'] ?? $app, 0, 1)) ?></div>
             <?php endif; ?>
             <div>
                 <div style="font-weight:800;font-size:1.1rem;"><?= View::e($appMeta['name'] ?? ucfirst($app)) ?></div>
                 <div style="font-size:.78rem;color:var(--text-secondary);">Secure Checkout &mdash; <?= View::e($plan['name']) ?></div>
+                <div class="merchant-trust">
+                    <i class="fas fa-lock" style="color:var(--green);"></i> Protected Payment
+                    <span>·</span>
+                    <i class="fas fa-shield-check" style="color:var(--cyan);"></i> Verified Subscription
+                </div>
             </div>
         </div>
         <div style="text-align:right;">
+            <?php if (!empty($secureLogo)): ?>
+            <div style="margin-bottom:8px;">
+                <img src="<?= View::e($secureLogo) ?>" alt="Secure brand logo" style="max-width:120px;max-height:34px;object-fit:contain;">
+            </div>
+            <?php endif; ?>
             <div style="font-size:.75rem;color:var(--text-secondary);margin-bottom:3px;">Total Due</div>
             <div style="font-size:1.5rem;font-weight:900;color:var(--cyan);">
                 <?= View::e($plan['currency'] ?? 'USD') ?> <?= number_format((float)($plan['price'] ?? 0), 2) ?>

@@ -626,7 +626,7 @@ if ($showStats):
             if (!empty($project['features'])) {
                 $decoded = json_decode($project['features'], true);
                 if (is_array($decoded)) {
-                    $projectFeatures = array_slice($decoded, 0, 5);
+                    $projectFeatures = array_slice($decoded, 0, 3);
                 }
             }
 
@@ -910,6 +910,51 @@ a.project-card:hover {
 
 .project-card__btn--primary {
     color: #fff !important;
+}
+
+@media (max-width: 768px) {
+    .project-card {
+        aspect-ratio: auto;
+        min-height: 320px;
+    }
+
+    .project-card__body {
+        padding: 12px;
+    }
+
+    .project-card__logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+    }
+
+    .project-card__title {
+        font-size: 0.95rem;
+    }
+
+    .project-card__features {
+        margin-top: 8px;
+        flex: 0 0 auto;
+    }
+
+    .project-card__features li {
+        font-size: 10px;
+        line-height: 1.35;
+        white-space: normal;
+    }
+
+    .project-card__actions {
+        margin-top: 10px;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .project-card__btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        justify-content: center;
+        flex: 1;
+    }
 }
 </style>
 
