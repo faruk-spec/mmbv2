@@ -344,6 +344,11 @@ class SubscriptionService
             'invoice_tax_enabled' => '0',
             'invoice_tax_label' => 'Tax',
             'invoice_tax_rate' => '0',
+            'invoice_title' => 'Subscription Invoice',
+            'invoice_subtitle' => 'Secure payment receipt',
+            'invoice_item_label' => 'Subscription',
+            'invoice_total_label' => 'Total',
+            'invoice_layout_blocks' => '["bill_to","subscription_details","line_items","footer_notes"]',
         ];
 
         try {
@@ -378,6 +383,11 @@ class SubscriptionService
             'invoice_tax_enabled' => isset($data['invoice_tax_enabled']) && $data['invoice_tax_enabled'] ? '1' : '0',
             'invoice_tax_label' => trim((string) ($data['invoice_tax_label'] ?? 'Tax')) ?: 'Tax',
             'invoice_tax_rate' => (string) max(0, min(100, (float) ($data['invoice_tax_rate'] ?? 0))),
+            'invoice_title' => trim((string) ($data['invoice_title'] ?? 'Subscription Invoice')) ?: 'Subscription Invoice',
+            'invoice_subtitle' => trim((string) ($data['invoice_subtitle'] ?? 'Secure payment receipt')) ?: 'Secure payment receipt',
+            'invoice_item_label' => trim((string) ($data['invoice_item_label'] ?? 'Subscription')) ?: 'Subscription',
+            'invoice_total_label' => trim((string) ($data['invoice_total_label'] ?? 'Total')) ?: 'Total',
+            'invoice_layout_blocks' => trim((string) ($data['invoice_layout_blocks'] ?? '["bill_to","subscription_details","line_items","footer_notes"]')),
         ];
 
         foreach ($settings as $key => $value) {
@@ -1692,6 +1702,10 @@ class SubscriptionService
         $terms     = nl2br(htmlspecialchars($settings['invoice_terms'] ?? ''));
         $gateway   = htmlspecialchars(strtoupper((string) ($payment['gateway'] ?? '')));
         $reference = htmlspecialchars((string) ($payment['reference'] ?? ''));
+        $invoiceTitle = htmlspecialchars((string) ($settings['invoice_title'] ?? 'Subscription Invoice'));
+        $invoiceSubtitle = htmlspecialchars((string) ($settings['invoice_subtitle'] ?? 'Secure payment receipt'));
+        $invoiceItemLabel = htmlspecialchars((string) ($settings['invoice_item_label'] ?? 'Subscription'));
+        $invoiceTotalLabel = htmlspecialchars((string) ($settings['invoice_total_label'] ?? 'Total'));
 
         // User billing address (from user_billing_details if available)
         $billAddress = '';
@@ -1750,6 +1764,64 @@ class SubscriptionService
               . '</div>'
             : '';
         $appLabel = htmlspecialchars($this->getAppLabel((string) ($payment['app_key'] ?? 'platform')));
+        $layoutOrder = json_decode((string) ($settings['invoice_layout_blocks'] ?? ''), true);
+        $allowedLayoutKeys = ['bill_to', 'subscription_details', 'line_items', 'footer_notes'];
+        if (!is_array($layoutOrder)) {
+            $layoutOrder = $allowedLayoutKeys;
+        }
+        $layoutOrder = array_values(array_unique(array_filter(array_map(static fn ($item): string => (string) $item, $layoutOrder), static fn ($item): bool => in_array($item, $allowedLayoutKeys, true))));
+        foreach ($allowedLayoutKeys as $layoutKey) {
+            if (!in_array($layoutKey, $layoutOrder, true)) {
+                $layoutOrder[] = $layoutKey;
+            }
+        }
+        $layoutBlocks = [
+            'bill_to' => <<<HTML
+<div class="invoice-section">
+  <div class="block-title">Bill To</div>
+  <p><strong>Name</strong>{$userName}</p>
+  <p><strong>Email</strong>{$userEmail}</p>
+  {$userPhoneRow}
+  {$billAddressRow}
+</div>
+HTML,
+            'subscription_details' => <<<HTML
+<div class="invoice-section">
+  <div class="block-title">Subscription Details</div>
+  <p><strong>Application</strong>{$appLabel}</p>
+  <p><strong>Plan</strong>{$planName}</p>
+  <p><strong>Billing Cycle</strong>{$billing}</p>
+  <p><strong>Started</strong>{$dateFormatted}</p>
+  <p><strong>Expires</strong>{$expiry}</p>
+  <p><strong>Ordered</strong>{$createdDate}</p>
+</div>
+HTML,
+            'line_items' => <<<HTML
+<div class="invoice-section invoice-section--wide">
+  <table>
+    <thead>
+      <tr><th>Description</th><th>Billing</th><th style="text-align:right;">Amount</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>{$planName} {$invoiceItemLabel}</td><td>{$billing}</td><td style="text-align:right;">{$cur} {$price}</td></tr>
+    </tbody>
+    <tfoot>
+      {$taxRow}
+      <tr class="total-row"><td colspan="2">{$invoiceTotalLabel}</td><td style="text-align:right;">{$cur} {$totalFmt}</td></tr>
+    </tfoot>
+  </table>
+</div>
+HTML,
+            'footer_notes' => $footerContent !== ''
+                ? '<div class="invoice-section invoice-section--wide">' . $footerContent . '</div>'
+                : '',
+        ];
+        $renderedLayoutBlocks = '';
+        foreach ($layoutOrder as $layoutKey) {
+            if (!empty($layoutBlocks[$layoutKey])) {
+                $renderedLayoutBlocks .= $layoutBlocks[$layoutKey];
+            }
+        }
 
         return <<<HTML
 <!DOCTYPE html>
@@ -1775,12 +1847,12 @@ body { font-family:'Segoe UI',Helvetica,Arial,sans-serif; background:#f5f7fc; co
 .status-pending { display:inline-block; background:#fff3cd; color:#856404; padding:3px 14px; border-radius:20px; font-size:.78rem; font-weight:700; margin-top:8px; }
 .status-other  { display:inline-block; background:#f0f4ff; color:#444; padding:3px 14px; border-radius:20px; font-size:.78rem; font-weight:700; margin-top:8px; }
 .inv-body { padding:32px 36px; }
-.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px; }
-.info-block { }
-.info-block .block-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#aaa; margin-bottom:10px; }
-.info-block p { font-size:.87rem; line-height:1.7; color:#333; }
-.info-block strong { display:block; font-size:.72rem; color:#aaa; font-weight:600; margin-top:6px; }
-.divider { border:none; border-top:1px solid #edf0f7; margin:20px 0; }
+.inv-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.invoice-section { border:1px solid #edf0f7; border-radius:12px; padding:16px; background:#fff; }
+.invoice-section--wide { grid-column:1 / -1; }
+.invoice-section .block-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#aaa; margin-bottom:10px; }
+.invoice-section p { font-size:.87rem; line-height:1.7; color:#333; }
+.invoice-section strong { display:block; font-size:.72rem; color:#aaa; font-weight:600; margin-top:6px; }
 table { width:100%; border-collapse:collapse; font-size:.88rem; }
 thead tr { background:linear-gradient(135deg,{$accent}12,{$accent}04); }
 th { padding:11px 16px; text-align:left; font-size:.76rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#666; border-bottom:2px solid {$accent}22; }
@@ -1789,13 +1861,13 @@ tbody tr:last-child td { border-bottom:none; }
 .tax-row td { background:#fafbff; color:#666; font-size:.85rem; }
 .total-row { }
 .total-row td { font-weight:800; font-size:1rem; color:{$accent}; padding:14px 16px; border-top:2px solid {$accent}22; background:linear-gradient(135deg,{$accent}08,{$accent}03); }
-.inv-footer { padding:22px 36px; border-top:1px solid #edf0f7; background:#fafbff; }
-.footer-text { font-size:.78rem; color:#aaa; line-height:1.6; }
+.inv-footer { padding:22px 36px; border-top:1px solid #edf0f7; background:#fafbff; display:flex; justify-content:flex-end; }
+.footer-text { font-size:.78rem; color:#777; line-height:1.6; }
 .print-btn { margin-top:12px; padding:8px 20px; background:{$accent}; color:#fff; border:none; border-radius:7px; font-size:.82rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
 .print-btn:hover { opacity:.88; }
 @media (max-width:580px) {
   .inv-top, .inv-body, .inv-footer { padding:20px; }
-  .info-grid { grid-template-columns:1fr; gap:16px; }
+  .inv-layout { grid-template-columns:1fr; }
   .inv-meta-col { text-align:left; }
 }
 @media print {
@@ -1814,7 +1886,7 @@ tbody tr:last-child td { border-bottom:none; }
     <div class="brand-col">
       {$logoHtml}
       <div class="brand-name">{$brandName}</div>
-      <div class="brand-sub">Subscription Invoice</div>
+      <div class="brand-sub">{$invoiceSubtitle}</div>
       <div class="company-info">{$companyInfo}</div>
     </div>
     <div class="inv-meta-col">
@@ -1831,43 +1903,13 @@ tbody tr:last-child td { border-bottom:none; }
   </div>
 
   <div class="inv-body">
-    <div class="info-grid">
-      <div class="info-block">
-        <div class="block-title">Bill To</div>
-        <p><strong>Name</strong>{$userName}</p>
-        <p><strong>Email</strong>{$userEmail}</p>
-        {$userPhoneRow}
-        {$billAddressRow}
-      </div>
-      <div class="info-block">
-        <div class="block-title">Subscription Details</div>
-        <p><strong>Application</strong>{$appLabel}</p>
-        <p><strong>Plan</strong>{$planName}</p>
-        <p><strong>Billing Cycle</strong>{$billing}</p>
-        <p><strong>Started</strong>{$dateFormatted}</p>
-        <p><strong>Expires</strong>{$expiry}</p>
-        <p><strong>Ordered</strong>{$createdDate}</p>
-      </div>
+    <h2 style="font-size:1.05rem;margin-bottom:14px;color:{$accent};">{$invoiceTitle}</h2>
+    <div class="inv-layout">
+      {$renderedLayoutBlocks}
     </div>
-
-    <hr class="divider">
-
-    <table>
-      <thead>
-        <tr><th>Description</th><th>Billing</th><th style="text-align:right;">Amount</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>{$planName} Subscription</td><td>{$billing}</td><td style="text-align:right;">{$cur} {$price}</td></tr>
-      </tbody>
-      <tfoot>
-        {$taxRow}
-        <tr class="total-row"><td colspan="2">Total</td><td style="text-align:right;">{$cur} {$totalFmt}</td></tr>
-      </tfoot>
-    </table>
   </div>
 
   <div class="inv-footer">
-    {$footerContent}
     <button class="print-btn" onclick="window.print()">&#x1F5A8; Print / Save as PDF</button>
   </div>
 </div>

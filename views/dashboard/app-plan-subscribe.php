@@ -174,7 +174,7 @@ $secureLogo = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_
                 <div class="merchant-trust">
                     <i class="fas fa-lock" style="color:var(--green);"></i> Protected Payment
                     <span>·</span>
-                    <i class="fas fa-shield-check" style="color:var(--cyan);"></i> Verified Subscription
+                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> Verified Subscription
                 </div>
             </div>
         </div>

@@ -32,6 +32,25 @@ if (!file_exists(BASE_PATH . '/config/installed.lock')) {
 // Load configuration
 require_once BASE_PATH . '/config/app.php';
 
+if (PHP_SAPI !== 'cli') {
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    $appUrl = defined('APP_URL') ? (string) APP_URL : '';
+    if (!$isHttps && str_starts_with(strtolower($appUrl), 'https://')) {
+        $targetHost = parse_url($appUrl, PHP_URL_HOST) ?: ($_SERVER['HTTP_HOST'] ?? '');
+        $targetPort = parse_url($appUrl, PHP_URL_PORT);
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        $hostWithPort = $targetHost;
+        if ($targetPort && !in_array((int) $targetPort, [80, 443], true)) {
+            $hostWithPort .= ':' . $targetPort;
+        }
+        if ($hostWithPort !== '') {
+            header('Location: https://' . $hostWithPort . $requestUri, true, 301);
+            exit;
+        }
+    }
+}
+
 // Debug mode: show request info
 // NOTE: Using reflection here for debugging purposes only. In production, APP_DEBUG should be false.
 // Additional guard: also requires a valid admin session to prevent information disclosure.

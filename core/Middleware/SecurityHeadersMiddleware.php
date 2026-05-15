@@ -23,17 +23,24 @@ class SecurityHeadersMiddleware
         header(
             "Content-Security-Policy: " .
             "default-src 'self'; " .
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://sdk.cashfree.com https://*.cashfree.com; " .
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://sdk.cashfree.com https://*.cashfree.com; " .
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; " .
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; " .
             "img-src 'self' data: blob: https:; " .
             "connect-src 'self' https://sdk.cashfree.com https://*.cashfree.com; " .
             "frame-src 'self' https://sdk.cashfree.com https://*.cashfree.com; " .
-            "frame-ancestors 'self';"
+            "frame-ancestors 'self'; " .
+            "form-action 'self' https://*.cashfree.com; " .
+            "base-uri 'self'; " .
+            "object-src 'none'; " .
+            "upgrade-insecure-requests; " .
+            "block-all-mixed-content;"
         );
 
-        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
-            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+        if ($isHttps) {
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
         }
 
         // For authenticated sessions: add identity headers visible in DevTools Network tab

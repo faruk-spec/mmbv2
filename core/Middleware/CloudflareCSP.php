@@ -25,12 +25,15 @@ class CloudflareCSP
             // Allow Cloudflare scripts and connections
             header("Content-Security-Policy: " . implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+                "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
                 "connect-src 'self' https://cloudflareinsights.com",
                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
                 "img-src 'self' data: https:",
-                "frame-src 'self'"
+                "frame-src 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+                "upgrade-insecure-requests"
             ]));
         }
     }
