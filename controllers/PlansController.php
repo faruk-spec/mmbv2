@@ -436,7 +436,7 @@ class PlansController extends BaseController
             && (float) ($existingForDowngrade['price'] ?? 0) > 0
             && (float) ($plan['price'] ?? 0) < (float) ($existingForDowngrade['price'] ?? 0)
         ) {
-            $this->flash('error', 'Downgrade not allowed. You already have an active higher-tier plan ("' . ($existingForDowngrade['plan_name'] ?? 'current plan') . '"). Please cancel your current plan before switching to a lower tier. Consider upgrading instead.');
+            $this->flash('error', 'Downgrade not allowed. Please cancel your current "' . ($existingForDowngrade['plan_name'] ?? 'current plan') . '" plan before switching to a lower tier, or consider upgrading instead.');
             $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
             return;
         }
@@ -466,7 +466,7 @@ class PlansController extends BaseController
 
         // If manual review is disabled, reject any attempt to use it.
         if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) > 0) {
-            $this->flash('error', 'No payment method is available. Please contact support to activate your plan.');
+            $this->flash('error', 'Payment methods are currently unavailable. Please contact the administrator to set up payment processing.');
             $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
             return;
         }

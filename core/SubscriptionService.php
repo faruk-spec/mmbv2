@@ -1476,7 +1476,7 @@ class SubscriptionService
     {
         $orderAmount = (float) ($payment['amount'] ?? 0);
         if ($orderAmount <= 0) {
-            return ['success' => false, 'message' => 'Cannot create a Cashfree order for a zero or negative amount. Please use a paid plan.'];
+            return ['success' => false, 'message' => 'Invalid payment amount. Please contact support if this issue persists.'];
         }
 
         $validatedReturnUrl = $this->validateReturnUrl($returnUrl);
