@@ -145,6 +145,8 @@
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Save Settings</button>
+                <input type="hidden" name="site_favicon" value="<?= View::e($settings['site_favicon'] ?? '') ?>">
+                <input type="hidden" name="footer_show_on_projects" value="<?= View::e($settings['footer_show_on_projects'] ?? '1') ?>">
             </form>
         </div>
     </div>
@@ -194,6 +196,8 @@
                 <input type="hidden" name="time_format" value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
                 <input type="hidden" name="registration_enabled" value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
                 <input type="hidden" name="auth_tagline" value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+                <input type="hidden" name="site_favicon" value="<?= View::e($settings['site_favicon'] ?? '') ?>">
+                <input type="hidden" name="footer_show_on_projects" value="<?= View::e($settings['footer_show_on_projects'] ?? '1') ?>">
                 <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="margin-bottom:6px;">Or enter Logo URL / Path</label>
                     <input type="text" name="auth_logo" class="form-input"
@@ -208,8 +212,91 @@
             </form>
         </div>
 
+        <!-- Favicon Settings -->
+        <div class="card" style="margin-top:16px;">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-star" style="margin-right:8px;color:var(--orange);"></i> Site Favicon</h4>
+            <?php $currentFavicon = $settings['site_favicon'] ?? ''; ?>
+            <?php if (!empty($currentFavicon)): ?>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <img src="<?= View::e($currentFavicon) ?>" alt="Current favicon"
+                     style="width:32px;height:32px;object-fit:contain;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-secondary);">
+                <span style="font-size:.8rem;color:var(--text-secondary);"><?= View::e($currentFavicon) ?></span>
+            </div>
+            <?php endif; ?>
+            <!-- Upload favicon file -->
+            <form method="POST" action="/admin/settings/upload-favicon" enctype="multipart/form-data" style="margin-bottom:14px;">
+                <?= \Core\Security::csrfField() ?>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="margin-bottom:6px;">Upload Favicon</label>
+                    <input type="file" name="site_favicon_file" class="form-input"
+                           accept=".ico,.png,.jpg,.jpeg,.webp,.svg" required
+                           style="padding:8px;font-size:13px;">
+                    <small class="form-help">ICO, PNG, SVG or WebP · Max 1 MB · Recommended: 32×32 or 64×64 px</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;font-size:13px;">
+                    <i class="fas fa-upload"></i> Upload Favicon
+                </button>
+            </form>
+            <!-- Or use a URL / path -->
+            <form method="POST" action="/admin/settings">
+                <?= \Core\Security::csrfField() ?>
+                <input type="hidden" name="site_name"             value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
+                <input type="hidden" name="site_description"      value="<?= View::e($settings['site_description'] ?? '') ?>">
+                <input type="hidden" name="contact_email"         value="<?= View::e($settings['contact_email'] ?? '') ?>">
+                <input type="hidden" name="system_timezone"       value="<?= View::e($settings['system_timezone'] ?? 'UTC') ?>">
+                <input type="hidden" name="date_format"           value="<?= View::e($settings['date_format'] ?? 'M d, Y') ?>">
+                <input type="hidden" name="time_format"           value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
+                <input type="hidden" name="registration_enabled"  value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
+                <input type="hidden" name="auth_tagline"          value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+                <input type="hidden" name="auth_logo"             value="<?= View::e($settings['auth_logo'] ?? '') ?>">
+                <input type="hidden" name="footer_show_on_projects" value="<?= View::e($settings['footer_show_on_projects'] ?? '1') ?>">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="margin-bottom:6px;">Or enter Favicon URL / Path</label>
+                    <input type="text" name="site_favicon" class="form-input"
+                           value="<?= View::e($currentFavicon) ?>"
+                           placeholder="https://… or /uploads/oauth/favicon.ico"
+                           style="font-size:13px;">
+                    <small class="form-help">Absolute URL or a relative path served by the app.</small>
+                </div>
+                <button type="submit" class="btn btn-secondary" style="width:100%;font-size:13px;">
+                    <i class="fas fa-save"></i> Save Favicon URL
+                </button>
+            </form>
+        </div>
+
         <div class="card" style="margin-top:16px;">
             <h4 style="margin-bottom:15px;"><i class="fas fa-shoe-prints" style="margin-right:8px;color:var(--cyan);"></i> Footer Settings</h4>
+            <p style="color:var(--text-secondary);font-size:.83rem;margin-bottom:12px;">
+                For full footer management, visit the <a href="/admin/settings/footer-page" style="color:var(--cyan);">Footer Settings page</a>.
+            </p>
+            <form method="POST" action="/admin/settings">
+                <?= \Core\Security::csrfField() ?>
+                <input type="hidden" name="site_name"             value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
+                <input type="hidden" name="site_description"      value="<?= View::e($settings['site_description'] ?? '') ?>">
+                <input type="hidden" name="contact_email"         value="<?= View::e($settings['contact_email'] ?? '') ?>">
+                <input type="hidden" name="system_timezone"       value="<?= View::e($settings['system_timezone'] ?? 'UTC') ?>">
+                <input type="hidden" name="date_format"           value="<?= View::e($settings['date_format'] ?? 'M d, Y') ?>">
+                <input type="hidden" name="time_format"           value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
+                <input type="hidden" name="registration_enabled"  value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
+                <input type="hidden" name="auth_tagline"          value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+                <input type="hidden" name="auth_logo"             value="<?= View::e($settings['auth_logo'] ?? '') ?>">
+                <input type="hidden" name="site_favicon"          value="<?= View::e($settings['site_favicon'] ?? '') ?>">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="footer_show_on_projects" value="1"
+                               <?= ($settings['footer_show_on_projects'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span>Show footer on <code>/projects/*</code> pages</span>
+                    </label>
+                    <small class="form-help" style="margin-top:4px;">Uncheck to hide the footer on all project pages (useful when projects have their own footer).</small>
+                </div>
+                <button type="submit" class="btn btn-primary" style="font-size:13px;">
+                    <i class="fas fa-save"></i> Save Footer Visibility
+                </button>
+            </form>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-shoe-prints" style="margin-right:8px;color:var(--cyan);"></i> Footer Content</h4>
             <form method="POST" action="/admin/settings/footer">
                 <?= \Core\Security::csrfField() ?>
 

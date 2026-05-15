@@ -85,6 +85,8 @@ class SettingsController extends BaseController
                 'time_format',
                 'auth_tagline',
                 'auth_logo',
+                'site_favicon',
+                'footer_show_on_projects',
             ];
 
             // Snapshot current values before writing
@@ -192,7 +194,8 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update footer settings.');
         }
 
-        $this->redirect('/admin/settings');
+        $redirect = $this->input('_redirect', '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer'], true) ? $redirect : '/admin/settings');
     }
 
     /**
@@ -237,7 +240,8 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update homepage footer settings.');
         }
 
-        $this->redirect('/admin/settings');
+        $redirect = $this->input('_redirect', '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer'], true) ? $redirect : '/admin/settings');
     }
 
     public function addFooterLink(): void
@@ -255,10 +259,12 @@ class SettingsController extends BaseController
         $url = trim((string) $this->input('url', ''));
         $sortOrder = (int) $this->input('sort_order', 0);
         $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
+        $backTo = $this->input('_redirect', '/admin/settings');
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer'], true) ? $backTo : '/admin/settings';
 
         if ($label === '' || $url === '') {
             $this->flash('error', 'Footer link label and URL are required.');
-            $this->redirect('/admin/settings');
+            $this->redirect($backTo);
             return;
         }
 
@@ -278,7 +284,7 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to add footer link.');
         }
 
-        $this->redirect('/admin/settings');
+        $this->redirect($backTo);
     }
 
     public function updateFooterLink(): void
@@ -297,10 +303,12 @@ class SettingsController extends BaseController
         $url = trim((string) $this->input('url', ''));
         $sortOrder = (int) $this->input('sort_order', 0);
         $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
+        $backTo = $this->input('_redirect', '/admin/settings');
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer'], true) ? $backTo : '/admin/settings';
 
         if ($id <= 0 || $label === '' || $url === '') {
             $this->flash('error', 'Invalid footer link update request.');
-            $this->redirect('/admin/settings');
+            $this->redirect($backTo);
             return;
         }
 
@@ -319,7 +327,7 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update footer link.');
         }
 
-        $this->redirect('/admin/settings');
+        $this->redirect($backTo);
     }
 
     public function deleteFooterLink(): void
@@ -333,9 +341,11 @@ class SettingsController extends BaseController
         $this->ensureFooterLinksTable();
         $db = Database::getInstance();
         $id = (int) $this->input('id', 0);
+        $backTo = $this->input('_redirect', '/admin/settings');
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer'], true) ? $backTo : '/admin/settings';
         if ($id <= 0) {
             $this->flash('error', 'Invalid footer link.');
-            $this->redirect('/admin/settings');
+            $this->redirect($backTo);
             return;
         }
 
@@ -347,7 +357,7 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to delete footer link.');
         }
 
-        $this->redirect('/admin/settings');
+        $this->redirect($backTo);
     }
 
     /**
@@ -467,6 +477,97 @@ class SettingsController extends BaseController
         }
 
         $this->redirect('/admin/settings');
+    }
+
+    /**
+     * Upload favicon image
+     */
+    public function uploadFavicon(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            if (empty($_FILES['site_favicon_file']) || $_FILES['site_favicon_file']['error'] !== UPLOAD_ERR_OK) {
+                $uploadError = $_FILES['site_favicon_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+                $msg = $uploadError === UPLOAD_ERR_NO_FILE ? 'No file was selected.' : 'File upload failed (error code ' . $uploadError . ').';
+                $this->flash('error', $msg);
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $file = $_FILES['site_favicon_file'];
+            $result = SecureUpload::process($file, [
+                'destination_dir' => BASE_PATH . '/storage/uploads/oauth',
+                'allowed_extensions' => ['ico', 'png', 'jpg', 'jpeg', 'webp', 'svg'],
+                'allowed_mime_types' => ['image/x-icon', 'image/vnd.microsoft.icon', 'image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
+                'max_size' => 1 * 1024 * 1024,
+                'trusted' => false,
+                'source' => 'admin.settings.favicon',
+                'user_id' => Auth::id(),
+            ]);
+
+            if (empty($result['success'])) {
+                $this->flash('error', $result['error'] ?? 'Failed to upload favicon.');
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $webPath = '/uploads/oauth/' . $result['filename'];
+            $db = Database::getInstance();
+
+            $row = $db->fetch("SELECT id FROM settings WHERE `key` = 'site_favicon'");
+            if ($row) {
+                $db->update('settings', ['value' => $webPath, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', ['site_favicon']);
+            } else {
+                $db->insert('settings', ['key' => 'site_favicon', 'value' => $webPath, 'created_at' => date('Y-m-d H:i:s')]);
+            }
+
+            ActivityLogger::logUpdate(Auth::id(), 'settings', 'settings', 0, [], ['site_favicon' => $webPath]);
+            $this->flash('success', 'Favicon uploaded successfully.');
+
+        } catch (\Exception $e) {
+            Logger::error('Favicon upload error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to upload favicon.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    /**
+     * Dedicated footer settings page
+     */
+    public function footerPage(): void
+    {
+        $this->requirePermission('settings');
+        $db = Database::getInstance();
+        $this->ensureFooterLinksTable();
+
+        $settings = $db->fetchAll("SELECT * FROM settings");
+        $settingsMap = [];
+        foreach ($settings as $setting) {
+            $settingsMap[$setting['key']] = $setting['value'];
+        }
+
+        $footerLinks = ['home' => [], 'default' => []];
+        try {
+            $rows = $db->fetchAll("SELECT * FROM footer_links ORDER BY area ASC, sort_order ASC, id ASC");
+            foreach ($rows as $row) {
+                $area = ($row['area'] ?? 'default') === 'home' ? 'home' : 'default';
+                $footerLinks[$area][] = $row;
+            }
+        } catch (\Exception $e) {
+            Logger::error('SettingsController footer links load error: ' . $e->getMessage());
+        }
+
+        $this->view('admin/settings/footer', [
+            'title' => 'Footer Settings',
+            'settings' => $settingsMap,
+            'footerLinks' => $footerLinks,
+        ]);
     }
 
     private function ensureFooterLinksTable(): void

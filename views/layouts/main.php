@@ -41,15 +41,36 @@ try {
 } catch (\Exception $e) {
     // ignore
 }
+// Load site name, description and favicon from settings
+$_siteName = defined('APP_NAME') ? APP_NAME : 'MyMultiBranch';
+$_siteDescription = 'Multi-Project Platform';
+$_siteFavicon = '';
+$_footerShowOnProjects = '1'; // default: show footer on project pages
+try {
+    $siteRows = $db->fetchAll(
+        "SELECT `key`, value FROM settings WHERE `key` IN ('site_name','site_description','site_favicon','footer_show_on_projects')"
+    );
+    foreach ($siteRows as $_sr) {
+        if ($_sr['key'] === 'site_name' && !empty($_sr['value']))        $_siteName = $_sr['value'];
+        if ($_sr['key'] === 'site_description' && !empty($_sr['value'])) $_siteDescription = $_sr['value'];
+        if ($_sr['key'] === 'site_favicon')                              $_siteFavicon = $_sr['value'] ?? '';
+        if ($_sr['key'] === 'footer_show_on_projects')                   $_footerShowOnProjects = $_sr['value'] ?? '1';
+    }
+} catch (\Exception $e) {
+    // Use defaults if query fails
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MyMultiBranch - Multi-Project Platform">
+    <meta name="description" content="<?= htmlspecialchars($_siteDescription) ?>">
     <meta name="csrf-token" content="<?= htmlspecialchars(\Core\Security::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= View::e($title ?? 'MyMultiBranch') ?> - <?= APP_NAME ?></title>
+    <title><?= View::e($title ?? $_siteName) ?> - <?= htmlspecialchars($_siteName) ?></title>
+    <?php if (!empty($_siteFavicon)): ?>
+    <link rel="icon" href="<?= htmlspecialchars($_siteFavicon) ?>">
+    <?php endif; ?>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2494,8 +2515,12 @@ window.mmbSkeleton = (function(){
     // Detect if we're on the homepage
     $currentUri = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
     $isHomePage = ($currentUri === '/' || $currentUri === '' || $currentUri === '/home');
+    $isProjectsPage = strpos($currentUri, '/projects/') === 0 || $currentUri === '/projects';
+    // Hide footer entirely on /projects/* pages when admin has disabled it
+    $showFooter = !($isProjectsPage && ($_footerShowOnProjects ?? '1') === '0');
     $showThreeColFooter = ($hpFooterEnabled === '1') && $isHomePage;
     ?>
+    <?php if ($showFooter): ?>
     <?php if ($showThreeColFooter): ?>
     <!-- Homepage 3-column footer -->
     <footer style="background:var(--bg-secondary);border-top:1px solid var(--border-color);margin-top:40px;padding:40px 0 0;">
@@ -2631,6 +2656,7 @@ window.mmbSkeleton = (function(){
         </div>
     </footer>
     <?php endif; ?>
+    <?php endif; // $showFooter ?>
     
     <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

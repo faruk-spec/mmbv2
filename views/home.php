@@ -752,7 +752,7 @@ a.project-card:hover {
 }
 
 .project-card.filtered-out {
-    display: none;
+    display: none !important;
 }
 
 /* Thumbnail fills card */

@@ -2498,6 +2498,12 @@ window.mmbSkeleton = (function(){
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/settings/footer-page" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/footer-page') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-shoe-prints"></i>
+                                <span>Footer Settings</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
                             <a href="/admin/settings/theme" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings/theme') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-palette"></i>
                                 <span>Universal Theme</span>
