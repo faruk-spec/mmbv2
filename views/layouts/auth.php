@@ -434,6 +434,68 @@ $extraScripts = trim(ob_get_clean());
             .auth-inline-row,
             .auth-actions-row { align-items: flex-start; }
         }
+
+        /* Animated particles canvas */
+        #auth-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-shell {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Top navbar */
+        .auth-topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            background: rgba(7, 17, 31, 0.72);
+            border-bottom: 1px solid rgba(89, 208, 255, 0.12);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+
+        .auth-topbar-brand {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--auth-text);
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .auth-topbar-brand:hover {
+            text-decoration: none;
+            color: var(--auth-primary);
+        }
+
+        .auth-topbar-back {
+            margin-left: auto;
+            font-size: 0.82rem;
+            color: var(--auth-muted);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .auth-topbar-back:hover {
+            color: var(--auth-primary);
+            text-decoration: none;
+        }
+
+        body { padding-top: 56px; }
     </style>
 <?php if ($extraStyles !== ''): ?>
     <style nonce="<?= View::e($nonce) ?>">
@@ -442,6 +504,14 @@ $extraScripts = trim(ob_get_clean());
 <?php endif; ?>
 </head>
 <body>
+    <canvas id="auth-particles"></canvas>
+    <nav class="auth-topbar">
+        <a href="/" class="auth-topbar-brand"><?= View::e(defined('APP_NAME') ? APP_NAME : 'Home') ?></a>
+        <a href="/" class="auth-topbar-back">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to Home
+        </a>
+    </nav>
     <div class="auth-shell">
         <?php View::yield('content'); ?>
     </div>
@@ -450,5 +520,122 @@ $extraScripts = trim(ob_get_clean());
 <?= $extraScripts ?>
     </script>
 <?php endif; ?>
+<script nonce="<?= View::e($nonce) ?>">
+(function () {
+    var canvas = document.getElementById('auth-particles');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var nodes = [], packets = [], raf, time = 0;
+    var CONNECT_DIST = 140;
+    var MAX_PACKETS  = 30;
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    function rnd(a, b) { return a + Math.random() * (b - a); }
+    function globalHue() { return 185 + 85 * (0.5 + 0.5 * Math.sin(time * 0.025)); }
+
+    function createNode() {
+        var depth = Math.floor(Math.random() * 3);
+        var sf = 1 - depth * 0.3;
+        return {
+            x: rnd(0, canvas.width), y: rnd(0, canvas.height),
+            depth: depth, r: rnd(1.0, 2.5) + (2 - depth) * 0.6,
+            dx: rnd(-0.25, 0.25) * sf, dy: rnd(-0.25, 0.25) * sf,
+            baseAlpha: rnd(0.4, 0.75) + (2 - depth) * 0.1,
+            phase: rnd(0, Math.PI * 2), pulse: 0
+        };
+    }
+
+    function init() {
+        nodes = []; packets = [];
+        var count = Math.min(70, Math.floor(canvas.width * canvas.height / 12000));
+        for (var i = 0; i < count; i++) nodes.push(createNode());
+    }
+
+    function gradLine(x1, y1, h1, x2, y2, h2, alpha, lineW) {
+        var g = ctx.createLinearGradient(x1, y1, x2, y2);
+        g.addColorStop(0, 'hsla(' + h1 + ',100%,65%,' + alpha + ')');
+        g.addColorStop(1, 'hsla(' + h2 + ',100%,65%,' + alpha + ')');
+        ctx.lineWidth = lineW; ctx.strokeStyle = g;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        time += 0.016;
+        var gHue = globalHue();
+        var edges = [];
+
+        for (var ii = 0; ii < nodes.length - 1; ii++) {
+            for (var jj = ii + 1; jj < nodes.length; jj++) {
+                var na = nodes[ii], nb = nodes[jj];
+                var ddx = na.x - nb.x, ddy = na.y - nb.y;
+                var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                if (dist < CONNECT_DIST) {
+                    var dDepth = Math.abs(na.depth - nb.depth);
+                    var lineA = (1 - dist / CONNECT_DIST) * 0.38 * (1 - dDepth * 0.2);
+                    var pulseBoost = 1 + Math.max(na.pulse, nb.pulse) * 2;
+                    lineA = Math.min(lineA * pulseBoost, 0.75);
+                    var lineW = (0.75 - dDepth * 0.12) * (1 + Math.max(na.pulse, nb.pulse) * 0.6);
+                    var h1 = gHue + (ii % 7 - 3) * 12, h2 = gHue + (jj % 7 - 3) * 12;
+                    gradLine(na.x, na.y, h1, nb.x, nb.y, h2, lineA, lineW);
+                    edges.push(ii, jj);
+                }
+            }
+        }
+
+        if (packets.length < MAX_PACKETS && edges.length > 0 && Math.random() < 0.08) {
+            var pick = Math.floor(Math.random() * (edges.length / 2)) * 2;
+            packets.push({ ai: edges[pick], bi: edges[pick + 1], t: 0,
+                speed: rnd(0.012, 0.028), hue: gHue + rnd(-45, 45), trail: [] });
+            if (nodes[edges[pick]]) nodes[edges[pick]].pulse = 1;
+        }
+
+        for (var k = packets.length - 1; k >= 0; k--) {
+            var pk = packets[k];
+            var pna = nodes[pk.ai], pnb = nodes[pk.bi];
+            if (!pna || !pnb) { packets.splice(k, 1); continue; }
+            pk.t += pk.speed;
+            if (pk.t >= 1) { if (pnb) pnb.pulse = 1; packets.splice(k, 1); continue; }
+            var px = pna.x + (pnb.x - pna.x) * pk.t;
+            var py = pna.y + (pnb.y - pna.y) * pk.t;
+            pk.trail.push({ x: px, y: py });
+            if (pk.trail.length > 8) pk.trail.shift();
+            for (var ti = 0; ti < pk.trail.length; ti++) {
+                var tf = (ti + 1) / pk.trail.length;
+                ctx.save(); ctx.globalAlpha = tf * 0.55;
+                ctx.beginPath(); ctx.arc(pk.trail[ti].x, pk.trail[ti].y, 1.4 * tf, 0, Math.PI * 2);
+                ctx.fillStyle = 'hsla(' + pk.hue + ',100%,82%,1)'; ctx.fill(); ctx.restore();
+            }
+            ctx.save(); ctx.shadowBlur = 14;
+            ctx.shadowColor = 'hsla(' + pk.hue + ',100%,85%,1)';
+            ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2);
+            ctx.fillStyle = 'hsla(' + pk.hue + ',100%,92%,1)'; ctx.fill(); ctx.restore();
+        }
+
+        for (var ni = 0; ni < nodes.length; ni++) {
+            var p = nodes[ni];
+            var tw = p.baseAlpha * (0.55 + 0.45 * Math.sin(time * 1.4 + p.phase));
+            var nHue = gHue + (p.depth - 1) * 28;
+            var glowMult = 1 + p.pulse * 3.5;
+            ctx.save(); ctx.shadowBlur = p.r * 9 * glowMult;
+            ctx.shadowColor = 'hsla(' + nHue + ',100%,72%,' + Math.min(0.9 * glowMult, 1) + ')';
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 + p.pulse * 0.6), 0, Math.PI * 2);
+            ctx.fillStyle = 'hsla(' + nHue + ',100%,80%,' + Math.min(tw + p.pulse * 0.45, 1) + ')';
+            ctx.fill(); ctx.restore();
+            if (p.pulse > 0) p.pulse = Math.max(0, p.pulse - 0.035);
+            p.x += p.dx; p.y += p.dy;
+            if (p.x < -10) p.x = canvas.width + 10;
+            if (p.x > canvas.width + 10) p.x = -10;
+            if (p.y < -10) p.y = canvas.height + 10;
+            if (p.y > canvas.height + 10) p.y = -10;
+        }
+
+        raf = requestAnimationFrame(draw);
+    }
+
+    resize(); init(); draw();
+    window.addEventListener('resize', function () { cancelAnimationFrame(raf); resize(); init(); draw(); });
+}());
+</script>
 </body>
 </html>
