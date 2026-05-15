@@ -618,6 +618,23 @@ class SettingsController extends BaseController
         // Remove inline event handlers / javascript: URLs from links and iframes.
         $clean = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $clean) ?? $clean;
         $clean = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', ' $1="#"', $clean) ?? $clean;
+        $clean = preg_replace_callback('/<iframe\b[^>]*>\s*<\/iframe>/i', function(array $m): string {
+            if (!preg_match('/\ssrc\s*=\s*(["\'])(.*?)\1/i', $m[0], $srcMatch)) {
+                return '';
+            }
+            $src = trim($srcMatch[2]);
+            $allowedPrefixes = [
+                'https://www.google.com/maps/embed',
+                'https://maps.google.com/',
+                'https://www.openstreetmap.org/export/embed.html',
+            ];
+            foreach ($allowedPrefixes as $prefix) {
+                if (stripos($src, $prefix) === 0) {
+                    return $m[0];
+                }
+            }
+            return '';
+        }, $clean) ?? $clean;
 
         return trim($clean);
     }

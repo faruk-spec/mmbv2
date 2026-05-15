@@ -2533,6 +2533,23 @@ window.mmbSkeleton = (function(){
     $hpCol3Safe = strip_tags($hpCol3Raw, '<p><br><strong><b><em><i><u><span><div><ul><ol><li><a><h1><h2><h3><h4><h5><h6><iframe>');
     $hpCol3Safe = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $hpCol3Safe) ?? $hpCol3Safe;
     $hpCol3Safe = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', ' $1="#"', $hpCol3Safe) ?? $hpCol3Safe;
+    $hpCol3Safe = preg_replace_callback('/<iframe\b[^>]*>\s*<\/iframe>/i', function(array $m): string {
+        if (!preg_match('/\ssrc\s*=\s*(["\'])(.*?)\1/i', $m[0], $srcMatch)) {
+            return '';
+        }
+        $src = trim($srcMatch[2]);
+        $allowedPrefixes = [
+            'https://www.google.com/maps/embed',
+            'https://maps.google.com/',
+            'https://www.openstreetmap.org/export/embed.html',
+        ];
+        foreach ($allowedPrefixes as $prefix) {
+            if (stripos($src, $prefix) === 0) {
+                return $m[0];
+            }
+        }
+        return '';
+    }, $hpCol3Safe) ?? $hpCol3Safe;
     ?>
     <?php if ($showFooter): ?>
     <?php if ($showThreeColFooter): ?>
