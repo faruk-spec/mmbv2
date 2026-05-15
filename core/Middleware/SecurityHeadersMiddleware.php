@@ -59,7 +59,7 @@ class SecurityHeadersMiddleware
 
         $isHttps = self::isHttpsRequest();
         if ($isHttps) {
-            header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
 
         // For authenticated sessions: add identity headers visible in DevTools Network tab
@@ -106,8 +106,11 @@ class SecurityHeadersMiddleware
         }
 
         $cfVisitor = (string) ($_SERVER['HTTP_CF_VISITOR'] ?? '');
-        if ($cfVisitor !== '' && str_contains($cfVisitor, '"scheme":"https"')) {
-            return true;
+        if ($cfVisitor !== '') {
+            $cfVisitorData = json_decode($cfVisitor, true);
+            if (is_array($cfVisitorData) && (($cfVisitorData['scheme'] ?? '') === 'https')) {
+                return true;
+            }
         }
 
         return false;

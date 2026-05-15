@@ -109,15 +109,19 @@
 (function () {
     var captchaImg = document.getElementById('loginCaptchaImg');
     var refreshBtn = document.getElementById('loginCaptchaRefresh');
-    if (!captchaImg) {
+    if (!captchaImg && !refreshBtn) {
         return;
     }
 
     function refreshCaptcha() {
-        captchaImg.src = '/captcha?t=' + Date.now();
+        if (captchaImg) {
+            captchaImg.src = '/captcha?t=' + Date.now();
+        }
     }
 
-    captchaImg.addEventListener('click', refreshCaptcha);
+    if (captchaImg) {
+        captchaImg.addEventListener('click', refreshCaptcha);
+    }
     if (refreshBtn) {
         refreshBtn.addEventListener('click', refreshCaptcha);
     }

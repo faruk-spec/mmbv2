@@ -64,13 +64,18 @@ class CloudflareCSP
  * require_once BASE_PATH . '/core/Middleware/CloudflareCSP.php';
  * \Core\Middleware\CloudflareCSP::addMinimalHeaders();
  * 
- * Option 2: Add to .htaccess (Apache)
+ * Option 2: Add to .htaccess (Apache) only if you can inject a dynamic nonce
  * -----------
- * Header set Content-Security-Policy "script-src 'self' 'nonce-{server-generated-nonce}' https://static.cloudflareinsights.com; script-src-attr 'none'; connect-src 'self' https://cloudflareinsights.com;"
+ * Static .htaccess values cannot generate a fresh nonce per request, so the PHP middleware
+ * approach above is recommended. Using a static nonce value (or falling back to unsafe-inline)
+ * would significantly weaken the CSP and should be avoided. If your server can inject a
+ * per-request nonce, mirror the same script-src / script-src-attr directives there.
  * 
- * Option 3: Add to nginx.conf (Nginx)
+ * Option 3: Add to nginx.conf (Nginx) only if you can inject a dynamic nonce
  * -----------
- * add_header Content-Security-Policy "script-src 'self' 'nonce-{server-generated-nonce}' https://static.cloudflareinsights.com; script-src-attr 'none'; connect-src 'self' https://cloudflareinsights.com;";
+ * Static nginx config also cannot generate a fresh nonce by itself. Use application-level
+ * middleware or server-side scripting that injects a unique nonce on every response; otherwise
+ * the CSP loses most of the protection that nonce-based execution is meant to provide.
  * 
  * Option 4: Disable in Cloudflare Dashboard (Recommended if not needed)
  * -----------

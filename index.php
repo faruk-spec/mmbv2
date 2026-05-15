@@ -39,14 +39,14 @@ if (PHP_SAPI !== 'cli') {
             || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https'));
     $appUrl = defined('APP_URL') ? (string) APP_URL : '';
     if (!$isHttps && str_starts_with(strtolower($appUrl), 'https://')) {
-        $targetHost = parse_url($appUrl, PHP_URL_HOST) ?: ($_SERVER['HTTP_HOST'] ?? '');
+        $targetHost = parse_url($appUrl, PHP_URL_HOST);
         $targetPort = parse_url($appUrl, PHP_URL_PORT);
         $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-        $hostWithPort = $targetHost;
-        if ($targetPort && !in_array((int) $targetPort, [80, 443], true)) {
-            $hostWithPort .= ':' . $targetPort;
-        }
-        if ($hostWithPort !== '') {
+        if (is_string($targetHost) && $targetHost !== '') {
+            $hostWithPort = $targetHost;
+            if ($targetPort && !in_array((int) $targetPort, [80, 443], true)) {
+                $hostWithPort .= ':' . $targetPort;
+            }
             header('Location: https://' . $hostWithPort . $requestUri, true, 301);
             exit;
         }

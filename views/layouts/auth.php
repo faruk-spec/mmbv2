@@ -331,15 +331,15 @@ $extraScripts = trim(ob_get_clean());
             align-items: center;
             justify-content: center;
             background: #fff;
-            border-radius: 12px;
-            border: 1px solid #d8e3f2;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
             transition: border-color var(--auth-transition), box-shadow var(--auth-transition), transform var(--auth-transition);
         }
 
         .oauth-button:hover,
         .oauth-button:focus-visible {
-            border-color: #b9ccdf;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
             transform: translateY(-1px);
             outline: none;
         }

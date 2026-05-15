@@ -12,7 +12,7 @@
 /* Countdown */
 .tfa-countdown { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
 .tfa-bar-track { flex: 1; height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden; }
-.tfa-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan, #00f0ff), var(--magenta, #ff2ec4)); border-radius: 2px; transition: width 1s linear; }
+.tfa-bar-fill { width: 0; height: 100%; background: linear-gradient(90deg, var(--cyan, #00f0ff), var(--magenta, #ff2ec4)); border-radius: 2px; transition: width 1s linear; }
 .tfa-timer { font-size: .78rem; color: var(--text-secondary); min-width: 54px; text-align: right; }
 /* Digit boxes */
 .tfa-digits { display: flex; gap: 8px; justify-content: center; margin-bottom: 22px; }
