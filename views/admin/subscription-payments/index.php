@@ -87,7 +87,7 @@
             $statusClass = match ($payment['status']) {
                 'paid'   => 'sp-badge-paid',
                 'verification_pending', 'pending' => 'sp-badge-pending',
-                'failed', 'cancelled' => 'sp-badge-failed',
+                'failed' => 'sp-badge-failed',
                 'cancelled' => 'sp-badge-cancelled',
                 default => 'sp-badge-default',
             };
@@ -149,7 +149,10 @@
                         <form method="POST" action="/admin/subscription-payments/<?= (int) $payment['id'] ?>/refund" style="margin:0;">
                             <?= \Core\Security::csrfField() ?>
                             <input type="hidden" name="decision" value="approved">
-                            <button type="submit" class="sp-btn sp-btn-refund" title="Approve refund — will trigger gateway if Cashfree"><i class="fas fa-undo"></i> Refund</button>
+                            <button type="submit" class="sp-btn sp-btn-refund"
+                                    aria-label="Approve refund — will trigger Cashfree gateway automatically if this is a Cashfree payment">
+                                <i class="fas fa-undo"></i> Approve Refund
+                            </button>
                         </form>
                         <form method="POST" action="/admin/subscription-payments/<?= (int) $payment['id'] ?>/refund" style="margin:0;">
                             <?= \Core\Security::csrfField() ?>
