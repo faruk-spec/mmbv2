@@ -33,8 +33,10 @@ if (!file_exists(BASE_PATH . '/config/installed.lock')) {
 require_once BASE_PATH . '/config/app.php';
 
 if (PHP_SAPI !== 'cli') {
-    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    $isHttps = class_exists('Core\\Middleware\\SecurityHeadersMiddleware')
+        ? \Core\Middleware\SecurityHeadersMiddleware::isHttpsRequest()
+        : ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https'));
     $appUrl = defined('APP_URL') ? (string) APP_URL : '';
     if (!$isHttps && str_starts_with(strtolower($appUrl), 'https://')) {
         $targetHost = parse_url($appUrl, PHP_URL_HOST) ?: ($_SERVER['HTTP_HOST'] ?? '');

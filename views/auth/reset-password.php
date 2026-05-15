@@ -1,10 +1,10 @@
 <?php use Core\View; use Core\Helpers; ?>
-<?php View::extend('main'); ?>
+<?php View::extend('auth'); ?>
 
 <?php View::section('content'); ?>
-<div style="max-width: 400px; margin: 40px auto;">
-    <div class="card">
-        <h1 style="text-align: center; margin-bottom: 30px; font-size: 1.8rem;">Reset Password</h1>
+<div class="auth-narrow">
+    <div class="auth-simple-card">
+        <h1 class="auth-title auth-center">Reset Password</h1>
         
         <?php if (Helpers::hasFlash('error')): ?>
             <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
@@ -29,7 +29,7 @@
                        class="form-input" placeholder="Repeat password" required>
             </div>
             
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Reset Password</button>
+            <button type="submit" class="btn btn-primary auth-btn-block">Reset Password</button>
         </form>
     </div>
 </div>

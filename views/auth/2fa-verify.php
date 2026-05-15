@@ -1,8 +1,7 @@
 <?php use Core\View; use Core\Helpers; ?>
-<?php View::extend('main'); ?>
+<?php View::extend('auth'); ?>
 
-<?php View::section('content'); ?>
-<style>
+<?php View::section('styles'); ?>
 .tfa-wrap { max-width: 420px; margin: 48px auto; }
 .tfa-card { background: var(--bg-card, var(--bg-secondary)); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
 .tfa-header { background: linear-gradient(135deg, rgba(0,240,255,.12), rgba(255,0,200,.12)); border-bottom: 1px solid var(--border-color); padding: 28px 32px 24px; text-align: center; }
@@ -30,8 +29,11 @@
 .tfa-backup-input:focus { border-color: var(--cyan, #00f0ff); }
 .tfa-back { display: block; text-align: center; margin-top: 20px; color: var(--text-secondary); font-size: .85rem; text-decoration: none; }
 .tfa-back:hover { color: var(--text-primary); }
-</style>
+ .tfa-flash { margin-bottom: 18px; }
+ .tfa-backup-label { display:block; font-size:.85rem; color:var(--text-secondary); margin-bottom:8px; }
+<?php View::endSection(); ?>
 
+<?php View::section('content'); ?>
 <div class="tfa-wrap">
     <div class="tfa-card">
         <div class="tfa-header">
@@ -47,14 +49,14 @@
 
         <div class="tfa-body">
             <?php if (Helpers::hasFlash('error')): ?>
-                <div style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4);border-radius:8px;padding:12px 14px;margin-bottom:18px;color:#ff6b6b;font-size:.875rem;">
+                <div class="alert alert-error tfa-flash">
                     <?= View::e(Helpers::getFlash('error')) ?>
                 </div>
             <?php endif; ?>
 
             <!-- TOTP countdown -->
             <div class="tfa-countdown">
-                <div class="tfa-bar-track"><div class="tfa-bar-fill" id="tfaBar" style="width:100%"></div></div>
+                <div class="tfa-bar-track"><div class="tfa-bar-fill" id="tfaBar"></div></div>
                 <span class="tfa-timer" id="tfaTimer">30s</span>
             </div>
 
@@ -79,7 +81,7 @@
                 </div>
 
                 <div class="tfa-backup-section" id="tfaBackupSection">
-                    <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:8px;">Enter backup code:</label>
+                    <label class="tfa-backup-label">Enter backup code:</label>
                     <input type="text" id="tfaBackupInput" class="tfa-backup-input" placeholder="xxxxxxxx" autocomplete="off">
                 </div>
             </form>
@@ -89,7 +91,9 @@
     </div>
 </div>
 
-<script>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
 (function () {
     var digits   = Array.from(document.querySelectorAll('.tfa-digit'));
     var hidden   = document.getElementById('tfaCodeHidden');
@@ -199,6 +203,4 @@
     // Auto-focus first digit
     digits[0].focus();
 })();
-</script>
 <?php View::endSection(); ?>
-

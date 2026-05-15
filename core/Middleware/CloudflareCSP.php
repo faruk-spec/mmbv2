@@ -13,6 +13,8 @@
 
 namespace Core\Middleware;
 
+use Core\Security;
+
 class CloudflareCSP
 {
     /**
@@ -22,11 +24,14 @@ class CloudflareCSP
     {
         // Only add if not already set
         if (!headers_sent()) {
+            $nonce = Security::getCspNonce();
             // Allow Cloudflare scripts and connections
             header("Content-Security-Policy: " . implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+                "script-src 'self' 'nonce-{$nonce}' https://static.cloudflareinsights.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+                "script-src-attr 'none'",
+                "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+                "style-src-attr 'none'",
                 "connect-src 'self' https://cloudflareinsights.com",
                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
                 "img-src 'self' data: https:",
@@ -44,8 +49,9 @@ class CloudflareCSP
     public static function addMinimalHeaders(): void
     {
         if (!headers_sent()) {
+            $nonce = Security::getCspNonce();
             // Minimal CSP just for Cloudflare beacon
-            header("Content-Security-Policy: script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com;");
+            header("Content-Security-Policy: script-src 'self' 'nonce-{$nonce}' https://static.cloudflareinsights.com; script-src-attr 'none'; connect-src 'self' https://cloudflareinsights.com;");
         }
     }
 }
@@ -60,11 +66,11 @@ class CloudflareCSP
  * 
  * Option 2: Add to .htaccess (Apache)
  * -----------
- * Header set Content-Security-Policy "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com;"
+ * Header set Content-Security-Policy "script-src 'self' 'nonce-{server-generated-nonce}' https://static.cloudflareinsights.com; script-src-attr 'none'; connect-src 'self' https://cloudflareinsights.com;"
  * 
  * Option 3: Add to nginx.conf (Nginx)
  * -----------
- * add_header Content-Security-Policy "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com;";
+ * add_header Content-Security-Policy "script-src 'self' 'nonce-{server-generated-nonce}' https://static.cloudflareinsights.com; script-src-attr 'none'; connect-src 'self' https://cloudflareinsights.com;";
  * 
  * Option 4: Disable in Cloudflare Dashboard (Recommended if not needed)
  * -----------
