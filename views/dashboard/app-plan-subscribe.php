@@ -249,9 +249,9 @@ if ($appLogoUrl === '') {
                 To downgrade, you must first cancel your current plan.
             </div>
             <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="<?= View::e($appMeta['url'] ?? '/plans') ?>"
+                <a href="/plans/payment/<?= htmlspecialchars((string) ($existing['payment_id'] ?? '')) ?>"
                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#06060a;font-weight:700;font-size:.82rem;text-decoration:none;">
-                    <i class="fas fa-arrow-up"></i> View Upgrade Plans
+                    <i class="fas fa-shield-alt"></i> Keep Current Plan
                 </a>
                 <a href="/plans"
                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:1px solid var(--border-color);color:var(--text-secondary);font-size:.82rem;text-decoration:none;">

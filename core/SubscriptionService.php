@@ -630,6 +630,8 @@ class SubscriptionService
             'payment_currency' => 'INR',
             'payment_manual_review_enabled' => '1',
             'require_mobile_verification' => '0',
+            'payment_default_refund_days' => '7',
+            'payment_default_cancel_days' => '0',
         ];
 
         try {
@@ -669,6 +671,8 @@ class SubscriptionService
             'payment_cashfree_sandbox' => !empty($input['payment_cashfree_sandbox']) ? '1' : '0',
             'payment_currency' => trim((string) ($input['payment_currency'] ?? 'INR')),
             'payment_manual_review_enabled' => !empty($input['payment_manual_review_enabled']) ? '1' : '0',
+            'payment_default_refund_days' => max(0, (int) ($input['payment_default_refund_days'] ?? 7)),
+            'payment_default_cancel_days' => max(0, (int) ($input['payment_default_cancel_days'] ?? 0)),
         ];
 
         foreach ($data as $key => $value) {
@@ -1238,6 +1242,39 @@ class SubscriptionService
             [$paymentId, $userId]
         );
 
+        // Auto-cancel the subscription when a refund is requested so the user
+        // does not retain access while the refund is pending admin review.
+        if (!empty($payment['subscription_id'])) {
+            $config = $this->getAppConfig((string) ($payment['app_key'] ?? ''));
+            if ($config !== null) {
+                try {
+                    if (($payment['app_key'] ?? '') === 'whatsapp') {
+                        $this->db->query(
+                            "UPDATE whatsapp_subscriptions
+                             SET status = 'cancelled', updated_at = NOW()
+                             WHERE id = ? AND user_id = ?",
+                            [(int) $payment['subscription_id'], $userId]
+                        );
+                    } else {
+                        $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                        $sql = "UPDATE {$config['subscription_table']}
+                                SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                        if ($cancelledColumn) {
+                            $sql .= ", {$cancelledColumn} = NOW()";
+                        }
+                        $sql .= " WHERE id = ? AND {$config['subscription_user_column']} = ?";
+                        $this->db->query($sql, [(int) $payment['subscription_id'], $userId]);
+                    }
+                    $this->db->query(
+                        "UPDATE subscription_payments SET cancel_requested_at = NOW(), updated_at = NOW() WHERE id = ?",
+                        [$paymentId]
+                    );
+                } catch (\Throwable $e) {
+                    Logger::error('SubscriptionService::requestRefund auto-cancel - ' . $e->getMessage());
+                }
+            }
+        }
+
         return true;
     }
 
@@ -1351,8 +1388,14 @@ class SubscriptionService
     public function getCancelRefundWindowDays(array $payment): int
     {
         $meta = $this->decodePaymentMetadata($payment);
-        $refundDays = (int) ($meta['refund_days'] ?? 7);
-        return $refundDays > 0 ? $refundDays : 7;
+        $refundDays = (int) ($meta['refund_days'] ?? -1);
+        if ($refundDays >= 0) {
+            return $refundDays;
+        }
+        // Fall back to the global default set in payment settings.
+        $paymentSettings = $this->getPaymentSettings();
+        $globalDefault = (int) ($paymentSettings['payment_default_refund_days'] ?? 7);
+        return $globalDefault >= 0 ? $globalDefault : 7;
     }
 
     public function canCancelPayment(array $payment): array

@@ -87,6 +87,20 @@
             </div>
             <small>When enabled, users must verify their phone via OTP before accessing any subscription plan.</small>
         </div>
+        <div class="form-group">
+            <label for="payment_default_refund_days">Default Refund Window (days)</label>
+            <input type="number" id="payment_default_refund_days" name="payment_default_refund_days"
+                   value="<?= (int) ($settings['payment_default_refund_days'] ?? 7) ?>"
+                   min="0" max="365" style="max-width:120px;">
+            <small>Number of days from payment date within which users can request a refund and cancel their subscription. Used when the plan does not specify its own refund window. Set to 0 to disable refunds by default.</small>
+        </div>
+        <div class="form-group">
+            <label for="payment_default_cancel_days">Default Cancellation Window (days)</label>
+            <input type="number" id="payment_default_cancel_days" name="payment_default_cancel_days"
+                   value="<?= (int) ($settings['payment_default_cancel_days'] ?? 0) ?>"
+                   min="0" max="365" style="max-width:120px;">
+            <small>Number of days from payment date within which users can cancel their subscription. Set to 0 for no time restriction (cancel any time).</small>
+        </div>
     </div>
 
     <!-- UPI / PhonePe -->

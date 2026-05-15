@@ -3,6 +3,10 @@ use Core\Auth;
 use Core\Database;
 
 $user = Auth::user();
+// When included from auth.php the nonce is already in scope; when included
+// from main.php (which uses unsafe-inline CSP) no nonce is needed, so we
+// fall back to an empty string so the attribute is harmless.
+$_navNonce = isset($nonce) ? htmlspecialchars((string) $nonce, ENT_QUOTES, 'UTF-8') : '';
 $isLoggedIn = $user !== null;
 
 /**
@@ -115,7 +119,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 ?>
 <?php if (!empty($navbarSettings['custom_css'])): ?>
 <!-- Custom CSS from admin settings (admin-controlled, sanitized on save) -->
-<style><?= $navbarSettings['custom_css'] ?></style>
+<style<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>><?= $navbarSettings['custom_css'] ?></style>
 <?php endif; ?>
 <header class="universal-header"<?= $headerStyleAttr ?>>
     <div class="container header-content">
@@ -456,7 +460,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
                         Settings
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item" id="navbarLogoutBtn" onclick="openLogoutModal(event)">
+                    <a href="#" class="dropdown-item" id="navbarLogoutBtn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
@@ -481,7 +485,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 </header>
 <!-- Navbar overlay: prevents click-through to page content when a popup is open -->
 <div id="nav-overlay" aria-hidden="true"></div>
-<script>
+<script<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
 // Universal Navbar JavaScript
 (function() {
     // Debug: Log navbar load
@@ -673,7 +677,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     }
 })();
 </script>
-<script>
+<script<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
 // Notification Bell Widget
 (function() {
     const bell   = document.getElementById('notifBellBtn');
@@ -810,7 +814,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 })();
 </script>
 
-<style>
+<style<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
 /* Universal Navbar Styles */
 html {
     scroll-behavior: smooth;
@@ -1486,7 +1490,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 <!-- ── Logout Confirmation Modal ───────────────────────────────────────────── -->
 <div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
     <!-- Backdrop -->
-    <div id="logoutBackdrop" onclick="closeLogoutModal()"
+    <div id="logoutBackdrop"
          style="position:absolute;inset:0;background:rgba(6,6,10,0.75);backdrop-filter:blur(6px);opacity:0;transition:opacity 0.3s ease;"></div>
     <!-- Card -->
     <div id="logoutCard"
@@ -1502,7 +1506,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         <h3 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0 0 8px;">Sign Out?</h3>
         <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 28px;line-height:1.55;">You're about to sign out of your account. You can always log back in at any time.</p>
         <div style="display:flex;gap:12px;justify-content:center;">
-            <button onclick="closeLogoutModal()"
+            <button data-close-logout
                     style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s;">
                 Cancel
             </button>
@@ -1514,7 +1518,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         </div>
     </div>
 </div>
-<script>
+<script<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
 (function () {
     function openLogoutModal(e) {
         e && e.preventDefault();
@@ -1543,6 +1547,14 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     // ESC key closes modal
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeLogoutModal();
+    });
+    // Wire up inline-handler replacements via event listeners (avoids script-src-attr CSP violation)
+    var logoutBtn = document.getElementById('navbarLogoutBtn');
+    if (logoutBtn) logoutBtn.addEventListener('click', openLogoutModal);
+    var logoutBackdrop = document.getElementById('logoutBackdrop');
+    if (logoutBackdrop) logoutBackdrop.addEventListener('click', closeLogoutModal);
+    document.querySelectorAll('[data-close-logout]').forEach(function(el) {
+        el.addEventListener('click', closeLogoutModal);
     });
     window.openLogoutModal  = openLogoutModal;
     window.closeLogoutModal = closeLogoutModal;
