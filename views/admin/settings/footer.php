@@ -18,6 +18,39 @@
     <a href="/admin/settings" style="font-size:.85rem;color:var(--cyan);text-decoration:none;">← Back to Settings</a>
 </div>
 
+<!-- ── Footer Visibility (Projects) ─────────────────────────────── -->
+<div class="card" style="margin-bottom:20px;">
+    <h4 style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-eye" style="color:var(--cyan);"></i> Footer Visibility
+    </h4>
+    <form method="POST" action="/admin/settings">
+        <?= \Core\Security::csrfField() ?>
+        <input type="hidden" name="_redirect" value="/admin/settings/footer-page">
+        <input type="hidden" name="site_name" value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
+        <input type="hidden" name="home_page_title" value="<?= View::e($settings['home_page_title'] ?? '') ?>">
+        <input type="hidden" name="site_description" value="<?= View::e($settings['site_description'] ?? '') ?>">
+        <input type="hidden" name="contact_email" value="<?= View::e($settings['contact_email'] ?? '') ?>">
+        <input type="hidden" name="system_timezone" value="<?= View::e($settings['system_timezone'] ?? 'UTC') ?>">
+        <input type="hidden" name="date_format" value="<?= View::e($settings['date_format'] ?? 'M d, Y') ?>">
+        <input type="hidden" name="time_format" value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
+        <input type="hidden" name="registration_enabled" value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
+        <input type="hidden" name="auth_tagline" value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+        <input type="hidden" name="auth_logo" value="<?= View::e($settings['auth_logo'] ?? '') ?>">
+        <input type="hidden" name="site_favicon" value="<?= View::e($settings['site_favicon'] ?? '') ?>">
+        <input type="hidden" name="footer_show_on_projects" value="0">
+
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
+            <input type="checkbox" name="footer_show_on_projects" value="1"
+                   <?= ($settings['footer_show_on_projects'] ?? '1') === '1' ? 'checked' : '' ?>>
+            <span>Show footer on <code>/projects/*</code> pages</span>
+        </label>
+        <small class="form-help" style="display:block;margin-bottom:12px;">
+            Uncheck to hide footer globally across all project pages (including ResumeX pages).
+        </small>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Footer Visibility</button>
+    </form>
+</div>
+
 <!-- ── Simple Footer ─────────────────────────────────────────────── -->
 <div class="card" style="margin-bottom:20px;">
     <h4 style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
@@ -114,9 +147,10 @@
                 <label class="form-label">Column 3 — Heading</label>
                 <input type="text" name="hp_footer_col3_heading" class="form-input"
                        value="<?= View::e($settings['hp_footer_col3_heading'] ?? 'Contact') ?>" placeholder="Contact">
-                <label class="form-label" style="margin-top:8px;">Column 3 — Body Text</label>
-                <textarea name="hp_footer_col3_text" class="form-input" rows="3"
-                          placeholder="Address, email, etc."><?= View::e($settings['hp_footer_col3_text'] ?? '') ?></textarea>
+                <label class="form-label" style="margin-top:8px;">Column 3 — HTML Content</label>
+                <textarea name="hp_footer_col3_text" class="form-input" rows="7"
+                          placeholder="<p>Address...</p><iframe src='https://www.google.com/maps/embed?...'></iframe>"><?= View::e($settings['hp_footer_col3_text'] ?? '') ?></textarea>
+                <small class="form-help">HTML is supported (including map iframe embeds). Unsafe scripts and event handlers are stripped automatically.</small>
             </div>
         </div>
         <div class="form-group" style="margin-bottom:14px;">

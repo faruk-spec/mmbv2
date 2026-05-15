@@ -76,6 +76,7 @@ class SettingsController extends BaseController
             
             $settingsToUpdate = [
                 'site_name',
+                'home_page_title',
                 'site_description',
                 'contact_email',
                 'maintenance_mode',
@@ -98,24 +99,32 @@ class SettingsController extends BaseController
             }
             
             foreach ($settingsToUpdate as $key) {
-                $value = $this->input($key, '');
+                if (in_array($key, ['registration_enabled', 'footer_show_on_projects'], true)) {
+                    if (!array_key_exists($key, $_POST)) {
+                        $value = (string) ($oldValues[$key] ?? '0');
+                    } else {
+                        $value = ((string) $this->input($key, '0') === '1') ? '1' : '0';
+                    }
+                } else {
+                    $value = $this->input($key, '');
+                }
                 
                 // Check if setting exists
                 $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
                 
                 if ($existing) {
                     $db->update('settings', [
-                        'value' => Security::sanitize($value),
+                        'value' => Security::sanitize((string) $value),
                         'updated_at' => date('Y-m-d H:i:s')
                     ], '`key` = ?', [$key]);
                 } else {
                     $db->insert('settings', [
                         'key' => $key,
-                        'value' => Security::sanitize($value),
+                        'value' => Security::sanitize((string) $value),
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
                 }
-                $newValues[$key] = Security::sanitize($value);
+                $newValues[$key] = Security::sanitize((string) $value);
             }
             
             // Update timezone in app config if changed
@@ -149,7 +158,8 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update settings.');
         }
         
-        $this->redirect('/admin/settings');
+        $redirect = $this->input('_redirect', '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer-page'], true) ? $redirect : '/admin/settings');
     }
 
     /**
@@ -195,7 +205,7 @@ class SettingsController extends BaseController
         }
 
         $redirect = $this->input('_redirect', '/admin/settings');
-        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer'], true) ? $redirect : '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer-page'], true) ? $redirect : '/admin/settings');
     }
 
     /**
@@ -224,6 +234,8 @@ class SettingsController extends BaseController
             foreach ($keys as $key => $type) {
                 if ($type === 'checkbox') {
                     $value = isset($_POST[$key]) ? '1' : '0';
+                } elseif ($key === 'hp_footer_col3_text') {
+                    $value = $this->sanitizeFooterHtml((string) $this->input($key, ''));
                 } else {
                     $value = Security::sanitize($this->input($key, ''));
                 }
@@ -241,7 +253,7 @@ class SettingsController extends BaseController
         }
 
         $redirect = $this->input('_redirect', '/admin/settings');
-        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer'], true) ? $redirect : '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer-page'], true) ? $redirect : '/admin/settings');
     }
 
     public function addFooterLink(): void
@@ -260,7 +272,7 @@ class SettingsController extends BaseController
         $sortOrder = (int) $this->input('sort_order', 0);
         $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
         $backTo = $this->input('_redirect', '/admin/settings');
-        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer'], true) ? $backTo : '/admin/settings';
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer-page'], true) ? $backTo : '/admin/settings';
 
         if ($label === '' || $url === '') {
             $this->flash('error', 'Footer link label and URL are required.');
@@ -304,7 +316,7 @@ class SettingsController extends BaseController
         $sortOrder = (int) $this->input('sort_order', 0);
         $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
         $backTo = $this->input('_redirect', '/admin/settings');
-        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer'], true) ? $backTo : '/admin/settings';
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer-page'], true) ? $backTo : '/admin/settings';
 
         if ($id <= 0 || $label === '' || $url === '') {
             $this->flash('error', 'Invalid footer link update request.');
@@ -342,7 +354,7 @@ class SettingsController extends BaseController
         $db = Database::getInstance();
         $id = (int) $this->input('id', 0);
         $backTo = $this->input('_redirect', '/admin/settings');
-        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer'], true) ? $backTo : '/admin/settings';
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer-page'], true) ? $backTo : '/admin/settings';
         if ($id <= 0) {
             $this->flash('error', 'Invalid footer link.');
             $this->redirect($backTo);
@@ -596,6 +608,18 @@ class SettingsController extends BaseController
     private function normalizeFooterArea(string $area): string
     {
         return $area === 'home' ? 'home' : 'default';
+    }
+
+    private function sanitizeFooterHtml(string $html): string
+    {
+        $allowedTags = '<p><br><strong><b><em><i><u><span><div><ul><ol><li><a><h1><h2><h3><h4><h5><h6><iframe>';
+        $clean = strip_tags($html, $allowedTags);
+
+        // Remove inline event handlers / javascript: URLs from links and iframes.
+        $clean = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $clean) ?? $clean;
+        $clean = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', ' $1="#"', $clean) ?? $clean;
+
+        return trim($clean);
     }
     
     /**

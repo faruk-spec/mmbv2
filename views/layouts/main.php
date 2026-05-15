@@ -43,15 +43,17 @@ try {
 }
 // Load site name, description and favicon from settings
 $_siteName = defined('APP_NAME') ? APP_NAME : 'MyMultiBranch';
+$_homePageTitle = '';
 $_siteDescription = 'Multi-Project Platform';
 $_siteFavicon = '';
 $_footerShowOnProjects = '1'; // default: show footer on project pages
 try {
     $siteRows = $db->fetchAll(
-        "SELECT `key`, value FROM settings WHERE `key` IN ('site_name','site_description','site_favicon','footer_show_on_projects')"
+        "SELECT `key`, value FROM settings WHERE `key` IN ('site_name','home_page_title','site_description','site_favicon','footer_show_on_projects')"
     );
     foreach ($siteRows as $_sr) {
         if ($_sr['key'] === 'site_name' && !empty($_sr['value']))        $_siteName = $_sr['value'];
+        if ($_sr['key'] === 'home_page_title' && !empty($_sr['value']))  $_homePageTitle = $_sr['value'];
         if ($_sr['key'] === 'site_description' && !empty($_sr['value'])) $_siteDescription = $_sr['value'];
         if ($_sr['key'] === 'site_favicon')                              $_siteFavicon = $_sr['value'] ?? '';
         if ($_sr['key'] === 'footer_show_on_projects')                   $_footerShowOnProjects = $_sr['value'] ?? '1';
@@ -59,6 +61,10 @@ try {
 } catch (\Exception $e) {
     // Use defaults if query fails
 }
+
+$_currentHeadPath = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+$_isHomeHeadPath = ($_currentHeadPath === '/' || $_currentHeadPath === '' || $_currentHeadPath === '/home');
+$_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $_homePageTitle : $_siteName);
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
@@ -67,9 +73,10 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= htmlspecialchars($_siteDescription) ?>">
     <meta name="csrf-token" content="<?= htmlspecialchars(\Core\Security::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= View::e($title ?? $_siteName) ?> - <?= htmlspecialchars($_siteName) ?></title>
+    <title><?= View::e($_effectivePageTitle) ?> - <?= htmlspecialchars($_siteName) ?></title>
     <?php if (!empty($_siteFavicon)): ?>
     <link rel="icon" href="<?= htmlspecialchars($_siteFavicon) ?>">
+    <link rel="shortcut icon" href="<?= htmlspecialchars($_siteFavicon) ?>">
     <?php endif; ?>
     
     <!-- Fonts -->
@@ -2515,10 +2522,17 @@ window.mmbSkeleton = (function(){
     // Detect if we're on the homepage
     $currentUri = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
     $isHomePage = ($currentUri === '/' || $currentUri === '' || $currentUri === '/home');
+    $isPagesPage = strpos($currentUri, '/pages/') === 0 || $currentUri === '/pages';
     $isProjectsPage = strpos($currentUri, '/projects/') === 0 || $currentUri === '/projects';
     // Hide footer entirely on /projects/* pages when admin has disabled it
-    $showFooter = !($isProjectsPage && ($_footerShowOnProjects ?? '1') === '0');
-    $showThreeColFooter = ($hpFooterEnabled === '1') && $isHomePage;
+    $showFooter = !($isProjectsPage && ($_footerShowOnProjects ?? '1') !== '1');
+    $showThreeColFooter = ($hpFooterEnabled === '1') && ($isHomePage || $isPagesPage);
+
+    // Column 3 supports rich HTML (including map iframe embeds) with a safety scrub.
+    $hpCol3Raw = (string) ($hpFooterSettings['hp_footer_col3_text'] ?? '');
+    $hpCol3Safe = strip_tags($hpCol3Raw, '<p><br><strong><b><em><i><u><span><div><ul><ol><li><a><h1><h2><h3><h4><h5><h6><iframe>');
+    $hpCol3Safe = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $hpCol3Safe) ?? $hpCol3Safe;
+    $hpCol3Safe = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', ' $1="#"', $hpCol3Safe) ?? $hpCol3Safe;
     ?>
     <?php if ($showFooter): ?>
     <?php if ($showThreeColFooter): ?>
@@ -2565,9 +2579,9 @@ window.mmbSkeleton = (function(){
                     <div style="font-weight:800;font-size:.95rem;color:var(--text-primary);margin-bottom:12px;letter-spacing:.02em;">
                         <?= htmlspecialchars($hpFooterSettings['hp_footer_col3_heading'] ?? 'Contact') ?>
                     </div>
-                    <p style="color:var(--text-secondary);font-size:.84rem;line-height:1.7;">
-                        <?= nl2br(htmlspecialchars($hpFooterSettings['hp_footer_col3_text'] ?? '')) ?>
-                    </p>
+                    <div style="color:var(--text-secondary);font-size:.84rem;line-height:1.7;">
+                        <?= $hpCol3Safe !== '' ? $hpCol3Safe : '' ?>
+                    </div>
                     <?php if ($footerShowSocial === '1' && !empty($footerSocialLinks)): ?>
                     <div style="display:flex;gap:14px;align-items:center;margin-top:12px;">
                         <?php foreach ($footerSocialLinks as $sk => $sv): ?>

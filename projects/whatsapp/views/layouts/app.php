@@ -1,11 +1,27 @@
 <?php use Core\View; use Core\Security; use Core\Auth; ?>
+<?php
+$siteName = 'MyMultiBranch';
+$siteFavicon = '';
+try {
+    $siteDb = \Core\Database::getInstance();
+    $siteRows = $siteDb->fetchAll("SELECT `key`, value FROM settings WHERE `key` IN ('site_name','site_favicon')");
+    foreach ($siteRows as $siteRow) {
+        if (($siteRow['key'] ?? '') === 'site_name' && !empty($siteRow['value'])) $siteName = $siteRow['value'];
+        if (($siteRow['key'] ?? '') === 'site_favicon') $siteFavicon = $siteRow['value'] ?? '';
+    }
+} catch (\Exception $e) {}
+?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark" id="html-theme">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="WhatsApp API Automation - MyMultiBranch">
-    <title><?= View::e($title ?? 'WhatsApp') ?> - MyMultiBranch</title>
+    <title><?= View::e($title ?? 'WhatsApp') ?> - <?= View::e($siteName) ?></title>
+    <?php if (!empty($siteFavicon)): ?>
+    <link rel="icon" href="<?= View::e($siteFavicon) ?>">
+    <link rel="shortcut icon" href="<?= View::e($siteFavicon) ?>">
+    <?php endif; ?>
     
     <!-- Include Universal Navbar Styles -->
     <link rel="stylesheet" href="/assets/css/navbar.css">
