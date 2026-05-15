@@ -449,7 +449,7 @@ $transactionId = (string) ($payment['provider_order_id'] ?? $payment['reference'
                         <form method="POST" action="/plans/payment/<?= (int) $payment['id'] ?>/refund" style="margin:0;">
                             <?= \Core\Security::csrfField() ?>
                             <button type="submit" class="pay-btn-danger"
-                                    onclick="return confirm('Request a refund for this payment?')">
+                                    onclick="return confirm('Requesting a refund will immediately cancel your subscription and revoke access. Your refund will be reviewed by our team. Are you sure?')">
                                 <i class="fas fa-undo"></i> Request Refund
                             </button>
                         </form>
