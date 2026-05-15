@@ -344,7 +344,6 @@ if ($canBillX)        $moduleLinks[] = ['label' => 'BillX',           'icon' => 
 if ($canWhatsApp)     $moduleLinks[] = ['label' => 'WhatsApp',        'icon' => 'fab fa-whatsapp',       'href' => '/admin/whatsapp',              'color' => '#25d366'];
 if ($canFormX ?? false) $moduleLinks[] = ['label' => 'FormX',         'icon' => 'fas fa-wpforms',        'href' => '/admin/formx/overview',        'color' => '#00f0ff'];
 if ($canSecurity)     $moduleLinks[] = ['label' => 'Security',        'icon' => 'fas fa-shield-alt',     'href' => '/admin/security',              'color' => '#ff4444'];
-if ($canPlatformPlans)$moduleLinks[] = ['label' => 'Platform Plans',  'icon' => 'fas fa-layer-group',    'href' => '/admin/platform-plans',        'color' => '#00bbff'];
 if ($canLogs && !$canUsers) $moduleLinks[] = ['label' => 'Activity Logs', 'icon' => 'fas fa-history',   'href' => '/admin/logs/activity',         'color' => '#ff8800'];
 if ($canProjects && !$canCodexPro && !$canProShare)
                       $moduleLinks[] = ['label' => 'Projects',        'icon' => 'fas fa-folder',         'href' => '/admin/projects',              'color' => '#44cc44'];

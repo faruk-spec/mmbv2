@@ -38,13 +38,12 @@ class DashboardController extends BaseController
         $canWhatsApp     = Auth::isAdmin() || Auth::hasPermissionGroup('whatsapp');
         $canQr           = Auth::isAdmin() || Auth::hasPermissionGroup('qr');
         $canSecurity     = Auth::isAdmin() || Auth::hasPermissionGroup('security');
-        $canPlatformPlans= Auth::isAdmin() || Auth::hasPermissionGroup('platform_plans');
         $canFormX        = Auth::isAdmin() || Auth::hasPermissionGroup('formx');
 
         // Determine whether the user has ANY visible module access
         $hasAnyAccess = $canUsers || $canLogs || $canProjects || $canCodexPro
             || $canProShare || $canConvertX || $canBillX || $canWhatsApp || $canQr
-            || $canSecurity || $canPlatformPlans || $canFormX;
+            || $canSecurity || $canFormX;
 
         // User stats — only if the user has access to the users section
         $stats = null;
@@ -156,7 +155,6 @@ class DashboardController extends BaseController
             'canWhatsApp'     => $canWhatsApp,
             'canQr'           => $canQr,
             'canSecurity'     => $canSecurity,
-            'canPlatformPlans'=> $canPlatformPlans,
             'canFormX'        => $canFormX,
             'hasAnyAccess'    => $hasAnyAccess,
         ]);
