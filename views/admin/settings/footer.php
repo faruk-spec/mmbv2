@@ -175,7 +175,7 @@ $defaultFooterLinks = $footerLinks['default'] ?? [];
     <?php foreach (['home' => $homeFooterLinks, 'default' => $defaultFooterLinks] as $areaKey => $rows): ?>
     <div style="margin-bottom:14px;">
         <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;color:var(--text-primary);">
-            <?= $areaKey === 'home' ? '🏠 Home Footer Links' : '🌐 Default Footer Links' ?>
+            <?= $areaKey === 'home' ? '<i class="fas fa-home" style="color:var(--cyan);margin-right:4px;"></i> Home Footer Links' : '<i class="fas fa-globe" style="color:var(--purple);margin-right:4px;"></i> Default Footer Links' ?>
         </div>
         <?php if (empty($rows)): ?>
         <p style="font-size:.82rem;color:var(--text-secondary);">No links configured yet.</p>
