@@ -96,6 +96,14 @@ class SubscriptionPaymentsController extends BaseController
         $this->redirect('/admin/subscription-payments');
     }
 
+    public function refunds(): void
+    {
+        $this->view('admin/subscription-payments/refunds', [
+            'title' => 'Refund Requests',
+            'payments' => $this->subscriptionService->getAdminRefundPayments(),
+        ]);
+    }
+
     public function refund(string $id): void
     {
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {

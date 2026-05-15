@@ -1389,6 +1389,17 @@ class SubscriptionService
         );
     }
 
+    public function getAdminRefundPayments(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT sp.*, u.name AS user_name, u.email AS user_email
+             FROM subscription_payments sp
+             JOIN users u ON u.id = sp.user_id
+             WHERE sp.refund_status IN ('requested','approved','refunded','rejected')
+             ORDER BY FIELD(sp.refund_status,'requested','approved','refunded','rejected'), sp.refund_requested_at DESC, sp.id DESC"
+        );
+    }
+
     public function markUserPaymentSubmitted(int $paymentId, int $userId): bool
     {
         $payment = $this->getUserPayment($paymentId, $userId);
@@ -1463,6 +1474,11 @@ class SubscriptionService
 
     public function createCashfreeOrder(array $payment, array $settings, array $customer, string $returnUrl): array
     {
+        $orderAmount = (float) ($payment['amount'] ?? 0);
+        if ($orderAmount <= 0) {
+            return ['success' => false, 'message' => 'Cannot create a Cashfree order for a zero or negative amount. Please use a paid plan.'];
+        }
+
         $validatedReturnUrl = $this->validateReturnUrl($returnUrl);
         if ($validatedReturnUrl === null) {
             return ['success' => false, 'message' => 'Invalid Cashfree return URL.'];
@@ -1499,7 +1515,7 @@ class SubscriptionService
 
         $payload = [
             'order_id' => $orderId,
-            'order_amount' => (float) $payment['amount'],
+            'order_amount' => $orderAmount,
             'order_currency' => (string) $payment['currency'],
             'order_expiry_time' => $expiryAt,
             'customer_details' => [
@@ -1683,21 +1699,29 @@ class SubscriptionService
         }
 
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE platform_user_subscriptions
-             SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('platform_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'assigned_by' => $adminId,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE platform_user_subscriptions
+                 SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('platform_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'assigned_by' => $adminId,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activatePlatformSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
 
         Notification::send($userId, 'plan_subscribed', 'Your "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'platform_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
@@ -1712,20 +1736,28 @@ class SubscriptionService
         }
 
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE resumex_user_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status IN ('active','trial')",
-            [$userId]
-        );
-        $subId = $this->db->insert('resumex_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE resumex_user_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status IN ('active','trial')",
+                [$userId]
+            );
+            $subId = $this->db->insert('resumex_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateResumeXSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
 
         Notification::send($userId, 'plan_subscribed', 'Your ResumeX "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'resumex_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
@@ -1739,20 +1771,28 @@ class SubscriptionService
             return 0;
         }
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE qr_user_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('qr_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE qr_user_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('qr_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateQrSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
         Notification::send($userId, 'plan_subscribed', 'Your QR Generator "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'qr_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
         return $subId;
@@ -1765,21 +1805,29 @@ class SubscriptionService
             return 0;
         }
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE convertx_user_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('convertx_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'assigned_by' => $adminId,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE convertx_user_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('convertx_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'assigned_by' => $adminId,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateConvertXSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
         Notification::send($userId, 'plan_subscribed', 'Your ConvertX "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'convertx_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
         return $subId;
@@ -1804,23 +1852,31 @@ class SubscriptionService
         } catch (\Throwable $e) {
         }
 
-        $this->db->query(
-            "UPDATE whatsapp_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('whatsapp_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'plan_type' => $planType ?: 'free',
-            'status' => 'active',
-            'start_date' => $start,
-            'end_date' => $end,
-            'messages_limit' => (int) ($plan['messages_limit'] ?? 0),
-            'sessions_limit' => (int) ($plan['sessions_limit'] ?? 0),
-            'api_calls_limit' => (int) ($plan['api_calls_limit'] ?? 0),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE whatsapp_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('whatsapp_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'plan_type' => $planType ?: 'free',
+                'status' => 'active',
+                'start_date' => $start,
+                'end_date' => $end,
+                'messages_limit' => (int) ($plan['messages_limit'] ?? 0),
+                'sessions_limit' => (int) ($plan['sessions_limit'] ?? 0),
+                'api_calls_limit' => (int) ($plan['api_calls_limit'] ?? 0),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateWhatsAppSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
         Notification::send($userId, 'plan_subscribed', 'Your WhatsApp API "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'whatsapp_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
         return $subId;

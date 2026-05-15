@@ -382,6 +382,11 @@ class PlansController extends BaseController
 
         $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
 
+        // Detect downgrade: user has an active higher-priced plan and wants a lower-priced one.
+        $isDowngrade = $existing !== null
+            && (float) ($existing['price'] ?? 0) > 0
+            && (float) ($plan['price'] ?? 0) < (float) ($existing['price'] ?? 0);
+
         if (!$this->checkSubscriptionPrerequisites('/plans/project/' . urlencode($app) . '/' . urlencode($slug))) {
             return;
         }
@@ -404,6 +409,7 @@ class PlansController extends BaseController
             'app' => $app,
             'appMeta' => $appMeta,
             'existing' => $existing,
+            'isDowngrade' => $isDowngrade,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
             'invoiceSettings' => $this->subscriptionService->getInvoiceSettings(true),
         ]);
@@ -424,8 +430,34 @@ class PlansController extends BaseController
             return;
         }
 
+        // Downgrade protection: if user has an active higher-priced plan, block downgrade.
+        $existingForDowngrade = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
+        if ($existingForDowngrade !== null
+            && (float) ($existingForDowngrade['price'] ?? 0) > 0
+            && (float) ($plan['price'] ?? 0) < (float) ($existingForDowngrade['price'] ?? 0)
+        ) {
+            $this->flash('error', 'Downgrade not allowed. You already have an active higher-tier plan ("' . ($existingForDowngrade['plan_name'] ?? 'current plan') . '"). Please cancel your current plan before switching to a lower tier. Consider upgrading instead.');
+            $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+            return;
+        }
+
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
-        $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
+        $cashfreeEnabled = ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+            && !empty($paymentSettings['payment_cashfree_app_id'])
+            && !empty($paymentSettings['payment_cashfree_secret']);
+        $hasUpi = !empty($paymentSettings['payment_upi_id']);
+        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
+
+        // Determine the effective payment method; ensure it is one that is actually available.
+        $requestedMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
+        if ($requestedMethod === 'cashfree' && !$cashfreeEnabled) {
+            $requestedMethod = $hasUpi ? 'upi' : 'request';
+        }
+        if ($requestedMethod === 'upi' && !$hasUpi) {
+            $requestedMethod = $cashfreeEnabled ? 'cashfree' : 'request';
+        }
+        $paymentMethod = $requestedMethod;
+
         $user = Auth::user();
         $policy = [
             'cancel_days' => (int) ($plan['cancel_days'] ?? 0),
@@ -433,9 +465,8 @@ class PlansController extends BaseController
         ];
 
         // If manual review is disabled, reject any attempt to use it.
-        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
         if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) > 0) {
-            $this->flash('error', 'Manual review is not available. Please select a different payment method.');
+            $this->flash('error', 'No payment method is available. Please contact support to activate your plan.');
             $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
             return;
         }
@@ -479,7 +510,7 @@ class PlansController extends BaseController
             'status' => $paymentMethod === 'request' ? 'verification_pending' : 'pending',
             'amount' => (float) $plan['price'],
             'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
-            'payment_payload' => $paymentMethod === 'upi' && !empty($paymentSettings['payment_upi_id'])
+            'payment_payload' => $paymentMethod === 'upi' && $hasUpi
                 ? 'upi://pay?' . http_build_query([
                     'pa' => $paymentSettings['payment_upi_id'],
                     'pn' => self::APP_META[$app]['name'] ?? ucfirst($app),
@@ -493,9 +524,7 @@ class PlansController extends BaseController
 
         // Only create a new Cashfree order when none exists yet (prevents 409 on retry).
         if ($paymentMethod === 'cashfree'
-            && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
-            && !empty($paymentSettings['payment_cashfree_app_id'])
-            && !empty($paymentSettings['payment_cashfree_secret'])
+            && $cashfreeEnabled
             && empty($payment['provider_order_id'])
         ) {
             $result = $this->subscriptionService->createCashfreeOrder(

@@ -516,3 +516,4 @@ $router->post('/admin/subscription-payments/{id}/approve', 'Admin\\SubscriptionP
 $router->post('/admin/subscription-payments/{id}/reject', 'Admin\\SubscriptionPaymentsController@reject', ['auth', 'admin']);
 $router->post('/admin/subscription-payments/{id}/refund', 'Admin\\SubscriptionPaymentsController@refund', ['auth', 'admin']);
 $router->post('/admin/subscription-payments/{id}/cancel-plan', 'Admin\\SubscriptionPaymentsController@cancelPlan', ['auth', 'admin']);
+$router->get('/admin/refunds', 'Admin\\SubscriptionPaymentsController@refunds', ['auth', 'admin']);

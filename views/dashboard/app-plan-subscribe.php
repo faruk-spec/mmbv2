@@ -235,6 +235,33 @@ if ($appLogoUrl === '') {
         </div>
     </div>
 
+    <!-- Downgrade warning banner -->
+    <?php if (!empty($isDowngrade)): ?>
+    <div style="background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px;">
+        <div style="flex-shrink:0;width:38px;height:38px;border-radius:10px;background:rgba(255,170,0,.15);display:flex;align-items:center;justify-content:center;color:#ffaa00;font-size:1.1rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-weight:700;font-size:.95rem;color:#ffaa00;margin-bottom:4px;">Downgrade Not Recommended</div>
+            <div style="font-size:.82rem;color:var(--text-secondary);line-height:1.6;">
+                You currently have an active <strong style="color:var(--text-primary);"><?= View::e($existing['plan_name'] ?? 'higher-tier plan') ?></strong> which includes more features.
+                Switching to this lower-tier plan will reduce your limits and features.
+                To downgrade, you must first cancel your current plan.
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="<?= View::e($appMeta['url'] ?? '/plans') ?>"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#06060a;font-weight:700;font-size:.82rem;text-decoration:none;">
+                    <i class="fas fa-arrow-up"></i> View Upgrade Plans
+                </a>
+                <a href="/plans"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:1px solid var(--border-color);color:var(--text-secondary);font-size:.82rem;text-decoration:none;">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="sub-grid">
         <!-- Left: payment method -->
         <div>
@@ -256,7 +283,23 @@ if ($appLogoUrl === '') {
                             && !empty($paymentSettings['payment_cashfree_app_id'])
                             && !empty($paymentSettings['payment_cashfree_secret']);
                         $hasUpi = !empty($paymentSettings['payment_upi_id']);
+
+                        // Ensure the default pre-selection is one that is actually available.
+                        if ($defaultPaymentMethod === 'cashfree' && !$cashfreeEnabled) {
+                            $defaultPaymentMethod = $hasUpi ? 'upi' : 'request';
+                        }
+                        if ($defaultPaymentMethod === 'upi' && !$hasUpi) {
+                            $defaultPaymentMethod = $cashfreeEnabled ? 'cashfree' : 'request';
+                        }
+                        $anyMethodAvailable = $hasUpi || $cashfreeEnabled || $canUseManualReview;
                         ?>
+
+                        <?php if (!$anyMethodAvailable): ?>
+                        <div style="padding:18px;border-radius:10px;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:var(--red);font-size:.85rem;text-align:center;">
+                            <i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>
+                            No payment methods are configured. Please contact the administrator to set up payments.
+                        </div>
+                        <?php endif; ?>
 
                         <?php if ($hasUpi): ?>
                         <label class="pay-method-tile">
@@ -286,7 +329,7 @@ if ($appLogoUrl === '') {
 
                         <?php if ($canUseManualReview): ?>
                         <label class="pay-method-tile">
-                            <input type="radio" name="payment_method" value="request" <?= (!$hasUpi && !$cashfreeEnabled) || $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
+                            <input type="radio" name="payment_method" value="request" <?= $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
                             <div class="pay-method-icon manual"><i class="fas fa-clipboard-check"></i></div>
                             <div style="flex:1;">
@@ -297,10 +340,17 @@ if ($appLogoUrl === '') {
                         <?php endif; ?>
 
                         <div class="chk-cta">
+                            <?php if ($anyMethodAvailable): ?>
                             <button type="submit" class="chk-cta-btn">
                                 <i class="fas fa-lock"></i>
                                 Continue to Payment
                             </button>
+                            <?php else: ?>
+                            <button type="button" class="chk-cta-btn" disabled style="opacity:.5;cursor:not-allowed;">
+                                <i class="fas fa-ban"></i>
+                                Payment Unavailable
+                            </button>
+                            <?php endif; ?>
                             <div class="trust-bar">
                                 <i class="fas fa-shield-alt"></i> <span>Secure payment powered by Cashfree Payments</span>
                                 <span style="margin:0 6px;">·</span>
