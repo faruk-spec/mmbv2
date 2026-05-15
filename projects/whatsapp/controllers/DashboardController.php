@@ -10,6 +10,7 @@ namespace Projects\WhatsApp\Controllers;
 use Core\Auth;
 use Core\View;
 use Core\Database;
+use Core\Logger;
 use Core\SubscriptionService;
 
 class DashboardController
@@ -33,9 +34,31 @@ class DashboardController
      */
     public function index()
     {
-        $stats = $this->getDashboardStats();
-        $recentSessions = $this->db->fetchAll("SELECT * FROM whatsapp_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5", [$this->user['id']]);
-        $recentMessages = $this->db->fetchAll("SELECT * FROM whatsapp_messages WHERE user_id = ? ORDER BY created_at DESC LIMIT 10", [$this->user['id']]);
+        try {
+            $stats = $this->getDashboardStats();
+        } catch (\Throwable $e) {
+            Logger::warning('WhatsApp dashboard stats fallback: ' . $e->getMessage(), ['user_id' => $this->user['id'] ?? null]);
+            $stats = [
+                'totalSessions' => 0,
+                'activeSessions' => 0,
+                'messagesToday' => 0,
+                'apiCallsToday' => 0,
+            ];
+        }
+
+        try {
+            $recentSessions = $this->db->fetchAll("SELECT * FROM whatsapp_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5", [$this->user['id']]);
+        } catch (\Throwable $e) {
+            Logger::warning('WhatsApp dashboard recentSessions fallback: ' . $e->getMessage(), ['user_id' => $this->user['id'] ?? null]);
+            $recentSessions = [];
+        }
+
+        try {
+            $recentMessages = $this->db->fetchAll("SELECT * FROM whatsapp_messages WHERE user_id = ? ORDER BY created_at DESC LIMIT 10", [$this->user['id']]);
+        } catch (\Throwable $e) {
+            Logger::warning('WhatsApp dashboard recentMessages fallback: ' . $e->getMessage(), ['user_id' => $this->user['id'] ?? null]);
+            $recentMessages = [];
+        }
 
         View::render('whatsapp/dashboard', [
             'user' => $this->user,
@@ -76,16 +99,35 @@ class DashboardController
      */
     private function getDashboardStats()
     {
-        $totalSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ?", [$this->user['id']]) ?? 0;
-        $activeSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ? AND status = 'active'", [$this->user['id']]) ?? 0;
-        $messagesToday = $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_messages
-            WHERE user_id = ? AND DATE(created_at) = CURDATE()
-        ", [$this->user['id']]) ?? 0;
-        $apiCallsToday = $this->db->fetchColumn("
-            SELECT COUNT(*) FROM whatsapp_api_logs
-            WHERE user_id = ? AND DATE(created_at) = CURDATE()
-        ", [$this->user['id']]) ?? 0;
+        $totalSessions = 0;
+        $activeSessions = 0;
+        $messagesToday = 0;
+        $apiCallsToday = 0;
+
+        try {
+            $totalSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ?", [$this->user['id']]) ?? 0;
+            $activeSessions = $this->db->fetchColumn("SELECT COUNT(*) FROM whatsapp_sessions WHERE user_id = ? AND status = 'active'", [$this->user['id']]) ?? 0;
+        } catch (\Throwable $e) {
+            Logger::warning('WhatsApp dashboard sessions stats fallback: ' . $e->getMessage(), ['user_id' => $this->user['id'] ?? null]);
+        }
+
+        try {
+            $messagesToday = $this->db->fetchColumn("
+                SELECT COUNT(*) FROM whatsapp_messages
+                WHERE user_id = ? AND DATE(created_at) = CURDATE()
+            ", [$this->user['id']]) ?? 0;
+        } catch (\Throwable $e) {
+            Logger::warning('WhatsApp dashboard message stats fallback: ' . $e->getMessage(), ['user_id' => $this->user['id'] ?? null]);
+        }
+
+        try {
+            $apiCallsToday = $this->db->fetchColumn("
+                SELECT COUNT(*) FROM whatsapp_api_logs
+                WHERE user_id = ? AND DATE(created_at) = CURDATE()
+            ", [$this->user['id']]) ?? 0;
+        } catch (\Throwable $e) {
+            Logger::warning('WhatsApp dashboard API stats fallback: ' . $e->getMessage(), ['user_id' => $this->user['id'] ?? null]);
+        }
 
         return [
             'totalSessions' => $totalSessions,

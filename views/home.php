@@ -553,17 +553,17 @@ if ($showStats):
     <h2 style="margin-bottom: 20px; font-size: 1.75rem;"><?= htmlspecialchars($projectsSectionTitle) ?></h2>
     
     <!-- Filter Buttons -->
-    <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
-        <button class="filter-btn active" data-filter="all">
+    <div id="projectsFilterBar" style="display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; flex-wrap: wrap;">
+        <button type="button" class="filter-btn active" data-filter="all" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('all', this)">
             All Tools
         </button>
-        <button class="filter-btn" data-filter="free">
+        <button type="button" class="filter-btn" data-filter="free" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('free', this)">
             Free Tools
         </button>
-        <button class="filter-btn" data-filter="freemium">
+        <button type="button" class="filter-btn" data-filter="freemium" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('freemium', this)">
             Freemium
         </button>
-        <button class="filter-btn" data-filter="enterprise">
+        <button type="button" class="filter-btn" data-filter="enterprise" onclick="window.applyHomeProjectFilter && window.applyHomeProjectFilter('enterprise', this)">
             Enterprise Grade
         </button>
     </div>
@@ -580,6 +580,13 @@ if ($showStats):
             foreach ($_allDbRows as $_row) {
                 $_dbKeys[] = $_row['project_key'];
                 if ((int) $_row['is_enabled'] === 1) {
+                    // When the DB tier is still the default 'free', use the config tier
+                    // as the canonical source so the homepage filter works even on
+                    // installs that have not yet run the add_project_tier migration.
+                    $dbTier = strtolower(trim((string)($_row['tier'] ?? 'free')));
+                    if ($dbTier === 'free' && isset($_configProjects[$_row['project_key']]['tier'])) {
+                        $_row['tier'] = $_configProjects[$_row['project_key']]['tier'];
+                    }
                     $projects[$_row['project_key']] = $_row;
                 }
             }
@@ -598,7 +605,12 @@ if ($showStats):
             $projectName = $project['name'] ?? '';
             $projectColor = $project['color'] ?? '#00f0ff';
             $projectUrl = $project['url'] ?? '';
-            $projectTier = strtolower(trim($project['tier'] ?? 'free'));
+            $projectTierRaw = strtolower(trim((string)($project['tier'] ?? 'free')));
+            $projectTier = match ($projectTierRaw) {
+                'enterprise-grade', 'enterprise grade', 'enterprise_plan', 'enterpriseplan' => 'enterprise',
+                'freemium_plan', 'freemium-plan' => 'freemium',
+                default => in_array($projectTierRaw, ['free', 'freemium', 'enterprise'], true) ? $projectTierRaw : 'free',
+            };
             $showFeaturesText = $project['show_features_text'] ?? 'Show Features';
             $showFeaturesUrl  = $project['show_features_url'] ?? '';
             $showTitle = isset($project['show_title']) ? (bool)(int)$project['show_title'] : true;
@@ -740,7 +752,7 @@ a.project-card:hover {
 }
 
 .project-card.filtered-out {
-    display: none;
+    display: none !important;
 }
 
 /* Thumbnail fills card */
@@ -900,30 +912,6 @@ a.project-card:hover {
     color: #fff !important;
 }
 </style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Filter functionality
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const projectCards = document.querySelectorAll('.project-card');
-
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-
-            const filter = this.dataset.filter;
-            projectCards.forEach(card => {
-                if (filter === 'all' || card.dataset.tier === filter) {
-                    card.classList.remove('filtered-out');
-                } else {
-                    card.classList.add('filtered-out');
-                }
-            });
-        });
-    });
-});
-</script>
 
 <div style="margin-top: 60px; padding: 40px 20px; background: rgba(0, 240, 255, 0.02); border-radius: 16px; max-width: 1500px; margin-left: auto; margin-right: auto;">
     <div style="text-align: center; margin-bottom: 30px;">
@@ -1423,5 +1411,61 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
     resize(); init(); draw();
     window.addEventListener('resize', function() { cancelAnimationFrame(raf); resize(); init(); draw(); });
 })();
+</script>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+<script>
+(function () {
+    'use strict';
+
+    var normalizeTier = function (tier) {
+        var t = String(tier || '').toLowerCase().trim();
+        if (t === 'all') return 'all';
+        if (t === 'enterprise-grade' || t === 'enterprise grade') return 'enterprise';
+        if (t === 'freemium-plan' || t === 'freemium_plan') return 'freemium';
+        if (t === 'free' || t === 'freemium' || t === 'enterprise') return t;
+        return 'free';
+    };
+
+    window.applyHomeProjectFilter = function (rawFilter, activeBtn) {
+        var filterBtns = document.querySelectorAll('#projectsFilterBar .filter-btn');
+        var projectCards = document.querySelectorAll('#projectsGrid .project-card');
+        var filter = normalizeTier(rawFilter);
+
+        filterBtns.forEach(function (b) { b.classList.remove('active'); });
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        } else {
+            var matchBtn = document.querySelector('#projectsFilterBar .filter-btn[data-filter="' + filter + '"]');
+            if (matchBtn) matchBtn.classList.add('active');
+        }
+
+        projectCards.forEach(function (card) {
+            var cardTier = normalizeTier(card.dataset.tier);
+            if (filter === 'all' || cardTier === filter) {
+                card.classList.remove('filtered-out');
+            } else {
+                card.classList.add('filtered-out');
+            }
+        });
+    };
+
+    // Delegated click handler so filter buttons work regardless of markup order.
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('#projectsFilterBar .filter-btn') : null;
+        if (!btn) return;
+        window.applyHomeProjectFilter(btn.dataset.filter, btn);
+    });
+
+    // Apply initial "all" state once DOM is ready.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            window.applyHomeProjectFilter('all');
+        });
+    } else {
+        window.applyHomeProjectFilter('all');
+    }
+}());
 </script>
 <?php View::endSection(); ?>

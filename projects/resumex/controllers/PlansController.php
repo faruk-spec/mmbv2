@@ -60,6 +60,12 @@ class PlansController
             exit;
         }
 
+        if ((float) ($plan['price'] ?? 0) === 0.0 && $this->hasActivePaidResumeXSubscription()) {
+            $_SESSION['_flash']['error'] = 'You already have an active paid plan. Free plans are not available while a paid plan is active.';
+            header('Location: /projects/resumex/plans');
+            exit;
+        }
+
         $existing = $this->getCurrentSubscription();
         $settings = $this->getPaymentSettings();
 
@@ -88,6 +94,12 @@ class PlansController
 
         // Free plan — auto-activate
         if ((float)$plan['price'] === 0.0) {
+            if ($this->hasActivePaidResumeXSubscription()) {
+                $_SESSION['_flash']['error'] = 'You already have an active paid plan. Free plans are not available while a paid plan is active.';
+                header('Location: /projects/resumex/plans');
+                exit;
+            }
+
             $payment = $this->subscriptionService->createOrReusePayment([
                 'user_id' => $this->userId,
                 'app_key' => 'resumex',
@@ -498,5 +510,25 @@ HTML;
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $scheme . '://' . $host . $path;
+    }
+
+    private function hasActivePaidResumeXSubscription(): bool
+    {
+        try {
+            $paid = $this->db->fetch(
+                "SELECT s.id
+                 FROM resumex_user_subscriptions s
+                 JOIN resumex_subscription_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                   AND p.price > 0
+                 LIMIT 1",
+                [$this->userId]
+            );
+
+            return $paid !== null;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

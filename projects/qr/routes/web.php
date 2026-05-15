@@ -8,6 +8,7 @@
 use Core\Router;
 use Core\View;
 use Core\Auth;
+use Projects\QR\Services\QRFeatureService;
 
 // Simple project router
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -16,6 +17,70 @@ $uri = $uri ?: '/';
 
 // Extract ID from URL if present (e.g., /view/123, /edit/123)
 $segments = explode('/', trim($uri, '/'));
+
+$qrRouteFeatureMap = [
+    ''               => 'static_qr',
+    'dashboard'      => 'static_qr',
+    'generate'       => 'static_qr',
+    'history'        => 'static_qr',
+    'view'           => 'static_qr',
+    'edit'           => 'static_qr',
+    'update'         => 'static_qr',
+    'download'       => 'download_png',
+    'delete'         => 'static_qr',
+    'bulk-delete'    => 'bulk_generation',
+    'bulk-print'     => 'bulk_generation',
+    'update-campaign'=> 'campaigns',
+    'scan'           => 'static_qr',
+    'access'         => 'static_qr',
+    'analytics'      => 'analytics',
+    'campaigns'      => 'campaigns',
+    'bulk'           => 'bulk_generation',
+    'templates'      => 'design_presets',
+    'api'            => 'api_access',
+];
+
+try {
+    $featureKey = $qrRouteFeatureMap[$segments[0] ?? ''] ?? null;
+    $userId = (int) (Auth::id() ?? 0);
+    if ($featureKey && $userId > 0) {
+        if (!class_exists(QRFeatureService::class)) {
+            require_once PROJECT_PATH . '/services/QRFeatureService.php';
+        }
+        $featureService = new QRFeatureService();
+        if (!$featureService->can($userId, $featureKey)) {
+            if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+                if (($segments[0] ?? '') === 'api' || str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')) {
+                    header('Content-Type: application/json');
+                    http_response_code(403);
+                    echo json_encode(['success' => false, 'message' => 'This feature is not available on your current plan.']);
+                } else {
+                    \Core\Helpers::flash('error', 'This feature is not available on your current plan.');
+                    header('Location: /projects/qr/plans');
+                }
+                exit;
+            }
+            $GLOBALS['qr_feature_gated'] = $featureKey;
+        }
+    }
+} catch (\Throwable $e) {
+    // Fail closed for safety when feature checks fail.
+    $featureKey = $qrRouteFeatureMap[$segments[0] ?? ''] ?? null;
+    if ($featureKey && (int) (Auth::id() ?? 0) > 0) {
+        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            if (($segments[0] ?? '') === 'api' || str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')) {
+                header('Content-Type: application/json');
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'This feature is not available on your current plan.']);
+            } else {
+                \Core\Helpers::flash('error', 'This feature is not available on your current plan.');
+                header('Location: /projects/qr/plans');
+            }
+            exit;
+        }
+        $GLOBALS['qr_feature_gated'] = $featureKey;
+    }
+}
 
 // Route handling
 switch ($segments[0]) {

@@ -8,11 +8,20 @@
 use Core\View;
 use Core\Auth;
 use Core\Helpers;
+use Core\Database;
 
 // Home page
 $router->get('/', function() {
     // Don't redirect logged-in users, let them view the home page
-    View::render('home');
+    $homeTitle = '';
+    try {
+        $db = Database::getInstance();
+        $row = $db->fetch("SELECT value FROM settings WHERE `key` = 'home_page_title' LIMIT 1");
+        $homeTitle = trim((string) ($row['value'] ?? ''));
+    } catch (\Throwable $e) {
+        $homeTitle = '';
+    }
+    View::render('home', ['title' => ($homeTitle !== '' ? $homeTitle : 'Home')]);
 });
 
 // Authentication routes

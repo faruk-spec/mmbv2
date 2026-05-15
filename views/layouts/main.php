@@ -41,15 +41,43 @@ try {
 } catch (\Exception $e) {
     // ignore
 }
+// Load site name, description and favicon from settings
+$_siteName = defined('APP_NAME') ? APP_NAME : 'MyMultiBranch';
+$_homePageTitle = '';
+$_siteDescription = 'Multi-Project Platform';
+$_siteFavicon = '';
+$_footerShowOnProjects = '1'; // default: show footer on project pages
+try {
+    $siteRows = $db->fetchAll(
+        "SELECT `key`, value FROM settings WHERE `key` IN ('site_name','home_page_title','site_description','site_favicon','footer_show_on_projects')"
+    );
+    foreach ($siteRows as $_sr) {
+        if ($_sr['key'] === 'site_name' && !empty($_sr['value']))        $_siteName = $_sr['value'];
+        if ($_sr['key'] === 'home_page_title' && !empty($_sr['value']))  $_homePageTitle = $_sr['value'];
+        if ($_sr['key'] === 'site_description' && !empty($_sr['value'])) $_siteDescription = $_sr['value'];
+        if ($_sr['key'] === 'site_favicon')                              $_siteFavicon = $_sr['value'] ?? '';
+        if ($_sr['key'] === 'footer_show_on_projects')                   $_footerShowOnProjects = $_sr['value'] ?? '1';
+    }
+} catch (\Exception $e) {
+    // Use defaults if query fails
+}
+
+$_currentHeadPath = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+$_isHomeHeadPath = ($_currentHeadPath === '/' || $_currentHeadPath === '' || $_currentHeadPath === '/home');
+$_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $_homePageTitle : $_siteName);
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?= htmlspecialchars($defaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MyMultiBranch - Multi-Project Platform">
+    <meta name="description" content="<?= htmlspecialchars($_siteDescription) ?>">
     <meta name="csrf-token" content="<?= htmlspecialchars(\Core\Security::generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
-    <title><?= View::e($title ?? 'MyMultiBranch') ?> - <?= APP_NAME ?></title>
+    <title><?= View::e($_effectivePageTitle) ?> - <?= htmlspecialchars($_siteName) ?></title>
+    <?php if (!empty($_siteFavicon)): ?>
+    <link rel="icon" href="<?= htmlspecialchars($_siteFavicon) ?>">
+    <link rel="shortcut icon" href="<?= htmlspecialchars($_siteFavicon) ?>">
+    <?php endif; ?>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2431,6 +2459,8 @@ window.mmbSkeleton = (function(){
     
     <?php
     $footerPages = [];
+    $homeFooterLinks = [];
+    $defaultFooterLinks = [];
     try {
         $footerPages = $db->fetchAll(
             "SELECT title, slug
@@ -2442,6 +2472,26 @@ window.mmbSkeleton = (function(){
     } catch (\Exception $e) {
         $footerPages = [];
         \Core\Logger::error('Failed to load footer pages: ' . $e->getMessage());
+    }
+    try {
+        $customLinks = $db->fetchAll(
+            "SELECT area, label, url
+             FROM footer_links
+             WHERE is_enabled = 1
+             ORDER BY area ASC, sort_order ASC, id ASC"
+        );
+        foreach ($customLinks as $lnk) {
+            $area = ($lnk['area'] ?? 'default') === 'home' ? 'home' : 'default';
+            if ($area === 'home') {
+                $homeFooterLinks[] = $lnk;
+            } else {
+                $defaultFooterLinks[] = $lnk;
+            }
+        }
+    } catch (\Exception $e) {
+        $homeFooterLinks = [];
+        $defaultFooterLinks = [];
+        \Core\Logger::error('Failed to load custom footer links: ' . $e->getMessage());
     }
     // Footer settings from DB
     $footerTagline   = '';
@@ -2472,8 +2522,36 @@ window.mmbSkeleton = (function(){
     // Detect if we're on the homepage
     $currentUri = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
     $isHomePage = ($currentUri === '/' || $currentUri === '' || $currentUri === '/home');
-    $showThreeColFooter = ($hpFooterEnabled === '1') && $isHomePage;
+    $isPagesPage = strpos($currentUri, '/pages/') === 0 || $currentUri === '/pages';
+    $isProjectsPage = strpos($currentUri, '/projects/') === 0 || $currentUri === '/projects';
+    // Hide footer entirely on /projects/* pages when admin has disabled it
+    $showFooter = !($isProjectsPage && ($_footerShowOnProjects ?? '1') !== '1');
+    $showThreeColFooter = ($hpFooterEnabled === '1') && ($isHomePage || $isPagesPage);
+
+    // Column 3 supports rich HTML (including map iframe embeds) with a safety scrub.
+    $hpCol3Raw = (string) ($hpFooterSettings['hp_footer_col3_text'] ?? '');
+    $hpCol3Safe = strip_tags($hpCol3Raw, '<p><br><strong><b><em><i><u><span><div><ul><ol><li><a><h1><h2><h3><h4><h5><h6><iframe>');
+    $hpCol3Safe = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $hpCol3Safe) ?? $hpCol3Safe;
+    $hpCol3Safe = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', ' $1="#"', $hpCol3Safe) ?? $hpCol3Safe;
+    $hpCol3Safe = preg_replace_callback('/<iframe\b[^>]*>\s*<\/iframe>/i', function(array $m): string {
+        if (!preg_match('/\ssrc\s*=\s*(["\'])(.*?)\1/i', $m[0], $srcMatch)) {
+            return '';
+        }
+        $src = trim($srcMatch[2]);
+        $allowedPrefixes = [
+            'https://www.google.com/maps/embed',
+            'https://maps.google.com/',
+            'https://www.openstreetmap.org/export/embed.html',
+        ];
+        foreach ($allowedPrefixes as $prefix) {
+            if (stripos($src, $prefix) === 0) {
+                return $m[0];
+            }
+        }
+        return '';
+    }, $hpCol3Safe) ?? $hpCol3Safe;
     ?>
+    <?php if ($showFooter): ?>
     <?php if ($showThreeColFooter): ?>
     <!-- Homepage 3-column footer -->
     <footer style="background:var(--bg-secondary);border-top:1px solid var(--border-color);margin-top:40px;padding:40px 0 0;">
@@ -2493,13 +2571,21 @@ window.mmbSkeleton = (function(){
                     <div style="font-weight:800;font-size:.95rem;color:var(--text-primary);margin-bottom:12px;letter-spacing:.02em;">
                         <?= htmlspecialchars($hpFooterSettings['hp_footer_col2_heading'] ?? 'Quick Links') ?>
                     </div>
-                    <?php if (!empty($footerPages)): ?>
+                    <?php if (!empty($homeFooterLinks) || !empty($footerPages)): ?>
                     <nav style="display:flex;flex-direction:column;gap:6px;">
-                        <?php foreach ($footerPages as $fp): ?>
-                        <a href="/pages/<?= htmlspecialchars($fp['slug']) ?>" style="color:var(--text-secondary);font-size:.85rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
-                            <i class="fas fa-chevron-right" style="font-size:.6rem;margin-right:5px;opacity:.6;"></i><?= htmlspecialchars($fp['title']) ?>
-                        </a>
-                        <?php endforeach; ?>
+                        <?php if (!empty($homeFooterLinks)): ?>
+                            <?php foreach ($homeFooterLinks as $fl): ?>
+                            <a href="<?= htmlspecialchars($fl['url']) ?>" style="color:var(--text-secondary);font-size:.85rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+                                <i class="fas fa-chevron-right" style="font-size:.6rem;margin-right:5px;opacity:.6;"></i><?= htmlspecialchars($fl['label']) ?>
+                            </a>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <?php foreach ($footerPages as $fp): ?>
+                            <a href="/pages/<?= htmlspecialchars($fp['slug']) ?>" style="color:var(--text-secondary);font-size:.85rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+                                <i class="fas fa-chevron-right" style="font-size:.6rem;margin-right:5px;opacity:.6;"></i><?= htmlspecialchars($fp['title']) ?>
+                            </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </nav>
                     <?php else: ?>
                     <p style="color:var(--text-secondary);font-size:.84rem;">No links configured yet.</p>
@@ -2510,9 +2596,9 @@ window.mmbSkeleton = (function(){
                     <div style="font-weight:800;font-size:.95rem;color:var(--text-primary);margin-bottom:12px;letter-spacing:.02em;">
                         <?= htmlspecialchars($hpFooterSettings['hp_footer_col3_heading'] ?? 'Contact') ?>
                     </div>
-                    <p style="color:var(--text-secondary);font-size:.84rem;line-height:1.7;">
-                        <?= nl2br(htmlspecialchars($hpFooterSettings['hp_footer_col3_text'] ?? '')) ?>
-                    </p>
+                    <div style="color:var(--text-secondary);font-size:.84rem;line-height:1.7;">
+                        <?= $hpCol3Safe !== '' ? $hpCol3Safe : '' ?>
+                    </div>
                     <?php if ($footerShowSocial === '1' && !empty($footerSocialLinks)): ?>
                     <div style="display:flex;gap:14px;align-items:center;margin-top:12px;">
                         <?php foreach ($footerSocialLinks as $sk => $sv): ?>
@@ -2551,11 +2637,17 @@ window.mmbSkeleton = (function(){
             <?php if ($footerTagline): ?>
             <p style="color:var(--text-secondary);font-size:.85rem;"><?= htmlspecialchars($footerTagline) ?></p>
             <?php endif; ?>
-            <?php if (!empty($footerPages)): ?>
+            <?php if (!empty($defaultFooterLinks) || !empty($footerPages)): ?>
                 <nav class="footer-links" aria-label="Footer links">
-                    <?php foreach ($footerPages as $footerPage): ?>
-                        <a href="/pages/<?= htmlspecialchars($footerPage['slug']) ?>"><?= htmlspecialchars($footerPage['title']) ?></a>
-                    <?php endforeach; ?>
+                    <?php if (!empty($defaultFooterLinks)): ?>
+                        <?php foreach ($defaultFooterLinks as $fl): ?>
+                            <a href="<?= htmlspecialchars($fl['url']) ?>"><?= htmlspecialchars($fl['label']) ?></a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($footerPages as $footerPage): ?>
+                            <a href="/pages/<?= htmlspecialchars($footerPage['slug']) ?>"><?= htmlspecialchars($footerPage['title']) ?></a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </nav>
             <?php endif; ?>
             <?php if ($footerShowSocial === '1' && !empty($footerSocialLinks)): ?>
@@ -2595,6 +2687,7 @@ window.mmbSkeleton = (function(){
         </div>
     </footer>
     <?php endif; ?>
+    <?php endif; // $showFooter ?>
     
     <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

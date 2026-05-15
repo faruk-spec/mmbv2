@@ -1,11 +1,18 @@
 <?php use Core\View; use Core\Auth; ?>
 <?php
 $defaultTheme = 'dark';
+$siteName = 'MyMultiBranch';
+$siteFavicon = '';
 try {
     $db = \Core\Database::getInstance();
     $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
     if ($navbarSettings && !empty($navbarSettings['default_theme'])) {
         $defaultTheme = $navbarSettings['default_theme'];
+    }
+    $siteRows = $db->fetchAll("SELECT `key`, value FROM settings WHERE `key` IN ('site_name','site_favicon')");
+    foreach ($siteRows as $siteRow) {
+        if (($siteRow['key'] ?? '') === 'site_name' && !empty($siteRow['value'])) $siteName = $siteRow['value'];
+        if (($siteRow['key'] ?? '') === 'site_favicon') $siteFavicon = $siteRow['value'] ?? '';
     }
 } catch (\Exception $e) {}
 
@@ -23,7 +30,11 @@ header("Expires: 0");
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <meta name="csrf-token" content="<?= \Core\Security::generateCsrfToken() ?>">
-    <title><?= View::e($title ?? 'NoteX') ?> - MyMultiBranch</title>
+    <title><?= View::e($title ?? 'NoteX') ?> - <?= View::e($siteName) ?></title>
+    <?php if (!empty($siteFavicon)): ?>
+    <link rel="icon" href="<?= View::e($siteFavicon) ?>">
+    <link rel="shortcut icon" href="<?= View::e($siteFavicon) ?>">
+    <?php endif; ?>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
           integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="

@@ -250,20 +250,32 @@ class PlatformPlansController extends BaseController
         }
 
         try {
-            // Cancel any existing active subscription for this user+plan
-            $this->db->query(
-                "UPDATE platform_user_subscriptions
-                 SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
-                 WHERE user_id = ? AND plan_id = ? AND status = 'active'",
-                [$userId, $planId]
-            );
+            $pdo = $this->db->getConnection();
+            $pdo->beginTransaction();
 
-            $this->db->query(
-                "INSERT INTO platform_user_subscriptions
-                    (user_id, plan_id, status, started_at, assigned_by, notes)
-                 VALUES (?, ?, 'active', NOW(), ?, ?)",
-                [$userId, $planId, Auth::id(), $notes]
-            );
+            try {
+                // Cancel ALL existing active subscriptions for this user (a user can
+                // only hold one active platform plan at a time).  Wrapped in a
+                // transaction so the cancel + insert are atomic.
+                $this->db->query(
+                    "UPDATE platform_user_subscriptions
+                     SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
+                     WHERE user_id = ? AND status = 'active'",
+                    [$userId]
+                );
+
+                $this->db->query(
+                    "INSERT INTO platform_user_subscriptions
+                        (user_id, plan_id, status, started_at, assigned_by, notes)
+                     VALUES (?, ?, 'active', NOW(), ?, ?)",
+                    [$userId, $planId, Auth::id(), $notes]
+                );
+
+                $pdo->commit();
+            } catch (\Exception $inner) {
+                $pdo->rollBack();
+                throw $inner;
+            }
 
             $plan = $this->db->fetch("SELECT name FROM platform_plans WHERE id = ?", [$planId]);
             Logger::activity(Auth::id(), 'platform_plan_assigned', [

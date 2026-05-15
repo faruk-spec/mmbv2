@@ -36,6 +36,14 @@
                     <input type="text" name="site_name" class="form-input" 
                            value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Home Page Title</label>
+                    <input type="text" name="home_page_title" class="form-input"
+                           value="<?= View::e($settings['home_page_title'] ?? '') ?>"
+                           placeholder="Leave blank to use Site Name">
+                    <small class="form-help">Controls the browser title for the home page (/).</small>
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label">Site Description</label>
@@ -145,6 +153,8 @@
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Save Settings</button>
+                <input type="hidden" name="site_favicon" value="<?= View::e($settings['site_favicon'] ?? '') ?>">
+                <input type="hidden" name="footer_show_on_projects" value="<?= View::e($settings['footer_show_on_projects'] ?? '1') ?>">
             </form>
         </div>
     </div>
@@ -187,6 +197,7 @@
             <form method="POST" action="/admin/settings">
                 <?= \Core\Security::csrfField() ?>
                 <input type="hidden" name="site_name" value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
+                <input type="hidden" name="home_page_title" value="<?= View::e($settings['home_page_title'] ?? '') ?>">
                 <input type="hidden" name="site_description" value="<?= View::e($settings['site_description'] ?? '') ?>">
                 <input type="hidden" name="contact_email" value="<?= View::e($settings['contact_email'] ?? '') ?>">
                 <input type="hidden" name="system_timezone" value="<?= View::e($settings['system_timezone'] ?? 'UTC') ?>">
@@ -194,6 +205,8 @@
                 <input type="hidden" name="time_format" value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
                 <input type="hidden" name="registration_enabled" value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
                 <input type="hidden" name="auth_tagline" value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+                <input type="hidden" name="site_favicon" value="<?= View::e($settings['site_favicon'] ?? '') ?>">
+                <input type="hidden" name="footer_show_on_projects" value="<?= View::e($settings['footer_show_on_projects'] ?? '1') ?>">
                 <div class="form-group" style="margin-bottom:10px;">
                     <label class="form-label" style="margin-bottom:6px;">Or enter Logo URL / Path</label>
                     <input type="text" name="auth_logo" class="form-input"
@@ -208,92 +221,67 @@
             </form>
         </div>
 
+        <!-- Favicon Settings -->
         <div class="card" style="margin-top:16px;">
-            <h4 style="margin-bottom:15px;"><i class="fas fa-shoe-prints" style="margin-right:8px;color:var(--cyan);"></i> Footer Settings</h4>
-            <form method="POST" action="/admin/settings/footer">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-star" style="margin-right:8px;color:var(--orange);"></i> Site Favicon</h4>
+            <?php $currentFavicon = $settings['site_favicon'] ?? ''; ?>
+            <?php if (!empty($currentFavicon)): ?>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <img src="<?= View::e($currentFavicon) ?>" alt="Current favicon"
+                     style="width:32px;height:32px;object-fit:contain;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-secondary);">
+                <span style="font-size:.8rem;color:var(--text-secondary);"><?= View::e($currentFavicon) ?></span>
+            </div>
+            <?php endif; ?>
+            <!-- Upload favicon file -->
+            <form method="POST" action="/admin/settings/upload-favicon" enctype="multipart/form-data" style="margin-bottom:14px;">
                 <?= \Core\Security::csrfField() ?>
-
-                <div class="form-group">
-                    <label class="form-label">Footer Tagline</label>
-                    <input type="text" name="footer_tagline" class="form-input"
-                           value="<?= View::e($settings['footer_tagline'] ?? '') ?>"
-                           placeholder="Your tools, all in one place.">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="margin-bottom:6px;">Upload Favicon</label>
+                    <input type="file" name="site_favicon_file" class="form-input"
+                           accept=".ico,.png,.jpg,.jpeg,.webp,.svg" required
+                           style="padding:8px;font-size:13px;">
+                    <small class="form-help">ICO, PNG, SVG or WebP · Max 1 MB · Recommended: 32×32 or 64×64 px</small>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Footer Copyright Text</label>
-                    <input type="text" name="footer_copyright" class="form-input"
-                           value="<?= View::e($settings['footer_copyright'] ?? '') ?>"
-                           placeholder="Leave blank to use default: © YEAR APP_NAME">
+                <button type="submit" class="btn btn-primary" style="width:100%;font-size:13px;">
+                    <i class="fas fa-upload"></i> Upload Favicon
+                </button>
+            </form>
+            <!-- Or use a URL / path -->
+            <form method="POST" action="/admin/settings">
+                <?= \Core\Security::csrfField() ?>
+                <input type="hidden" name="site_name"             value="<?= View::e($settings['site_name'] ?? APP_NAME) ?>">
+                <input type="hidden" name="home_page_title"      value="<?= View::e($settings['home_page_title'] ?? '') ?>">
+                <input type="hidden" name="site_description"      value="<?= View::e($settings['site_description'] ?? '') ?>">
+                <input type="hidden" name="contact_email"         value="<?= View::e($settings['contact_email'] ?? '') ?>">
+                <input type="hidden" name="system_timezone"       value="<?= View::e($settings['system_timezone'] ?? 'UTC') ?>">
+                <input type="hidden" name="date_format"           value="<?= View::e($settings['date_format'] ?? 'M d, Y') ?>">
+                <input type="hidden" name="time_format"           value="<?= View::e($settings['time_format'] ?? 'g:i A') ?>">
+                <input type="hidden" name="registration_enabled"  value="<?= View::e($settings['registration_enabled'] ?? '1') ?>">
+                <input type="hidden" name="auth_tagline"          value="<?= View::e($settings['auth_tagline'] ?? '') ?>">
+                <input type="hidden" name="auth_logo"             value="<?= View::e($settings['auth_logo'] ?? '') ?>">
+                <input type="hidden" name="footer_show_on_projects" value="<?= View::e($settings['footer_show_on_projects'] ?? '1') ?>">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="margin-bottom:6px;">Or enter Favicon URL / Path</label>
+                    <input type="text" name="site_favicon" class="form-input"
+                           value="<?= View::e($currentFavicon) ?>"
+                           placeholder="https://… or /uploads/oauth/favicon.ico"
+                           style="font-size:13px;">
+                    <small class="form-help">Absolute URL or a relative path served by the app.</small>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Social Links</label>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                        <div>
-                            <label style="font-size:.8rem;">Twitter/X URL</label>
-                            <input type="url" name="footer_social_twitter" class="form-input" value="<?= View::e($settings['footer_social_twitter'] ?? '') ?>" placeholder="https://twitter.com/...">
-                        </div>
-                        <div>
-                            <label style="font-size:.8rem;">GitHub URL</label>
-                            <input type="url" name="footer_social_github" class="form-input" value="<?= View::e($settings['footer_social_github'] ?? '') ?>" placeholder="https://github.com/...">
-                        </div>
-                        <div>
-                            <label style="font-size:.8rem;">LinkedIn URL</label>
-                            <input type="url" name="footer_social_linkedin" class="form-input" value="<?= View::e($settings['footer_social_linkedin'] ?? '') ?>" placeholder="https://linkedin.com/...">
-                        </div>
-                        <div>
-                            <label style="font-size:.8rem;">YouTube URL</label>
-                            <input type="url" name="footer_social_youtube" class="form-input" value="<?= View::e($settings['footer_social_youtube'] ?? '') ?>" placeholder="https://youtube.com/...">
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-checkbox">
-                        <input type="checkbox" name="footer_show_social" value="1"
-                               <?= ($settings['footer_show_social'] ?? '1') === '1' ? 'checked' : '' ?>>
-                        <span>Show Social Links in Footer</span>
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Footer Settings</button>
+                <button type="submit" class="btn btn-secondary" style="width:100%;font-size:13px;">
+                    <i class="fas fa-save"></i> Save Favicon URL
+                </button>
             </form>
         </div>
 
-        <!-- Homepage 3-Column Footer -->
-        <div class="card">
-            <h4 style="margin-bottom:15px;"><i class="fas fa-columns" style="margin-right:8px;color:var(--cyan);"></i> Homepage 3-Column Footer</h4>
-            <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:14px;">Manage the rich 3-column footer shown on the home page. Dashboard, profile, and project pages use the simple single-line footer above.</p>
-            <form method="POST" action="/admin/settings/homepage-footer">
-                <?= \Core\Security::csrfField() ?>
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" name="hp_footer_enabled" value="1" <?= ($settings['hp_footer_enabled'] ?? '0') === '1' ? 'checked' : '' ?>>
-                        <span>Enable homepage 3-column footer</span>
-                    </label>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:12px;">
-                    <div>
-                        <label class="form-label">Column 1 — Heading</label>
-                        <input type="text" name="hp_footer_col1_heading" class="form-input" value="<?= \Core\View::e($settings['hp_footer_col1_heading'] ?? 'About Us') ?>" placeholder="About Us">
-                        <label class="form-label" style="margin-top:8px;">Column 1 — Body Text</label>
-                        <textarea name="hp_footer_col1_text" class="form-input" rows="3" placeholder="Short description..."><?= \Core\View::e($settings['hp_footer_col1_text'] ?? '') ?></textarea>
-                    </div>
-                    <div>
-                        <label class="form-label">Column 2 — Heading</label>
-                        <input type="text" name="hp_footer_col2_heading" class="form-input" value="<?= \Core\View::e($settings['hp_footer_col2_heading'] ?? 'Quick Links') ?>" placeholder="Quick Links">
-                        <p style="color:var(--text-secondary);font-size:.8rem;margin-top:6px;">Column 2 links come from published pages with <strong>Show Footer</strong> enabled. Manage them in <a href="/admin/pages" style="color:var(--cyan);">Admin Pages</a>.</p>
-                    </div>
-                    <div>
-                        <label class="form-label">Column 3 — Heading</label>
-                        <input type="text" name="hp_footer_col3_heading" class="form-input" value="<?= \Core\View::e($settings['hp_footer_col3_heading'] ?? 'Contact') ?>" placeholder="Contact">
-                        <label class="form-label" style="margin-top:8px;">Column 3 — Body Text</label>
-                        <textarea name="hp_footer_col3_text" class="form-input" rows="3" placeholder="Address, email, etc."><?= \Core\View::e($settings['hp_footer_col3_text'] ?? '') ?></textarea>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-top:12px;">
-                    <label class="form-label">Bottom Bar Text (overrides default copyright)</label>
-                    <input type="text" name="hp_footer_bottom_text" class="form-input" value="<?= \Core\View::e($settings['hp_footer_bottom_text'] ?? '') ?>" placeholder="© 2025 YourBrand. All rights reserved.">
-                </div>
-                <button type="submit" class="btn btn-primary" style="margin-top:6px;"><i class="fas fa-save"></i> Save Homepage Footer</button>
-            </form>
+        <div class="card" style="margin-top:16px;">
+            <h4 style="margin-bottom:15px;"><i class="fas fa-shoe-prints" style="margin-right:8px;color:var(--cyan);"></i> Footer Settings</h4>
+            <p style="color:var(--text-secondary);font-size:.83rem;margin-bottom:12px;">
+                All footer controls were moved to the dedicated page.
+            </p>
+            <a href="/admin/settings/footer-page" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;">
+                <i class="fas fa-arrow-right"></i> Open Footer Settings
+            </a>
         </div>
 
         <div class="card">

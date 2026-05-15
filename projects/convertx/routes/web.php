@@ -35,6 +35,7 @@ $featureByRoute = [
     'img-remove-bg' => 'page_img_remove_bg',
     'docs'          => 'page_docs',
     'apikeys'       => 'page_apikeys',
+    'api'           => 'page_apikeys',
     'plan'          => 'page_plan',
     'settings'      => 'page_settings',
 ];
@@ -57,7 +58,16 @@ try {
         }
     }
 } catch (\Exception $e) {
-    // Fail-open if feature checks are unavailable
+    // Fail-closed for plan enforcement when feature checks error out.
+    $featureKey = $featureByRoute[$segments[0]] ?? null;
+    if ($featureKey) {
+        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            $_SESSION['_flash']['error'] = 'This feature is not available on your plan.';
+            header('Location: /projects/convertx/dashboard');
+            exit;
+        }
+        $GLOBALS['cx_feature_gated'] = $featureKey;
+    }
 }
 
 switch ($segments[0]) {

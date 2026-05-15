@@ -118,9 +118,18 @@ class QRFeatureService
             }
         }
 
-        // If no configuration exists at all, allow everything (permissive default).
+        // If no configuration exists at all, return a basic free-tier feature set.
+        // Basic free tier allows: plain static QR generation, PNG download, content
+        // type selection, and QR label — all advanced features (dynamic QR, analytics,
+        // bulk generation, AI design, etc.) are denied until the admin configures plans.
+        // This is intentionally restrictive to prevent feature access before plan setup.
         if (!$hasAnyConfig) {
-            return array_fill_keys(self::ALL_FEATURES, true);
+            $freeDefaults = array_fill_keys(self::ALL_FEATURES, false);
+            $freeDefaults['static_qr']    = true;  // basic QR generation always allowed
+            $freeDefaults['download_png'] = true;  // save QR as PNG
+            $freeDefaults['content_type'] = true;  // choose content type
+            $freeDefaults['qr_label']     = true;  // basic label
+            return $freeDefaults;
         }
 
         return $features;

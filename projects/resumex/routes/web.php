@@ -12,6 +12,93 @@ $uri = $uri ?: '/';
 $segments = explode('/', trim($uri, '/'));
 $method   = $_SERVER['REQUEST_METHOD'];
 
+$resumexFeatureByRoute = [
+    ''            => 'unlimited_resumes',
+    'dashboard'   => 'unlimited_resumes',
+    'create'      => 'unlimited_resumes',
+    'import'      => 'unlimited_resumes',
+    'edit'        => 'unlimited_resumes',
+    'preview'     => 'unlimited_resumes',
+    'delete'      => 'unlimited_resumes',
+    'duplicate'   => 'unlimited_resumes',
+    'upload-image'=> 'unlimited_resumes',
+    'download'    => 'pdf_export',
+    'templates'   => 'premium_templates',
+    'ai'          => 'ai_suggestions',
+];
+
+$resumexFeatureAllowed = static function (string $featureKey): bool {
+    $userId = (int) (\Core\Auth::id() ?? 0);
+    if ($userId <= 0) {
+        return true;
+    }
+
+    static $featureMapCache = null;
+    if (is_array($featureMapCache)) {
+        return !empty($featureMapCache[$featureKey]);
+    }
+
+    $featureMapCache = [];
+    try {
+        $db = \Core\Database::getInstance();
+        $row = $db->fetch(
+            "SELECT p.features
+             FROM resumex_user_subscriptions s
+             JOIN resumex_subscription_plans p ON p.id = s.plan_id
+             WHERE s.user_id = ? AND s.status = 'active'
+               AND (s.expires_at IS NULL OR s.expires_at > NOW())
+             ORDER BY s.started_at DESC
+             LIMIT 1",
+            [$userId]
+        );
+
+        if (!$row || empty($row['features'])) {
+            $row = $db->fetch(
+                "SELECT features
+                 FROM resumex_subscription_plans
+                 WHERE slug = 'free' AND status = 'active'
+                 LIMIT 1"
+            );
+        }
+
+        $featureMapCache = json_decode((string) ($row['features'] ?? '{}'), true) ?: [];
+    } catch (\Throwable $e) {
+        $featureMapCache = [];
+    }
+
+    return !empty($featureMapCache[$featureKey]);
+};
+
+try {
+    $routeKey = $segments[0] ?? '';
+    $featureKey = $resumexFeatureByRoute[$routeKey] ?? null;
+    if ($featureKey && (int) (\Core\Auth::id() ?? 0) > 0 && !$resumexFeatureAllowed($featureKey)) {
+        if ($routeKey === 'ai' || in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'This feature is not available on your current plan.']);
+            exit;
+        }
+        $_SESSION['_flash']['error'] = 'This feature is not available on your current plan.';
+        header('Location: /projects/resumex/plans');
+        exit;
+    }
+} catch (\Throwable $e) {
+    // Fail closed for security-sensitive feature routes.
+    $routeKey = $segments[0] ?? '';
+    if (isset($resumexFeatureByRoute[$routeKey]) && (int) (\Core\Auth::id() ?? 0) > 0) {
+        if ($routeKey === 'ai' || in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'This feature is not available on your current plan.']);
+            exit;
+        }
+        $_SESSION['_flash']['error'] = 'This feature is not available on your current plan.';
+        header('Location: /projects/resumex/plans');
+        exit;
+    }
+}
+
 switch ($segments[0]) {
     case '':
     case 'dashboard':

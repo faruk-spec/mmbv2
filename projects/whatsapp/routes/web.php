@@ -6,6 +6,10 @@
  */
 
 use Core\Router;
+use Core\Auth;
+use Projects\WhatsApp\Helpers\SubscriptionHelper;
+
+$whatsappProjectPrefix = '/projects/whatsapp';
 
 // Load the controllers
 require_once BASE_PATH . '/projects/whatsapp/controllers/DashboardController.php';
@@ -14,6 +18,74 @@ require_once BASE_PATH . '/projects/whatsapp/controllers/MessageController.php';
 require_once BASE_PATH . '/projects/whatsapp/controllers/ContactController.php';
 require_once BASE_PATH . '/projects/whatsapp/controllers/SettingsController.php';
 require_once BASE_PATH . '/projects/whatsapp/controllers/ApiDocsController.php';
+require_once BASE_PATH . '/projects/whatsapp/helpers/SubscriptionHelper.php';
+
+$waUriPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '';
+$waPath = trim((string) preg_replace('#^' . preg_quote($whatsappProjectPrefix, '#') . '/?#', '', $waUriPath), '/');
+$waFirst = explode('/', $waPath)[0] ?: 'dashboard';
+$waMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$waUserId = (int) (Auth::id() ?? 0);
+
+try {
+    // Web/API-keys dashboard pages can be viewed without active subscription,
+    // but feature actions are enforced below.
+    $alwaysAllowedPages = ['dashboard', 'subscription', 'plans'];
+    $requiresActivePlan = !in_array($waFirst, $alwaysAllowedPages, true) && $waFirst !== 'api-docs' && $waFirst !== 'api';
+
+    if ($waUserId > 0 && $requiresActivePlan) {
+        $sub = SubscriptionHelper::getUserSubscription($waUserId);
+        $isActive = $sub && (!empty($sub['end_date']) ? strtotime((string) $sub['end_date']) >= time() : true);
+        if (!$isActive) {
+            if ($waMethod !== 'GET') {
+                header('Content-Type: application/json');
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Active WhatsApp subscription required.']);
+                exit;
+            }
+            $_SESSION['_flash']['error'] = 'Active WhatsApp subscription required.';
+            header('Location: /projects/whatsapp/plans');
+            exit;
+        }
+    }
+
+    if ($waUserId > 0 && $waFirst === 'sessions' && $waMethod === 'POST' && str_contains($waPath, 'create')) {
+        $check = SubscriptionHelper::canCreateSession($waUserId);
+        if (empty($check['allowed'])) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => $check['reason'] ?? 'Session creation is not available on your current plan.']);
+            exit;
+        }
+    }
+
+    if ($waUserId > 0 && $waFirst === 'messages' && $waMethod === 'POST' && str_contains($waPath, 'send')) {
+        $check = SubscriptionHelper::canSendMessage($waUserId);
+        if (empty($check['allowed'])) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => $check['reason'] ?? 'Message sending is not available on your current plan.']);
+            exit;
+        }
+    }
+
+    if ($waUserId > 0 && $waFirst === 'api' && in_array($waMethod, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        $check = SubscriptionHelper::canMakeApiCall($waUserId);
+        if (empty($check['allowed'])) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => $check['reason'] ?? 'API access is not available on your current plan.']);
+            exit;
+        }
+    }
+} catch (\Throwable $e) {
+    // Fail closed for mutating actions.
+    if (in_array($waMethod, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        header('Content-Type: application/json');
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'This action is not available on your current plan.']);
+        exit;
+    }
+}
 
 $router = new Router(false);
 

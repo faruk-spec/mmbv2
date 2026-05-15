@@ -6,12 +6,19 @@ use Core\Security;
 // Dynamic theme from DB (same as ConvertX/BillX pattern)
 $defaultTheme = 'dark';
 $allowedThemes = ['dark', 'light'];
+$siteName = 'MyMultiBranch';
+$siteFavicon = '';
 try {
     $db = \Core\Database::getInstance();
     $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
     if ($navbarSettings && !empty($navbarSettings['default_theme'])
         && in_array($navbarSettings['default_theme'], $allowedThemes, true)) {
         $defaultTheme = $navbarSettings['default_theme'];
+    }
+    $siteRows = $db->fetchAll("SELECT `key`, value FROM settings WHERE `key` IN ('site_name','site_favicon')");
+    foreach ($siteRows as $siteRow) {
+        if (($siteRow['key'] ?? '') === 'site_name' && !empty($siteRow['value'])) $siteName = $siteRow['value'];
+        if (($siteRow['key'] ?? '') === 'site_favicon') $siteFavicon = $siteRow['value'] ?? '';
     }
 } catch (\Exception $e) { /* fall through */ }
 
@@ -24,7 +31,11 @@ $_uri = $_SERVER['REQUEST_URI'] ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="csrf-token" content="<?= Security::generateCsrfToken() ?>">
-    <title><?= View::e($title ?? 'ProShare') ?> – ProShare</title>
+    <title><?= View::e($title ?? 'ProShare') ?> – <?= View::e($siteName) ?></title>
+    <?php if (!empty($siteFavicon)): ?>
+    <link rel="icon" href="<?= View::e($siteFavicon) ?>">
+    <link rel="shortcut icon" href="<?= View::e($siteFavicon) ?>">
+    <?php endif; ?>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

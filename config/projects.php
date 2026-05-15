@@ -13,7 +13,8 @@ return [
         'color' => '#00f0ff',
         'enabled' => true,
         'database' => 'mmb_codexpro',
-        'url' => '/projects/codexpro'
+        'url' => '/projects/codexpro',
+        'tier' => 'enterprise',
     ],
     
     'devzone' => [
@@ -23,6 +24,7 @@ return [
         'color'       => '#ff2ec4',
         'enabled'     => true,
         'url'         => '/projects/devzone',
+        'tier'        => 'enterprise',
     ],
     
     'proshare' => [
@@ -32,7 +34,8 @@ return [
         'color' => '#ffaa00',
         'enabled' => true,
         'database' => 'mmb_proshare',
-        'url' => '/projects/proshare'
+        'url' => '/projects/proshare',
+        'tier' => 'freemium',
     ],
     
     'qr' => [
@@ -42,7 +45,8 @@ return [
         'color' => '#9945ff',
         'enabled' => true,
         'database' => 'mmb_qr',
-        'url' => '/projects/qr'
+        'url' => '/projects/qr',
+        'tier' => 'free',
     ],
     
     'resumex' => [
@@ -52,7 +56,8 @@ return [
         'color' => '#ff6b6b',
         'enabled' => true,
         'database' => 'mmb_resumex',
-        'url' => '/projects/resumex'
+        'url' => '/projects/resumex',
+        'tier' => 'free',
     ],
     
     'whatsapp' => [
@@ -62,7 +67,8 @@ return [
         'color' => '#25D366',
         'enabled' => true,
         'database' => 'mmb_whatsapp',
-        'url' => '/projects/whatsapp'
+        'url' => '/projects/whatsapp',
+        'tier' => 'enterprise',
     ],
     'convertx' => [
         'name' => 'ConvertX',
@@ -71,7 +77,8 @@ return [
         'color' => '#6366f1',
         'enabled' => true,
         'database' => 'mmb_convertx',
-        'url' => '/projects/convertx'
+        'url' => '/projects/convertx',
+        'tier' => 'freemium',
     ],
     'billx' => [
         'name' => 'BillX',
@@ -80,7 +87,8 @@ return [
         'color' => '#f59e0b',
         'enabled' => true,
         'database' => 'mmb_billx',
-        'url' => '/projects/billx'
+        'url' => '/projects/billx',
+        'tier' => 'freemium',
     ],
     'idcard' => [
         'name' => 'CardX',
@@ -89,7 +97,8 @@ return [
         'color' => '#6366f1',
         'enabled' => true,
         'database' => 'mmb_idcard',
-        'url' => '/projects/idcard'
+        'url' => '/projects/idcard',
+        'tier' => 'freemium',
     ],
     'formx' => [
         'name' => 'FormX',
@@ -98,7 +107,8 @@ return [
         'color' => '#00f0ff',
         'enabled' => true,
         'database' => 'mmb_formx',
-        'url' => '/projects/formx'
+        'url' => '/projects/formx',
+        'tier' => 'freemium',
     ],
 
     'linkshortner' => [
@@ -108,7 +118,8 @@ return [
         'color' => '#00d4ff',
         'enabled' => true,
         'database' => 'mmb_linkshortner',
-        'url' => '/projects/linkshortner'
+        'url' => '/projects/linkshortner',
+        'tier' => 'free',
     ],
 
     'notex' => [
@@ -118,6 +129,7 @@ return [
         'color' => '#ffd700',
         'enabled' => true,
         'database' => 'mmb_notex',
-        'url' => '/projects/notex'
+        'url' => '/projects/notex',
+        'tier' => 'free',
     ],
 ];

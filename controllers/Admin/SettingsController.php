@@ -17,6 +17,9 @@ use Core\SecureUpload;
 
 class SettingsController extends BaseController
 {
+    private const FOOTER_LINK_LABEL_MAX = 120;
+    private const FOOTER_LINK_URL_MAX = 255;
+
     public function __construct()
     {
         $this->requireAuth();
@@ -30,6 +33,7 @@ class SettingsController extends BaseController
     {
         $this->requirePermission('settings');
         $db = Database::getInstance();
+        $this->ensureFooterLinksTable();
         
         // Get current settings
         $settings = $db->fetchAll("SELECT * FROM settings");
@@ -37,10 +41,22 @@ class SettingsController extends BaseController
         foreach ($settings as $setting) {
             $settingsMap[$setting['key']] = $setting['value'];
         }
+
+        $footerLinks = ['home' => [], 'default' => []];
+        try {
+            $rows = $db->fetchAll("SELECT * FROM footer_links ORDER BY area ASC, sort_order ASC, id ASC");
+            foreach ($rows as $row) {
+                $area = ($row['area'] ?? 'default') === 'home' ? 'home' : 'default';
+                $footerLinks[$area][] = $row;
+            }
+        } catch (\Exception $e) {
+            Logger::error('SettingsController footer links load error: ' . $e->getMessage());
+        }
         
         $this->view('admin/settings/index', [
             'title' => 'Site Settings',
-            'settings' => $settingsMap
+            'settings' => $settingsMap,
+            'footerLinks' => $footerLinks
         ]);
     }
     
@@ -60,6 +76,7 @@ class SettingsController extends BaseController
             
             $settingsToUpdate = [
                 'site_name',
+                'home_page_title',
                 'site_description',
                 'contact_email',
                 'maintenance_mode',
@@ -69,6 +86,8 @@ class SettingsController extends BaseController
                 'time_format',
                 'auth_tagline',
                 'auth_logo',
+                'site_favicon',
+                'footer_show_on_projects',
             ];
 
             // Snapshot current values before writing
@@ -80,24 +99,32 @@ class SettingsController extends BaseController
             }
             
             foreach ($settingsToUpdate as $key) {
-                $value = $this->input($key, '');
+                if (in_array($key, ['registration_enabled', 'footer_show_on_projects'], true)) {
+                    if (!array_key_exists($key, $_POST)) {
+                        $value = (string) ($oldValues[$key] ?? '0');
+                    } else {
+                        $value = ((string) $this->input($key, '0') === '1') ? '1' : '0';
+                    }
+                } else {
+                    $value = $this->input($key, '');
+                }
                 
                 // Check if setting exists
                 $existing = $db->fetch("SELECT id FROM settings WHERE `key` = ?", [$key]);
                 
                 if ($existing) {
                     $db->update('settings', [
-                        'value' => Security::sanitize($value),
+                        'value' => Security::sanitize((string) $value),
                         'updated_at' => date('Y-m-d H:i:s')
                     ], '`key` = ?', [$key]);
                 } else {
                     $db->insert('settings', [
                         'key' => $key,
-                        'value' => Security::sanitize($value),
+                        'value' => Security::sanitize((string) $value),
                         'created_at' => date('Y-m-d H:i:s')
                     ]);
                 }
-                $newValues[$key] = Security::sanitize($value);
+                $newValues[$key] = Security::sanitize((string) $value);
             }
             
             // Update timezone in app config if changed
@@ -131,7 +158,8 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update settings.');
         }
         
-        $this->redirect('/admin/settings');
+        $redirect = $this->input('_redirect', '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer-page'], true) ? $redirect : '/admin/settings');
     }
 
     /**
@@ -176,7 +204,8 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update footer settings.');
         }
 
-        $this->redirect('/admin/settings');
+        $redirect = $this->input('_redirect', '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer-page'], true) ? $redirect : '/admin/settings');
     }
 
     /**
@@ -205,6 +234,8 @@ class SettingsController extends BaseController
             foreach ($keys as $key => $type) {
                 if ($type === 'checkbox') {
                     $value = isset($_POST[$key]) ? '1' : '0';
+                } elseif ($key === 'hp_footer_col3_text') {
+                    $value = $this->sanitizeFooterHtml((string) $this->input($key, ''));
                 } else {
                     $value = Security::sanitize($this->input($key, ''));
                 }
@@ -221,7 +252,124 @@ class SettingsController extends BaseController
             $this->flash('error', 'Failed to update homepage footer settings.');
         }
 
-        $this->redirect('/admin/settings');
+        $redirect = $this->input('_redirect', '/admin/settings');
+        $this->redirect(in_array($redirect, ['/admin/settings', '/admin/settings/footer-page'], true) ? $redirect : '/admin/settings');
+    }
+
+    public function addFooterLink(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $this->ensureFooterLinksTable();
+        $db = Database::getInstance();
+        $area = $this->normalizeFooterArea($this->input('area', 'default'));
+        $label = trim((string) Security::sanitize($this->input('label', '')));
+        $url = trim((string) $this->input('url', ''));
+        $sortOrder = (int) $this->input('sort_order', 0);
+        $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
+        $backTo = $this->input('_redirect', '/admin/settings');
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer-page'], true) ? $backTo : '/admin/settings';
+
+        if ($label === '' || $url === '') {
+            $this->flash('error', 'Footer link label and URL are required.');
+            $this->redirect($backTo);
+            return;
+        }
+
+        try {
+            $db->insert('footer_links', [
+                'area' => $area,
+                'label' => mb_substr($label, 0, self::FOOTER_LINK_LABEL_MAX),
+                'url' => mb_substr($url, 0, self::FOOTER_LINK_URL_MAX),
+                'sort_order' => $sortOrder,
+                'is_enabled' => $isEnabled,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->flash('success', 'Footer link added.');
+        } catch (\Exception $e) {
+            Logger::error('SettingsController addFooterLink error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to add footer link.');
+        }
+
+        $this->redirect($backTo);
+    }
+
+    public function updateFooterLink(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $this->ensureFooterLinksTable();
+        $db = Database::getInstance();
+        $id = (int) $this->input('id', 0);
+        $area = $this->normalizeFooterArea($this->input('area', 'default'));
+        $label = trim((string) Security::sanitize($this->input('label', '')));
+        $url = trim((string) $this->input('url', ''));
+        $sortOrder = (int) $this->input('sort_order', 0);
+        $isEnabled = isset($_POST['is_enabled']) ? 1 : 0;
+        $backTo = $this->input('_redirect', '/admin/settings');
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer-page'], true) ? $backTo : '/admin/settings';
+
+        if ($id <= 0 || $label === '' || $url === '') {
+            $this->flash('error', 'Invalid footer link update request.');
+            $this->redirect($backTo);
+            return;
+        }
+
+        try {
+            $db->update('footer_links', [
+                'area' => $area,
+                'label' => mb_substr($label, 0, self::FOOTER_LINK_LABEL_MAX),
+                'url' => mb_substr($url, 0, self::FOOTER_LINK_URL_MAX),
+                'sort_order' => $sortOrder,
+                'is_enabled' => $isEnabled,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], 'id = ?', [$id]);
+            $this->flash('success', 'Footer link updated.');
+        } catch (\Exception $e) {
+            Logger::error('SettingsController updateFooterLink error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update footer link.');
+        }
+
+        $this->redirect($backTo);
+    }
+
+    public function deleteFooterLink(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        $this->ensureFooterLinksTable();
+        $db = Database::getInstance();
+        $id = (int) $this->input('id', 0);
+        $backTo = $this->input('_redirect', '/admin/settings');
+        $backTo = in_array($backTo, ['/admin/settings', '/admin/settings/footer-page'], true) ? $backTo : '/admin/settings';
+        if ($id <= 0) {
+            $this->flash('error', 'Invalid footer link.');
+            $this->redirect($backTo);
+            return;
+        }
+
+        try {
+            $db->delete('footer_links', 'id = ?', [$id]);
+            $this->flash('success', 'Footer link deleted.');
+        } catch (\Exception $e) {
+            Logger::error('SettingsController deleteFooterLink error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to delete footer link.');
+        }
+
+        $this->redirect($backTo);
     }
 
     /**
@@ -341,6 +489,154 @@ class SettingsController extends BaseController
         }
 
         $this->redirect('/admin/settings');
+    }
+
+    /**
+     * Upload favicon image
+     */
+    public function uploadFavicon(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->flash('error', 'Invalid request.');
+            $this->redirect('/admin/settings');
+            return;
+        }
+
+        try {
+            if (empty($_FILES['site_favicon_file']) || $_FILES['site_favicon_file']['error'] !== UPLOAD_ERR_OK) {
+                $uploadError = $_FILES['site_favicon_file']['error'] ?? UPLOAD_ERR_NO_FILE;
+                $msg = $uploadError === UPLOAD_ERR_NO_FILE ? 'No file was selected.' : 'File upload failed (error code ' . $uploadError . ').';
+                $this->flash('error', $msg);
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $file = $_FILES['site_favicon_file'];
+            $result = SecureUpload::process($file, [
+                'destination_dir' => BASE_PATH . '/storage/uploads/oauth',
+                'allowed_extensions' => ['ico', 'png', 'jpg', 'jpeg', 'webp', 'svg'],
+                'allowed_mime_types' => ['image/x-icon', 'image/vnd.microsoft.icon', 'image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'],
+                'max_size' => 1 * 1024 * 1024,
+                'trusted' => false,
+                'source' => 'admin.settings.favicon',
+                'user_id' => Auth::id(),
+            ]);
+
+            if (empty($result['success'])) {
+                $this->flash('error', $result['error'] ?? 'Failed to upload favicon.');
+                $this->redirect('/admin/settings');
+                return;
+            }
+
+            $webPath = '/uploads/oauth/' . $result['filename'];
+            $db = Database::getInstance();
+
+            $row = $db->fetch("SELECT id FROM settings WHERE `key` = 'site_favicon'");
+            if ($row) {
+                $db->update('settings', ['value' => $webPath, 'updated_at' => date('Y-m-d H:i:s')], '`key` = ?', ['site_favicon']);
+            } else {
+                $db->insert('settings', ['key' => 'site_favicon', 'value' => $webPath, 'created_at' => date('Y-m-d H:i:s')]);
+            }
+
+            ActivityLogger::logUpdate(Auth::id(), 'settings', 'settings', 0, [], ['site_favicon' => $webPath]);
+            $this->flash('success', 'Favicon uploaded successfully.');
+
+        } catch (\Exception $e) {
+            Logger::error('Favicon upload error: ' . $e->getMessage());
+            $this->flash('error', 'Failed to upload favicon.');
+        }
+
+        $this->redirect('/admin/settings');
+    }
+
+    /**
+     * Dedicated footer settings page
+     */
+    public function footerPage(): void
+    {
+        $this->requirePermission('settings');
+        $db = Database::getInstance();
+        $this->ensureFooterLinksTable();
+
+        $settings = $db->fetchAll("SELECT * FROM settings");
+        $settingsMap = [];
+        foreach ($settings as $setting) {
+            $settingsMap[$setting['key']] = $setting['value'];
+        }
+
+        $footerLinks = ['home' => [], 'default' => []];
+        try {
+            $rows = $db->fetchAll("SELECT * FROM footer_links ORDER BY area ASC, sort_order ASC, id ASC");
+            foreach ($rows as $row) {
+                $area = ($row['area'] ?? 'default') === 'home' ? 'home' : 'default';
+                $footerLinks[$area][] = $row;
+            }
+        } catch (\Exception $e) {
+            Logger::error('SettingsController footer links load error: ' . $e->getMessage());
+        }
+
+        $this->view('admin/settings/footer', [
+            'title' => 'Footer Settings',
+            'settings' => $settingsMap,
+            'footerLinks' => $footerLinks,
+        ]);
+    }
+
+    private function ensureFooterLinksTable(): void
+    {
+        try {
+            $db = Database::getInstance();
+            $db->query("
+                CREATE TABLE IF NOT EXISTS `footer_links` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `area` ENUM('home','default') NOT NULL DEFAULT 'default',
+                    `label` VARCHAR(120) NOT NULL,
+                    `url` VARCHAR(255) NOT NULL,
+                    `sort_order` INT NOT NULL DEFAULT 0,
+                    `is_enabled` TINYINT(1) NOT NULL DEFAULT 1,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_footer_links_area_sort` (`area`, `sort_order`),
+                    INDEX `idx_footer_links_enabled` (`is_enabled`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Exception $e) {
+            Logger::error('SettingsController ensureFooterLinksTable error: ' . $e->getMessage());
+        }
+    }
+
+    private function normalizeFooterArea(string $area): string
+    {
+        return $area === 'home' ? 'home' : 'default';
+    }
+
+    private function sanitizeFooterHtml(string $html): string
+    {
+        $allowedTags = '<p><br><strong><b><em><i><u><span><div><ul><ol><li><a><h1><h2><h3><h4><h5><h6><iframe>';
+        $clean = strip_tags($html, $allowedTags);
+
+        // Remove inline event handlers / javascript: URLs from links and iframes.
+        $clean = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/i', '', $clean) ?? $clean;
+        $clean = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', ' $1="#"', $clean) ?? $clean;
+        $clean = preg_replace_callback('/<iframe\b[^>]*>\s*<\/iframe>/i', function(array $m): string {
+            if (!preg_match('/\ssrc\s*=\s*(["\'])(.*?)\1/i', $m[0], $srcMatch)) {
+                return '';
+            }
+            $src = trim($srcMatch[2]);
+            $allowedPrefixes = [
+                'https://www.google.com/maps/embed',
+                'https://maps.google.com/',
+                'https://www.openstreetmap.org/export/embed.html',
+            ];
+            foreach ($allowedPrefixes as $prefix) {
+                if (stripos($src, $prefix) === 0) {
+                    return $m[0];
+                }
+            }
+            return '';
+        }, $clean) ?? $clean;
+
+        return trim($clean);
     }
     
     /**

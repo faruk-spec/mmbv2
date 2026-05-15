@@ -1678,7 +1678,8 @@ class SubscriptionService
         $invoiceNo   = htmlspecialchars($payment['invoice_no'] ?? ('INV-' . strtoupper(substr(md5((string) ($payment['id'] ?? 0)), 0, 8))));
         $paidAt      = (string) ($payment['paid_at'] ?: $payment['created_at'] ?: 'now');
         $dateFormatted = date('F j, Y', strtotime($paidAt));
-        $timeFormatted = date('g:i A', strtotime($paidAt));
+        $paidAtTimeFormatted = date('g:i A', strtotime($paidAt));
+        $createdAtTimeFormatted = date('g:i A', strtotime((string) ($payment['created_at'] ?: 'now')));
         $createdDate = date('F j, Y \a\t g:i A', strtotime((string) ($payment['created_at'] ?: 'now')));
         $expiry    = !empty($payment['expires_at']) ? date('F j, Y', strtotime((string) $payment['expires_at'])) : ($this->resolveSubscriptionExpiry((string) ($payment['app_key'] ?? 'platform'), (int) ($payment['subscription_id'] ?? 0)) ?: 'Lifetime');
         $userName  = htmlspecialchars($user['name'] ?? $user['username'] ?? 'User');
@@ -1696,7 +1697,9 @@ class SubscriptionService
         $billAddress = '';
         try {
             $bd = $this->db->fetch(
-                "SELECT full_name, address_line1, address_line2, city, state, postal_code, country FROM user_billing_details WHERE user_id = ? LIMIT 1",
+                "SELECT full_name, email, phone, address_line1, address_line2, city, state, postal_code, country
+                 FROM user_billing_details
+                 WHERE user_id = ? LIMIT 1",
                 [(int) ($user['id'] ?? 0)]
             );
             if ($bd) {
@@ -1713,6 +1716,12 @@ class SubscriptionService
                 $billAddress = implode('<br>', $parts);
                 if (!empty($bd['full_name'])) {
                     $userName = htmlspecialchars($bd['full_name']);
+                }
+                if (!empty($bd['email'])) {
+                    $userEmail = htmlspecialchars($bd['email']);
+                }
+                if (!empty($bd['phone'])) {
+                    $userPhone = htmlspecialchars($bd['phone']);
                 }
             }
         } catch (\Throwable $e) {}
@@ -1810,12 +1819,13 @@ tbody tr:last-child td { border-bottom:none; }
     </div>
     <div class="inv-meta-col">
       <div class="inv-number">{$invoiceNo}</div>
-      <div class="inv-dates">
-        <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">ISSUED</strong> {$dateFormatted}</div>
-        <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">TIME</strong> {$timeFormatted}</div>
-        <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">GATEWAY</strong> {$gateway}</div>
-        {$refRow}
-      </div>
+        <div class="inv-dates">
+          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">ISSUED</strong> {$dateFormatted}</div>
+          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">PAYMENT TIME</strong> {$paidAtTimeFormatted}</div>
+          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">INVOICE TIME</strong> {$createdAtTimeFormatted}</div>
+          <div><strong style="color:#aaa;font-size:.72rem;font-weight:700;">GATEWAY</strong> {$gateway}</div>
+          {$refRow}
+        </div>
       <div class="{$statusClass}">{$status}</div>
     </div>
   </div>
