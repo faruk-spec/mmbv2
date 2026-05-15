@@ -188,6 +188,24 @@
 @media (max-width: 740px) {
     .pay-grid { grid-template-columns: 1fr; }
     .stat-tiles { grid-template-columns: 1fr 1fr; }
+    .secure-brand-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .pay-wrap { padding: 0; }
+    .paid-banner { flex-direction: column; gap: 12px; }
+    .paid-banner > a { margin-left: 0 !important; width: 100%; text-align: center; }
+    .paid-banner-meta { flex-direction: column; gap: 6px; }
+    .pay-ch { flex-wrap: wrap; gap: 10px; }
+    .pay-actions { flex-direction: column; gap: 8px; }
+    .pay-actions > * { width: 100%; justify-content: center; }
+    .pp-steps { gap: 0; }
+    .pp-step-lbl { font-size: .65rem; }
+}
+@media (max-width: 480px) {
+    .stat-tiles { grid-template-columns: 1fr; }
+    .pp-dot { width: 28px; height: 28px; font-size: .74rem; }
+    .pay-cb { padding: 16px; }
+    .pay-ch { padding: 14px 16px 12px; }
+    .order-total { font-size: 1rem; }
+    .upi-panel { flex-direction: column; align-items: center; }
 }
 </style>
 <?php View::endSection(); ?>

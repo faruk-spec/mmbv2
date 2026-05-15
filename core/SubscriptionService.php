@@ -1226,14 +1226,97 @@ class SubscriptionService
             return false;
         }
 
+        $finalStatus = $decision;
+
+        // When admin approves a Cashfree payment, attempt gateway refund automatically.
+        if ($decision === 'approved' && ($payment['gateway'] ?? '') === 'cashfree' && !empty($payment['provider_order_id'])) {
+            $settings = $this->getPaymentSettings();
+            $gatewayResult = $this->triggerCashfreeRefund($payment, $settings, $note);
+            if ($gatewayResult['success']) {
+                $finalStatus = 'refunded';
+                $note = trim($note . ' [Gateway refund initiated: ' . ($gatewayResult['refund_id'] ?? 'OK') . ']');
+            } else {
+                // Log gateway failure but still mark as approved so admin can follow up manually.
+                Logger::warning('SubscriptionService::reviewRefundRequest - Cashfree refund API failed: ' . ($gatewayResult['message'] ?? 'unknown'), [
+                    'payment_id' => $paymentId,
+                ]);
+                $note = trim($note . ' [Gateway error: ' . ($gatewayResult['message'] ?? 'unknown') . ' — process manually]');
+            }
+        }
+
         $this->db->query(
             "UPDATE subscription_payments
              SET refund_status = ?, refund_decided_at = NOW(), admin_notes = ?, updated_at = NOW()
              WHERE id = ?",
-            [$decision, $note, $paymentId]
+            [$finalStatus, $note, $paymentId]
         );
-        Logger::activity($adminId, 'subscription_refund_reviewed', ['payment_id' => $paymentId, 'decision' => $decision]);
+        Logger::activity($adminId, 'subscription_refund_reviewed', ['payment_id' => $paymentId, 'decision' => $finalStatus]);
         return true;
+    }
+
+    /**
+     * Call the Cashfree refunds API to initiate a gateway-level refund.
+     *
+     * @param array  $payment  The subscription_payments row (must have provider_order_id and amount).
+     * @param array  $settings Payment settings (cashfree credentials).
+     * @param string $note     Optional reason / note for the refund.
+     * @return array ['success' => bool, 'refund_id' => string|null, 'message' => string|null]
+     */
+    private function triggerCashfreeRefund(array $payment, array $settings, string $note = ''): array
+    {
+        $orderId = (string) ($payment['provider_order_id'] ?? '');
+        if ($orderId === '') {
+            return ['success' => false, 'message' => 'Missing Cashfree order ID.'];
+        }
+
+        $isSandbox = ($settings['payment_cashfree_sandbox'] ?? '1') === '1';
+        $baseUrl = $isSandbox
+            ? 'https://sandbox.cashfree.com/pg/orders/'
+            : 'https://api.cashfree.com/pg/orders/';
+
+        $refundId = 'refund_' . $payment['id'] . '_' . time();
+        $payload  = [
+            'refund_amount' => (float) $payment['amount'],
+            'refund_id'     => $refundId,
+            'refund_note'   => $note ?: 'Admin-approved refund',
+        ];
+
+        $url = $baseUrl . rawurlencode($orderId) . '/refunds';
+        $ch  = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'x-api-version: 2023-08-01',
+                'x-client-id: '     . ($settings['payment_cashfree_app_id'] ?? ''),
+                'x-client-secret: ' . ($settings['payment_cashfree_secret'] ?? ''),
+            ],
+            CURLOPT_TIMEOUT        => 30,
+        ]);
+
+        $response  = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpStatus = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+
+        if ($response === false || $curlError !== '') {
+            return ['success' => false, 'message' => $curlError ?: 'cURL error contacting Cashfree.'];
+        }
+
+        $decoded = json_decode($response, true);
+        // Cashfree returns 200 on success; refund_status will be PENDING or SUCCESS.
+        if ($httpStatus >= 200 && $httpStatus < 300 && is_array($decoded)) {
+            return [
+                'success'   => true,
+                'refund_id' => $decoded['refund_id'] ?? $refundId,
+                'message'   => $decoded['refund_message'] ?? null,
+            ];
+        }
+
+        $errMsg = is_array($decoded) ? ($decoded['message'] ?? 'Cashfree refund failed.') : 'Cashfree refund failed.';
+        return ['success' => false, 'message' => $errMsg];
     }
 
     /**

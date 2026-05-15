@@ -25,7 +25,7 @@ class SubscriptionPaymentsController extends BaseController
     public function index(): void
     {
         $appKey = trim((string) ($_GET['app'] ?? ''));
-        $appKey = in_array($appKey, ['platform', 'resumex'], true) ? $appKey : null;
+        $appKey = in_array($appKey, ['resumex', 'qr', 'convertx', 'whatsapp'], true) ? $appKey : null;
 
         $this->view('admin/subscription-payments/index', [
             'title' => 'Subscription Payments',

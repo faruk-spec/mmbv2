@@ -49,17 +49,9 @@ class PlansController extends BaseController
     public function index(): void
     {
         $userId = Auth::id();
-        $this->subscriptionService->ensureUserHasDefaultPlatformPlan($userId);
 
         // ── Per-app active subscriptions ──────────────────────────────────────
         $appSubscriptions = $this->getAppSubscriptions($userId);
-
-        // ── Platform (universal) plans — all active ones ──────────────────────
-        $platformPlans = $this->getPlatformPlans();
-
-        // ── User's active platform subscription(s) ────────────────────────────
-        $userPlatformSubs = $this->getUserPlatformSubscriptions($userId);
-        $platformHistory = $this->getPlatformSubscriptionHistory($userId);
 
         // ── Payment History — paginated ───────────────────────────────────────
         $payPerPage  = 10;
@@ -72,8 +64,13 @@ class PlansController extends BaseController
 
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
 
-        // Map plan_id → subscription so the view can check if a plan is active
-        $activePlatformPlanIds = array_column($userPlatformSubs, 'plan_id');
+        // ── Map app_key → latest paid payment ID for "Manage Subscription" links ──
+        $appManagePaymentIds = [];
+        foreach ($allPayments as $p) {
+            if (($p['status'] ?? '') === 'paid' && isset(self::APP_META[$p['app_key'] ?? '']) && !isset($appManagePaymentIds[$p['app_key']])) {
+                $appManagePaymentIds[$p['app_key']] = (int) $p['id'];
+            }
+        }
 
         Logger::activity($userId, 'plans_viewed');
 
@@ -93,10 +90,7 @@ class PlansController extends BaseController
         $this->view('dashboard/plans', [
             'title'                 => 'My Plans',
             'appSubscriptions'      => $appSubscriptions,
-            'platformPlans'         => $platformPlans,
-            'userPlatformSubs'      => $userPlatformSubs,
-            'activePlatformPlanIds' => $activePlatformPlanIds,
-            'platformHistory'       => $platformHistory,
+            'appManagePaymentIds'   => $appManagePaymentIds,
             'allPayments'           => $allPayments,
             'paymentHistory'        => $paymentHistory,
             'payPage'               => $payPage,

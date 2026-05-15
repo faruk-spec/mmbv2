@@ -142,6 +142,18 @@
 
 @media (max-width: 740px) {
     .sub-grid { grid-template-columns: 1fr; }
+    .merchant-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .sub-wrap { padding: 0; }
+    .chk-steps { gap: 0; }
+    .chk-step-lbl { font-size: .65rem; }
+}
+@media (max-width: 480px) {
+    .chk-step-dot { width: 28px; height: 28px; font-size: .74rem; }
+    .sub-cb { padding: 16px; }
+    .sub-ch { padding: 14px 16px 12px; }
+    .chk-cta-btn { font-size: .88rem; padding: 12px; }
+    .pay-method-tile { padding: 12px 14px; }
+    .order-total { font-size: 1rem; }
 }
 </style>
 <?php View::endSection(); ?>
