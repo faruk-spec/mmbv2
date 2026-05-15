@@ -502,6 +502,79 @@ class SubscriptionService
         return $row ? $this->normalizeSubscriptionRow($appKey, $row) : null;
     }
 
+    public function ensureUserHasDefaultPlatformPlan(int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        try {
+            $this->ensureInfrastructure();
+            $this->ensurePlatformPlanTables();
+
+            $active = $this->db->fetch(
+                "SELECT s.id
+                 FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                 LIMIT 1",
+                [$userId]
+            );
+            if ($active) {
+                return true;
+            }
+
+            $freePlan = $this->db->fetch(
+                "SELECT *
+                 FROM platform_plans
+                 WHERE status = 'active' AND (slug = 'free' OR price <= 0)
+                 ORDER BY (slug = 'free') DESC, sort_order ASC, id ASC
+                 LIMIT 1"
+            );
+
+            if (!$freePlan) {
+                $freePlanId = $this->db->insert('platform_plans', [
+                    'name' => 'Free Plan',
+                    'slug' => 'free',
+                    'description' => 'Default free access plan available until upgrade.',
+                    'price' => 0.00,
+                    'currency' => 'USD',
+                    'billing_cycle' => 'lifetime',
+                    'cancel_days' => 0,
+                    'refund_days' => 0,
+                    'color' => '#00f0ff',
+                    'included_apps' => json_encode(['qr', 'whatsapp', 'convertx', 'resumex']),
+                    'app_features' => json_encode((object) []),
+                    'status' => 'active',
+                    'sort_order' => -1000,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+                $freePlan = $this->db->fetch("SELECT * FROM platform_plans WHERE id = ? LIMIT 1", [(int) $freePlanId]);
+            }
+
+            if (!$freePlan) {
+                return false;
+            }
+
+            $this->db->insert('platform_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => (int) $freePlan['id'],
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => null,
+                'assigned_by' => null,
+                'notes' => 'Auto-assigned default free plan',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::ensureUserHasDefaultPlatformPlan - ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function getSubscriptionHistory(string $appKey, int $userId, int $limit = 20): array
     {
         $config = $this->getAppConfig($appKey);
@@ -648,7 +721,9 @@ class SubscriptionService
 
         $invoiceNo = $this->generateUniqueToken('INV-');
         $reference = $this->generateUniqueToken('PAY-');
-        $expiresAt = $data['expires_at'] ?? date('Y-m-d H:i:s', strtotime('+1 day'));
+        $expiresAt = array_key_exists('expires_at', $data)
+            ? $data['expires_at']
+            : $this->calculateExpiry((string) ($data['billing_cycle'] ?? ''));
 
         $paymentId = $this->db->insert('subscription_payments', [
             'user_id' => (int) $data['user_id'],
@@ -1168,7 +1243,8 @@ class SubscriptionService
     public function getCancelRefundWindowDays(array $payment): int
     {
         $meta = $this->decodePaymentMetadata($payment);
-        return (int) ($meta['refund_days'] ?? 7);
+        $refundDays = (int) ($meta['refund_days'] ?? 7);
+        return $refundDays > 0 ? $refundDays : 7;
     }
 
     public function canCancelPayment(array $payment): array
@@ -1270,11 +1346,13 @@ class SubscriptionService
             return false;
         }
 
+        $subscriptionExpiresAt = $this->resolveSubscriptionExpiryRaw((string) $payment['app_key'], $subscriptionId);
+
         $this->db->query(
             "UPDATE subscription_payments
-             SET status = 'paid', subscription_id = ?, paid_at = NOW(), updated_at = NOW()
+             SET status = 'paid', subscription_id = ?, paid_at = NOW(), expires_at = ?, updated_at = NOW()
              WHERE id = ?",
-            [$subscriptionId, $paymentId]
+            [$subscriptionId, $subscriptionExpiresAt, $paymentId]
         );
 
         $this->sendConfirmationEmail($paymentId);
@@ -1943,6 +2021,84 @@ HTML;
         } catch (\Throwable $e) {
         }
         return null;
+    }
+
+    private function resolveSubscriptionExpiryRaw(string $appKey, int $subscriptionId): ?string
+    {
+        try {
+            $config = $this->getAppConfig($appKey);
+            if ($config === null || empty($config['subscription_expires_column'])) {
+                return null;
+            }
+            $row = $this->db->fetch(
+                "SELECT {$config['subscription_expires_column']} AS expires_at FROM {$config['subscription_table']} WHERE id = ? LIMIT 1",
+                [$subscriptionId]
+            );
+            if (!empty($row['expires_at'])) {
+                return (string) $row['expires_at'];
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return null;
+    }
+
+    private function ensurePlatformPlanTables(): void
+    {
+        $this->db->query("
+            CREATE TABLE IF NOT EXISTS `platform_plans` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `name` VARCHAR(100) NOT NULL,
+                `slug` VARCHAR(100) UNIQUE NOT NULL,
+                `description` TEXT NULL,
+                `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+                `billing_cycle` ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
+                `cancel_days` INT NOT NULL DEFAULT 0,
+                `refund_days` INT NOT NULL DEFAULT 0,
+                `color` VARCHAR(7) DEFAULT '#9945ff',
+                `included_apps` JSON NULL,
+                `app_features` JSON NULL,
+                `status` ENUM('active','inactive') DEFAULT 'active',
+                `sort_order` INT DEFAULT 0,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $this->db->query("
+            CREATE TABLE IF NOT EXISTS `platform_user_subscriptions` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT UNSIGNED NOT NULL,
+                `plan_id` INT UNSIGNED NOT NULL,
+                `status` ENUM('active','cancelled','expired','trial') DEFAULT 'active',
+                `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `expires_at` TIMESTAMP NULL,
+                `cancelled_at` TIMESTAMP NULL,
+                `assigned_by` INT UNSIGNED NULL,
+                `notes` VARCHAR(500) NULL,
+                `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (`plan_id`) REFERENCES `platform_plans`(`id`) ON DELETE CASCADE,
+                INDEX `idx_user_id` (`user_id`),
+                INDEX `idx_plan_id` (`plan_id`),
+                INDEX `idx_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        try {
+            $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM platform_plans"), 'Field');
+            if (!in_array('currency', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+            }
+            if (!in_array('cancel_days', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `cancel_days` INT NOT NULL DEFAULT 0 AFTER `billing_cycle`");
+            }
+            if (!in_array('refund_days', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `refund_days` INT NOT NULL DEFAULT 0 AFTER `cancel_days`");
+            }
+        } catch (\Throwable $e) {
+        }
     }
 
     private function calculateExpiry(string $billingCycle): ?string

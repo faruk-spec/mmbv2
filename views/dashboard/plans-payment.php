@@ -38,6 +38,36 @@
     font-size: .72rem;
     font-weight: 700;
 }
+.trust-methods {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.trust-method-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: .72rem;
+    font-weight: 600;
+}
+.checkout-assurance {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,240,255,.18);
+    background: rgba(0,240,255,.05);
+    font-size: .78rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.checkout-assurance strong { color: var(--text-primary); }
 
 /* Progress steps (same style as subscribe page) */
 .pp-steps  { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 32px; }
@@ -135,6 +165,25 @@
     background: rgba(0,255,136,.15); display: flex; align-items: center;
     justify-content: center; font-size: 1.4rem; color: var(--green);
 }
+.paid-banner-copy { font-size: .82rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.6; }
+.paid-banner-meta {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.paid-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,255,136,.3);
+    background: rgba(0,255,136,.12);
+    color: var(--green);
+    font-size: .72rem;
+    font-weight: 700;
+}
 
 @media (max-width: 740px) {
     .pay-grid { grid-template-columns: 1fr; }
@@ -147,6 +196,9 @@
 <?php
 $invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
 $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAME') ? APP_NAME : 'MMB Platform');
+$isPendingPayment = in_array((string) ($payment['status'] ?? ''), ['pending', 'verification_pending'], true);
+$isPaidPayment = ((string) ($payment['status'] ?? '')) === 'paid';
+$transactionId = (string) ($payment['provider_order_id'] ?? $payment['reference'] ?? ('TXN-' . (int) ($payment['id'] ?? 0)));
 ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
@@ -167,13 +219,13 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
             <img src="<?= View::e($invoiceLogoUrl) ?>" alt="Secure brand logo" class="secure-brand-logo">
             <?php endif; ?>
             <div>
-                <div style="font-weight:800;font-size:1rem;"><?= View::e($secureBrandName) ?> Secure Payment Desk</div>
-                <div style="font-size:.76rem;color:var(--text-secondary);">Your transaction is processed through verified payment channels.</div>
+                <div style="font-weight:800;font-size:1rem;">Secure payment powered by Cashfree Payments</div>
+                <div style="font-size:.76rem;color:var(--text-secondary);">Your payment is processed securely with encrypted HTTPS channels.</div>
             </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span class="secure-pill"><i class="fas fa-lock"></i> Encrypted</span>
-            <span class="secure-pill"><i class="fas fa-shield-alt"></i> Protected</span>
+            <span class="secure-pill"><i class="fas fa-lock"></i> HTTPS Secure</span>
+            <span class="secure-pill"><i class="fas fa-shield-alt"></i> PCI-DSS Compliant</span>
         </div>
     </div>
 
@@ -212,19 +264,27 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
     };
     ?>
 
-    <?php if ($payment['status'] === 'paid'): ?>
+    <?php if ($isPaidPayment): ?>
     <div class="paid-banner">
         <div class="paid-banner-icon"><i class="fas fa-check-circle"></i></div>
         <div>
             <div style="font-weight:800;font-size:1.05rem;color:var(--green);">Payment Successful!</div>
-            <div style="font-size:.82rem;color:var(--text-secondary);margin-top:3px;">
+            <div class="paid-banner-copy">
                 Your <strong><?= View::e($payment['plan_name']) ?></strong> subscription is now active.
-                Invoice: <code style="font-size:.8rem;"><?= View::e($payment['invoice_no']) ?></code>
+                Payment secured by Cashfree Payments.
+            </div>
+            <div class="paid-banner-meta">
+                <span class="paid-meta-chip"><i class="fas fa-receipt"></i> Transaction ID: <?= View::e($transactionId) ?></span>
+                <span class="paid-meta-chip"><i class="fas fa-envelope"></i> Confirmation sent via email/SMS with invoice PDF</span>
             </div>
         </div>
         <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice"
            style="margin-left:auto;padding:9px 18px;background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.3);border-radius:9px;color:var(--green);font-size:.82rem;font-weight:700;text-decoration:none;white-space:nowrap;">
-            <i class="fas fa-file-invoice"></i> Invoice
+            <i class="fas fa-file-invoice"></i> Download Invoice
+        </a>
+        <a href="/support"
+           style="padding:9px 18px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:9px;color:var(--text-primary);font-size:.82rem;font-weight:700;text-decoration:none;white-space:nowrap;">
+            <i class="fas fa-life-ring"></i> Need Help?
         </a>
     </div>
     <?php endif; ?>
@@ -301,14 +361,19 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
                         </div>
                     </div>
                     <?php elseif ($payment['gateway'] === 'cashfree'): ?>
-                        <?php if (!empty($payment['payment_url'])): ?>
+                        <?php if ($isPendingPayment && !empty($payment['payment_url'])): ?>
                         <a href="<?= View::e($payment['payment_url']) ?>" rel="noopener noreferrer" class="pay-btn-primary">
                             <i class="fas fa-external-link-alt"></i> Open Cashfree Checkout
                         </a>
-                        <?php elseif (!empty($payment['provider_payment_session_id'])): ?>
+                        <?php elseif ($isPendingPayment && !empty($payment['provider_payment_session_id'])): ?>
                         <button type="button" id="cashfreePayBtn" class="pay-btn-primary">
                             <i class="fas fa-external-link-alt"></i> Open Cashfree Checkout
                         </button>
+                        <?php elseif ($isPaidPayment): ?>
+                        <div style="padding:14px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.25);border-radius:10px;font-size:.84rem;color:var(--green);">
+                            <i class="fas fa-check-circle" style="margin-right:6px;"></i>
+                            Payment already completed. Cashfree checkout has been closed for this transaction.
+                        </div>
                         <?php else: ?>
                         <div style="padding:14px;background:rgba(255,60,60,.08);border:1px solid rgba(255,60,60,.2);border-radius:10px;font-size:.84rem;color:var(--red);">
                             <i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>
@@ -316,7 +381,7 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
                             <a href="/plans" style="color:inherit;text-decoration:underline;">retry from the plans page</a>.
                         </div>
                         <?php endif; ?>
-                        <?php if (!empty($payment['payment_url']) || !empty($payment['provider_payment_session_id'])): ?>
+                        <?php if ($isPendingPayment && (!empty($payment['payment_url']) || !empty($payment['provider_payment_session_id']))): ?>
                         <div style="margin-top:14px;">
                             <a href="/plans/payment/<?= (int) $payment['id'] ?>/return" class="pay-btn-secondary">
                                 <i class="fas fa-sync"></i> Check Payment Status
@@ -329,6 +394,19 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
                         Your subscription request has been submitted. An admin will review it and activate your plan shortly. You will receive an email notification once it is processed.
                     </div>
                     <?php endif; ?>
+
+                    <div class="checkout-assurance">
+                        <strong><i class="fas fa-lock"></i> Secure checkout via Cashfree Payments</strong><br>
+                        <span><i class="fas fa-shield-alt"></i> PCI-DSS compliant · 256-bit encryption · HTTPS secure</span><br>
+                        <span><i class="fas fa-credit-card"></i> UPI · Cards · Net Banking · Wallets</span>
+                    </div>
+
+                    <div class="trust-methods" aria-label="Accepted payment methods">
+                        <span class="trust-method-chip"><i class="fas fa-mobile-alt"></i> UPI</span>
+                        <span class="trust-method-chip"><i class="fas fa-credit-card"></i> Cards</span>
+                        <span class="trust-method-chip"><i class="fas fa-university"></i> Net Banking</span>
+                        <span class="trust-method-chip"><i class="fas fa-wallet"></i> Wallets</span>
+                    </div>
 
                     <!-- Actions -->
                     <div class="pay-actions">
@@ -409,9 +487,21 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
                         <span><?= View::e($payment['billing_cycle']) ?></span>
                     </div>
                     <?php endif; ?>
+                    <div class="order-row">
+                        <span style="color:var(--text-secondary);">Subtotal</span>
+                        <span><?= View::e($payment['currency']) ?> <?= number_format((float) $payment['amount'], 2) ?></span>
+                    </div>
+                    <div class="order-row">
+                        <span style="color:var(--text-secondary);">Processing Fee</span>
+                        <span><?= View::e($payment['currency']) ?> 0.00</span>
+                    </div>
                     <div class="order-total">
                         <span>Total</span>
                         <span style="color:var(--cyan);"><?= View::e($payment['currency']) ?> <?= number_format((float) $payment['amount'], 2) ?></span>
+                    </div>
+                    <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,240,255,.05);border:1px solid rgba(0,240,255,.14);font-size:.76rem;color:var(--text-secondary);line-height:1.6;">
+                        <div><i class="fas fa-receipt" style="color:var(--cyan);margin-right:6px;"></i>No extra fees applied.</div>
+                        <div style="margin-top:5px;"><i class="fas fa-undo" style="color:var(--cyan);margin-right:6px;"></i>Refund and cancellation terms apply based on your selected plan policy.</div>
                     </div>
                 </div>
             </div>

@@ -121,6 +121,24 @@
     font-size: .74rem; color: var(--text-secondary);
 }
 .trust-bar i { color: var(--cyan); }
+.pay-methods-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+.pay-method-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: .72rem;
+    font-weight: 600;
+}
 
 @media (max-width: 740px) {
     .sub-grid { grid-template-columns: 1fr; }
@@ -179,9 +197,9 @@ if ($appLogoUrl === '') {
                 <div style="font-weight:800;font-size:1.1rem;"><?= View::e($appMeta['name'] ?? ucfirst($app)) ?></div>
                 <div style="font-size:.78rem;color:var(--text-secondary);">Secure Checkout &mdash; <?= View::e($plan['name']) ?></div>
                 <div class="merchant-trust">
-                    <i class="fas fa-lock" style="color:var(--green);"></i> Protected Payment
+                    <i class="fas fa-lock" style="color:var(--green);"></i> HTTPS Secure
                     <span>·</span>
-                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> Verified Subscription
+                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> PCI-DSS Compliant
                 </div>
             </div>
         </div>
@@ -247,7 +265,7 @@ if ($appLogoUrl === '') {
                             <div class="pay-method-radio"></div>
                             <div class="pay-method-icon cashfree"><i class="fas fa-bolt"></i></div>
                             <div style="flex:1;">
-                                <div class="pay-method-label">Cashfree</div>
+                                <div class="pay-method-label">Cashfree Payments</div>
                                 <div class="pay-method-desc">Cards, UPI, Netbanking via Cashfree</div>
                             </div>
                             <span class="pay-method-badge" style="background:rgba(153,69,255,.12);color:var(--purple);border:1px solid rgba(153,69,255,.2);">Popular</span>
@@ -272,11 +290,17 @@ if ($appLogoUrl === '') {
                                 Continue to Payment
                             </button>
                             <div class="trust-bar">
-                                <i class="fas fa-shield-alt"></i> <span>256-bit SSL encrypted</span>
+                                <i class="fas fa-shield-alt"></i> <span>Secure payment powered by Cashfree Payments</span>
                                 <span style="margin:0 6px;">·</span>
-                                <i class="fas fa-user-shield"></i> <span>Your data is secure</span>
+                                <i class="fas fa-lock"></i> <span>HTTPS Secure</span>
                                 <span style="margin:0 6px;">·</span>
-                                <i class="fas fa-undo"></i> <span>Refund policy applies</span>
+                                <i class="fas fa-id-card"></i> <span>PCI-DSS compliant</span>
+                            </div>
+                            <div class="pay-methods-inline" aria-label="Accepted methods">
+                                <span class="pay-method-pill"><i class="fas fa-mobile-alt"></i> UPI</span>
+                                <span class="pay-method-pill"><i class="fas fa-credit-card"></i> Cards</span>
+                                <span class="pay-method-pill"><i class="fas fa-university"></i> Net Banking</span>
+                                <span class="pay-method-pill"><i class="fas fa-wallet"></i> Wallets</span>
                             </div>
                         </div>
                     </form>
@@ -321,9 +345,21 @@ if ($appLogoUrl === '') {
                         <span><?= (int) $plan['refund_days'] ?> day(s)</span>
                     </div>
                     <?php endif; ?>
+                    <div class="order-row">
+                        <span style="color:var(--text-secondary);">Subtotal</span>
+                        <span><?= View::e($plan['currency'] ?? 'USD') ?> <?= number_format((float) ($plan['price'] ?? 0), 2) ?></span>
+                    </div>
+                    <div class="order-row">
+                        <span style="color:var(--text-secondary);">Processing fee</span>
+                        <span><?= View::e($plan['currency'] ?? 'USD') ?> 0.00</span>
+                    </div>
                     <div class="order-total">
                         <span>Total Due</span>
                         <span style="color:var(--cyan);"><?= View::e($plan['currency'] ?? 'USD') ?> <?= number_format((float) ($plan['price'] ?? 0), 2) ?></span>
+                    </div>
+                    <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,240,255,.05);border:1px solid rgba(0,240,255,.12);font-size:.76rem;color:var(--text-secondary);line-height:1.6;">
+                        <div><i class="fas fa-receipt" style="color:var(--cyan);margin-right:6px;"></i>No extra fees applied.</div>
+                        <div style="margin-top:4px;"><i class="fas fa-undo" style="color:var(--cyan);margin-right:6px;"></i>Refund and cancellation are handled according to your plan policy.</div>
                     </div>
 
                     <?php if (!empty($plan['features']) && is_array($plan['features'])): ?>

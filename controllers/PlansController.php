@@ -49,6 +49,7 @@ class PlansController extends BaseController
     public function index(): void
     {
         $userId = Auth::id();
+        $this->subscriptionService->ensureUserHasDefaultPlatformPlan($userId);
 
         // ── Per-app active subscriptions ──────────────────────────────────────
         $appSubscriptions = $this->getAppSubscriptions($userId);

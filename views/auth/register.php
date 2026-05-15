@@ -17,6 +17,7 @@
         <?php if ($authTagline): ?>
             <p class="auth-tagline"><?= View::e($authTagline) ?></p>
         <?php endif; ?>
+        <div class="auth-security-note"><i class="fas fa-lock" aria-hidden="true"></i> HTTPS Secure Signup</div>
 
         <?php if (Helpers::hasFlash('error')): ?>
             <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>

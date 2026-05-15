@@ -138,6 +138,21 @@ $extraScripts = trim(ob_get_clean());
             color: var(--auth-muted);
         }
 
+        .auth-security-note {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto 20px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--auth-border);
+            background: var(--auth-primary-soft);
+            color: var(--auth-text);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
         .auth-tagline,
         .auth-subtext {
             margin: 0 0 24px;
