@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; ?>
-<?php View::extend('main'); ?>
+<?php View::extend('auth'); ?>
 
 <?php View::section('content'); ?>
 <?php include BASE_PATH . '/views/partials/auth-branding.php'; ?>
@@ -46,7 +46,7 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="phone">Phone Number <span style="color:var(--text-secondary);font-size:.8em;">(optional)</span></label>
+                <label class="form-label" for="phone">Phone Number <span class="form-label-note">(optional)</span></label>
                 <input type="tel" id="phone" name="phone" class="form-input"
                        value="<?= View::old('phone') ?>" placeholder="+91 9876543210">
             </div>
@@ -77,13 +77,11 @@
             <?php \Core\Captcha::generate(); ?>
             <div class="form-group">
                 <label class="form-label">Security Check</label>
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                <div class="captcha-row">
                     <img src="/captcha" id="regCaptchaImg" alt="CAPTCHA"
-                         style="border-radius:6px;border:1px solid var(--border-color);cursor:pointer;"
-                         title="Click to refresh" onclick="this.src='/captcha?t='+Date.now()">
-                    <button type="button" onclick="document.getElementById('regCaptchaImg').src='/captcha?t='+Date.now()"
-                            style="background:none;border:none;color:var(--cyan);cursor:pointer;font-size:13px;padding:0;">
-                        <i class="fas fa-sync-alt"></i> Refresh
+                         class="captcha-image" title="Click to refresh">
+                    <button type="button" id="registerCaptchaRefresh" class="captcha-refresh">
+                        Refresh
                     </button>
                 </div>
                 <input type="text" name="captcha_answer" class="form-input"
@@ -94,18 +92,35 @@
             </div>
             <?php endif; ?>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 13px 20px; font-size: 0.95rem;">Create Account</button>
+            <button type="submit" class="btn btn-primary auth-btn-block">Create Account</button>
         </form>
 
-        <p style="text-align: center; margin-top: 22px; color: var(--text-secondary); font-size: 0.9rem;">
-            Already have an account? <a href="/login" style="font-weight: 600;">Sign In</a>
+        <p class="auth-footer-copy">
+            Already have an account? <a href="/login" class="auth-link-strong">Sign In</a>
         </p>
     </div>
 </div>
-<script>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
 (function() {
     var form = document.querySelector('form[action="/register"]');
     if (!form) return;
+
+    var captchaImg = document.getElementById('regCaptchaImg');
+    var refreshBtn = document.getElementById('registerCaptchaRefresh');
+    function refreshCaptcha() {
+        if (captchaImg) {
+            captchaImg.src = '/captcha?t=' + Date.now();
+        }
+    }
+    if (captchaImg) {
+        captchaImg.addEventListener('click', refreshCaptcha);
+    }
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshCaptcha);
+    }
+
     form.addEventListener('submit', function(e) {
         var pw = document.getElementById('password');
         var pw2 = document.getElementById('password_confirmation');
@@ -123,5 +138,4 @@
         }
     });
 })();
-</script>
 <?php View::endSection(); ?>

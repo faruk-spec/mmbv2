@@ -10,6 +10,7 @@ namespace Core;
 class Security
 {
     private static array $rateLimitCache = [];
+    private static ?string $cspNonce = null;
     
     /**
      * Hash password using Argon2id
@@ -65,6 +66,18 @@ class Security
     {
         $token = self::generateCsrfToken();
         return '<input type="hidden" name="_csrf_token" value="' . htmlspecialchars($token) . '">';
+    }
+
+    /**
+     * Generate or reuse the request CSP nonce.
+     */
+    public static function getCspNonce(): string
+    {
+        if (self::$cspNonce === null) {
+            self::$cspNonce = base64_encode(random_bytes(18));
+        }
+
+        return self::$cspNonce;
     }
     
     /**

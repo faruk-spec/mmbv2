@@ -65,11 +65,48 @@ class InvoiceSettingsController extends BaseController
             'invoice_logo' => $logoPath,
             'invoice_prefix' => $_POST['invoice_prefix'] ?? 'INV',
             'invoice_accent_color' => $_POST['invoice_accent_color'] ?? '#0077cc',
+            'invoice_tax_enabled' => isset($_POST['invoice_tax_enabled']) ? '1' : '0',
+            'invoice_tax_label' => $_POST['invoice_tax_label'] ?? 'Tax',
+            'invoice_tax_rate' => $_POST['invoice_tax_rate'] ?? '0',
             'invoice_footer_note' => $_POST['invoice_footer_note'] ?? '',
             'invoice_terms' => $_POST['invoice_terms'] ?? '',
+            'invoice_title' => $_POST['invoice_title'] ?? 'Subscription Invoice',
+            'invoice_subtitle' => $_POST['invoice_subtitle'] ?? 'Secure payment receipt',
+            'invoice_item_label' => $_POST['invoice_item_label'] ?? 'Subscription',
+            'invoice_total_label' => $_POST['invoice_total_label'] ?? 'Total',
+            'invoice_layout_blocks' => $this->sanitizeLayoutBlocks((string) ($_POST['invoice_layout_blocks'] ?? '')),
         ]);
 
         $this->flash('success', 'Invoice settings updated.');
         $this->redirect('/admin/invoice-settings');
+    }
+
+    private function sanitizeLayoutBlocks(string $raw): string
+    {
+        $allowed = ['bill_to', 'subscription_details', 'line_items', 'footer_notes'];
+        $decoded = json_decode($raw, true);
+        $ordered = [];
+
+        if (is_array($decoded)) {
+            foreach ($decoded as $item) {
+                $key = (string) $item;
+                if (in_array($key, $allowed, true) && !in_array($key, $ordered, true)) {
+                    $ordered[] = $key;
+                }
+            }
+        }
+
+        foreach ($allowed as $key) {
+            if (!in_array($key, $ordered, true)) {
+                $ordered[] = $key;
+            }
+        }
+
+        $encoded = json_encode($ordered);
+        if ($encoded === false) {
+            return '["bill_to","subscription_details","line_items","footer_notes"]';
+        }
+
+        return $encoded;
     }
 }

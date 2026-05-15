@@ -1,5 +1,5 @@
 <?php use Core\View; use Core\Helpers; ?>
-<?php View::extend('main'); ?>
+<?php View::extend('auth'); ?>
 
 <?php View::section('content'); ?>
 <?php include BASE_PATH . '/views/partials/auth-branding.php'; ?>
@@ -61,12 +61,12 @@
                 <?php endif; ?>
             </div>
 
-            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="form-group auth-inline-row">
                 <label class="form-checkbox">
                     <input type="checkbox" name="remember">
                     <span>Remember me</span>
                 </label>
-                <a href="/forgot-password" style="font-size: 14px;">Forgot password?</a>
+                <a href="/forgot-password">Forgot password?</a>
             </div>
 
             <?php
@@ -80,13 +80,11 @@
             <?php \Core\Captcha::generate(); ?>
             <div class="form-group">
                 <label class="form-label">Security Check</label>
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                <div class="captcha-row">
                     <img src="/captcha" id="loginCaptchaImg" alt="CAPTCHA"
-                         style="border-radius:6px;border:1px solid var(--border-color);cursor:pointer;"
-                         title="Click to refresh" onclick="this.src='/captcha?t='+Date.now()">
-                    <button type="button" onclick="document.getElementById('loginCaptchaImg').src='/captcha?t='+Date.now()"
-                            style="background:none;border:none;color:var(--cyan);cursor:pointer;font-size:13px;padding:0;">
-                        <i class="fas fa-sync-alt"></i> Refresh
+                         class="captcha-image" title="Click to refresh">
+                    <button type="button" id="loginCaptchaRefresh" class="captcha-refresh">
+                        Refresh
                     </button>
                 </div>
                 <input type="text" name="captcha_answer" class="form-input"
@@ -97,12 +95,35 @@
             </div>
             <?php endif; ?>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px; padding: 13px 20px; font-size: 0.95rem;">Sign In</button>
+            <button type="submit" class="btn btn-primary auth-btn-block">Sign In</button>
         </form>
 
-        <p style="text-align: center; margin-top: 22px; color: var(--text-secondary); font-size: 0.9rem;">
-            Don't have an account? <a href="/register" style="font-weight: 600;">Register</a>
+        <p class="auth-footer-copy">
+            Don't have an account? <a href="/register" class="auth-link-strong">Register</a>
         </p>
     </div>
 </div>
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+(function () {
+    var captchaImg = document.getElementById('loginCaptchaImg');
+    var refreshBtn = document.getElementById('loginCaptchaRefresh');
+    if (!captchaImg && !refreshBtn) {
+        return;
+    }
+
+    function refreshCaptcha() {
+        if (captchaImg) {
+            captchaImg.src = '/captcha?t=' + Date.now();
+        }
+    }
+
+    if (captchaImg) {
+        captchaImg.addEventListener('click', refreshCaptcha);
+    }
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshCaptcha);
+    }
+})();
 <?php View::endSection(); ?>

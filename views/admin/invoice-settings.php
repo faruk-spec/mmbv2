@@ -2,6 +2,31 @@
 <?php View::extend('admin'); ?>
 
 <?php View::section('content'); ?>
+<?php
+$layoutLabels = [
+    'bill_to' => 'Bill To Section',
+    'subscription_details' => 'Subscription Details Section',
+    'line_items' => 'Line Items Table',
+    'footer_notes' => 'Footer Notes Block',
+];
+$layoutOrder = json_decode($settings['invoice_layout_blocks'] ?? '', true);
+if (!is_array($layoutOrder)) {
+    $layoutOrder = array_keys($layoutLabels);
+}
+$normalizedLayoutOrder = [];
+foreach ($layoutOrder as $item) {
+    $key = (string) $item;
+    if (isset($layoutLabels[$key])) {
+        $normalizedLayoutOrder[] = $key;
+    }
+}
+$layoutOrder = array_values(array_unique($normalizedLayoutOrder));
+foreach (array_keys($layoutLabels) as $key) {
+    if (!in_array($key, $layoutOrder, true)) {
+        $layoutOrder[] = $key;
+    }
+}
+?>
 
 <?php if (Helpers::hasFlash('success')): ?>
 <div style="background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:20px;">
@@ -88,6 +113,44 @@
     </div>
 
     <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px;margin-bottom:20px;">
+        <div style="margin-bottom:16px;font-weight:700;font-size:.9rem;">Content Customization</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:end;">
+            <div>
+                <label>Invoice Title</label>
+                <input type="text" name="invoice_title" class="form-control" value="<?= View::e($settings['invoice_title'] ?? 'Subscription Invoice') ?>">
+            </div>
+            <div>
+                <label>Invoice Subtitle</label>
+                <input type="text" name="invoice_subtitle" class="form-control" value="<?= View::e($settings['invoice_subtitle'] ?? 'Secure payment receipt') ?>">
+            </div>
+            <div>
+                <label>Line Item Label</label>
+                <input type="text" name="invoice_item_label" class="form-control" value="<?= View::e($settings['invoice_item_label'] ?? 'Subscription') ?>">
+            </div>
+            <div>
+                <label>Total Label</label>
+                <input type="text" name="invoice_total_label" class="form-control" value="<?= View::e($settings['invoice_total_label'] ?? 'Total') ?>">
+            </div>
+        </div>
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px;margin-bottom:20px;">
+        <div style="margin-bottom:8px;font-weight:700;font-size:.9rem;">Invoice Layout Builder (Drag &amp; Drop)</div>
+        <p style="color:var(--text-secondary);font-size:.8rem;margin-bottom:12px;">Drag sections to customize invoice section order.</p>
+        <input type="hidden" name="invoice_layout_blocks" id="invoiceLayoutBlocksInput" value="<?= htmlspecialchars((string) json_encode($layoutOrder), ENT_QUOTES, 'UTF-8') ?>">
+        <ul id="invoiceLayoutList" style="list-style:none;padding:0;margin:0;display:grid;gap:10px;">
+            <?php foreach ($layoutOrder as $blockKey): ?>
+            <li draggable="true"
+                data-layout-key="<?= View::e($blockKey) ?>"
+                style="display:flex;align-items:center;gap:10px;padding:12px;border:1px dashed var(--border-color);border-radius:10px;background:var(--bg-secondary);cursor:move;">
+                <i class="fas fa-grip-vertical" style="color:var(--text-secondary);"></i>
+                <span style="font-size:.86rem;font-weight:600;"><?= View::e($layoutLabels[$blockKey] ?? $blockKey) ?></span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:22px;margin-bottom:20px;">
         <div style="margin-bottom:16px;">
             <label>Footer Note</label>
             <textarea name="invoice_footer_note" class="form-control" rows="3"><?= View::e($settings['invoice_footer_note'] ?? '') ?></textarea>
@@ -101,4 +164,48 @@
     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Invoice Settings</button>
 </form>
 
+<?php View::endSection(); ?>
+
+<?php View::section('scripts'); ?>
+<script>
+(function () {
+    const list = document.getElementById('invoiceLayoutList');
+    const hidden = document.getElementById('invoiceLayoutBlocksInput');
+    if (!list || !hidden) return;
+    let dragged = null;
+
+    function updateValue() {
+        const order = Array.from(list.querySelectorAll('li[data-layout-key]')).map((item) => item.dataset.layoutKey);
+        hidden.value = JSON.stringify(order);
+    }
+
+    list.querySelectorAll('li[data-layout-key]').forEach((item) => {
+        item.addEventListener('dragstart', function () {
+            dragged = this;
+            this.style.opacity = '0.5';
+        });
+        item.addEventListener('dragend', function () {
+            this.style.opacity = '1';
+            dragged = null;
+            updateValue();
+        });
+        item.addEventListener('dragover', function (e) {
+            e.preventDefault();
+        });
+        item.addEventListener('drop', function (e) {
+            e.preventDefault();
+            if (!dragged || dragged === this) return;
+            const rect = this.getBoundingClientRect();
+            const after = e.clientY > rect.top + rect.height / 2;
+            if (after) {
+                this.parentNode.insertBefore(dragged, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(dragged, this);
+            }
+        });
+    });
+
+    updateValue();
+})();
+</script>
 <?php View::endSection(); ?>

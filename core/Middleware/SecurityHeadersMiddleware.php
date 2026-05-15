@@ -1,6 +1,8 @@
 <?php
 namespace Core\Middleware;
 
+use Core\Security;
+
 class SecurityHeadersMiddleware
 {
     public static function handle(): void
@@ -17,22 +19,46 @@ class SecurityHeadersMiddleware
         header('Referrer-Policy: strict-origin-when-cross-origin');
         header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 
-        // Content Security Policy — allows same-origin scripts/styles, CDN fonts,
-        // and inline styles/scripts used by the existing front-end.
-        // unsafe-inline is needed because the current codebase embeds <script>/<style> blocks.
-        header(
-            "Content-Security-Policy: " .
-            "default-src 'self'; " .
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://sdk.cashfree.com https://*.cashfree.com; " .
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; " .
-            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; " .
-            "img-src 'self' data: blob: https:; " .
-            "connect-src 'self' https://sdk.cashfree.com https://*.cashfree.com; " .
-            "frame-src 'self' https://sdk.cashfree.com https://*.cashfree.com; " .
-            "frame-ancestors 'self';"
-        );
+        $requestPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
+        $nonce = Security::getCspNonce();
+        if (self::usesStrictAuthCsp($requestPath)) {
+            header(
+                "Content-Security-Policy: " .
+                "default-src 'self'; " .
+                "script-src 'self' 'nonce-{$nonce}'; " .
+                "script-src-attr 'none'; " .
+                "style-src 'self' 'nonce-{$nonce}'; " .
+                "style-src-attr 'none'; " .
+                "img-src 'self' data: https:; " .
+                "font-src 'self' data:; " .
+                "connect-src 'self'; " .
+                "frame-src 'none'; " .
+                "frame-ancestors 'self'; " .
+                "form-action 'self'; " .
+                "base-uri 'self'; " .
+                "object-src 'none'; " .
+                "upgrade-insecure-requests;"
+            );
+        } else {
+            header(
+                "Content-Security-Policy: " .
+                "default-src 'self'; " .
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://sdk.cashfree.com https://*.cashfree.com; " .
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; " .
+                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; " .
+                "img-src 'self' data: blob: https:; " .
+                "connect-src 'self' https://sdk.cashfree.com https://*.cashfree.com; " .
+                "frame-src 'self' https://sdk.cashfree.com https://*.cashfree.com; " .
+                "frame-ancestors 'self'; " .
+                "form-action 'self' https://*.cashfree.com; " .
+                "base-uri 'self'; " .
+                "object-src 'none'; " .
+                "upgrade-insecure-requests;"
+            );
+        }
 
-        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        $isHttps = self::isHttpsRequest();
+        if ($isHttps) {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
 
@@ -55,5 +81,50 @@ class SecurityHeadersMiddleware
             // or caching snapshots of them.
             header('X-Robots-Tag: noindex, nofollow, nosnippet, noarchive');
         }
+    }
+
+    public static function isHttpsRequest(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
+            return true;
+        }
+
+        $forwardedProto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+        if ($forwardedProto !== '') {
+            $parts = array_map('trim', explode(',', $forwardedProto));
+            if (in_array('https', $parts, true)) {
+                return true;
+            }
+        }
+
+        if (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')) === 'on') {
+            return true;
+        }
+
+        if (strtolower((string) ($_SERVER['REQUEST_SCHEME'] ?? '')) === 'https') {
+            return true;
+        }
+
+        $cfVisitor = (string) ($_SERVER['HTTP_CF_VISITOR'] ?? '');
+        if ($cfVisitor !== '') {
+            $cfVisitorData = json_decode($cfVisitor, true);
+            if (is_array($cfVisitorData) && (($cfVisitorData['scheme'] ?? '') === 'https')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function usesStrictAuthCsp(string $path): bool
+    {
+        return in_array($path, [
+            '/login',
+            '/register',
+            '/forgot-password',
+            '/reset-password',
+            '/verify-otp',
+            '/2fa-verify',
+        ], true);
     }
 }

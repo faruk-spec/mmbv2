@@ -6,6 +6,38 @@
 /* ── Plans Payment page redesign ──────────────────────────────────────── */
 .pay-wrap  { max-width: 960px; margin: 0 auto; }
 .pay-grid  { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+.secure-brand-bar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+.secure-brand-logo {
+    max-width: 130px;
+    max-height: 36px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 8px;
+    padding: 4px 6px;
+}
+.secure-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(0,255,136,.3);
+    color: var(--green);
+    background: rgba(0,255,136,.08);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: .72rem;
+    font-weight: 700;
+}
 
 /* Progress steps (same style as subscribe page) */
 .pp-steps  { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 32px; }
@@ -112,6 +144,10 @@
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
+<?php
+$invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
+$secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAME') ? APP_NAME : 'MMB Platform');
+?>
 
 <?php if (Helpers::hasFlash('success')): ?>
 <div class="alert alert-success" style="max-width:960px;margin:0 auto 16px;"><?= View::e(Helpers::getFlash('success')) ?></div>
@@ -124,6 +160,22 @@
     <a href="/plans" style="color:var(--text-secondary);font-size:.875rem;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:28px;">
         <i class="fas fa-arrow-left"></i> Back to Plans
     </a>
+
+    <div class="secure-brand-bar">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <?php if (!empty($invoiceLogoUrl)): ?>
+            <img src="<?= View::e($invoiceLogoUrl) ?>" alt="Secure brand logo" class="secure-brand-logo">
+            <?php endif; ?>
+            <div>
+                <div style="font-weight:800;font-size:1rem;"><?= View::e($secureBrandName) ?> Secure Payment Desk</div>
+                <div style="font-size:.76rem;color:var(--text-secondary);">Your transaction is processed through verified payment channels.</div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="secure-pill"><i class="fas fa-lock"></i> Encrypted</span>
+            <span class="secure-pill"><i class="fas fa-shield-alt"></i> Protected</span>
+        </div>
+    </div>
 
     <!-- Progress steps -->
     <div class="pp-steps">
@@ -366,7 +418,7 @@
 
             <?php if ($payment['status'] === 'paid' && !empty($payment['subscription_id'])): ?>
             <div style="margin-top:16px;padding:14px 18px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.15);border-radius:14px;font-size:.8rem;color:var(--text-secondary);">
-                <i class="fas fa-shield-check" style="color:var(--green);margin-right:6px;"></i>
+                <i class="fas fa-shield-alt" style="color:var(--green);margin-right:6px;"></i>
                 Subscription active. Thank you for your payment!
             </div>
             <?php endif; ?>
@@ -413,5 +465,3 @@ document.getElementById('cashfreePayBtn')?.addEventListener('click', function ()
 </script>
 <?php endif; ?>
 <?php View::endSection(); ?>
-
-

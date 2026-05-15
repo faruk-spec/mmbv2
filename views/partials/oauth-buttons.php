@@ -15,20 +15,18 @@ $filteredProviders = array_filter($enabledProviders, fn($p) => in_array(strtolow
 ?>
 
 <?php if (!empty($filteredProviders)): ?>
-    <div style="margin-bottom: 16px;">
-        <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin: 0 0 10px;">
+    <div class="oauth-group">
+        <p class="oauth-label">
             Continue with
         </p>
-        <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div class="oauth-row">
             <?php foreach ($filteredProviders as $provider): ?>
                 <?php $providerName = strtolower($provider['name']); ?>
                 <a href="/auth/<?= View::e($providerName) ?><?= $oauthMode === 'register' ? '?register=1' : '' ?>"
                    title="<?= View::e($providerTooltip[$providerName] ?? ucfirst($providerName)) ?>"
-                   style="display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; transition: box-shadow 0.15s, border-color 0.15s; text-decoration: none;"
-                   onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)';this.style.borderColor='#cbd5e1';"
-                   onmouseout="this.style.boxShadow='none';this.style.borderColor='#e2e8f0';">
-                    <?php if ($providerName === 'google'): ?>
-                        <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                   class="oauth-button">
+                     <?php if ($providerName === 'google'): ?>
+                         <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
                             <g fill="none" fill-rule="evenodd">
                                 <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
                                 <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>

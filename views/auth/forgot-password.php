@@ -1,10 +1,10 @@
 <?php use Core\View; use Core\Helpers; ?>
-<?php View::extend('main'); ?>
+<?php View::extend('auth'); ?>
 
 <?php View::section('content'); ?>
-<div style="max-width: 400px; margin: 40px auto;">
-    <div class="card">
-        <h1 style="text-align: center; margin-bottom: 30px; font-size: 1.8rem;">Forgot Password</h1>
+<div class="auth-narrow">
+    <div class="auth-simple-card">
+        <h1 class="auth-title auth-center">Forgot Password</h1>
         
         <?php if (Helpers::hasFlash('success')): ?>
             <div class="alert alert-success"><?= View::e(Helpers::getFlash('success')) ?></div>
@@ -14,7 +14,7 @@
             <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
         <?php endif; ?>
         
-        <p style="color: var(--text-secondary); margin-bottom: 20px; text-align: center;">
+        <p class="auth-subtext">
             Enter your email address and we'll send you a link to reset your password.
         </p>
         
@@ -27,10 +27,10 @@
                        placeholder="you@example.com" required>
             </div>
             
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Send Reset Link</button>
+            <button type="submit" class="btn btn-primary auth-btn-block">Send Reset Link</button>
         </form>
         
-        <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
+        <p class="auth-footer-copy">
             Remember your password? <a href="/login">Sign In</a>
         </p>
     </div>

@@ -13,6 +13,8 @@
 
 namespace Core\Middleware;
 
+use Core\Security;
+
 class CloudflareCSP
 {
     /**
@@ -22,15 +24,21 @@ class CloudflareCSP
     {
         // Only add if not already set
         if (!headers_sent()) {
+            $nonce = Security::getCspNonce();
             // Allow Cloudflare scripts and connections
             header("Content-Security-Policy: " . implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+                "script-src 'self' 'nonce-{$nonce}' https://static.cloudflareinsights.com https://cdnjs.cloudflare.com https://fonts.googleapis.com",
+                "script-src-attr 'none'",
+                "style-src 'self' 'nonce-{$nonce}' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+                "style-src-attr 'none'",
                 "connect-src 'self' https://cloudflareinsights.com",
                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
                 "img-src 'self' data: https:",
-                "frame-src 'self'"
+                "frame-src 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+                "upgrade-insecure-requests"
             ]));
         }
     }
@@ -41,8 +49,9 @@ class CloudflareCSP
     public static function addMinimalHeaders(): void
     {
         if (!headers_sent()) {
+            $nonce = Security::getCspNonce();
             // Minimal CSP just for Cloudflare beacon
-            header("Content-Security-Policy: script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com;");
+            header("Content-Security-Policy: script-src 'self' 'nonce-{$nonce}' https://static.cloudflareinsights.com; script-src-attr 'none'; connect-src 'self' https://cloudflareinsights.com;");
         }
     }
 }
@@ -55,13 +64,18 @@ class CloudflareCSP
  * require_once BASE_PATH . '/core/Middleware/CloudflareCSP.php';
  * \Core\Middleware\CloudflareCSP::addMinimalHeaders();
  * 
- * Option 2: Add to .htaccess (Apache)
+ * Option 2: Add to .htaccess (Apache) only if you can inject a dynamic nonce
  * -----------
- * Header set Content-Security-Policy "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com;"
+ * Static .htaccess values cannot generate a fresh nonce per request, so the PHP middleware
+ * approach above is recommended. Using a static nonce value (or falling back to unsafe-inline)
+ * would significantly weaken the CSP and should be avoided. If your server can inject a
+ * per-request nonce, mirror the same script-src / script-src-attr directives there.
  * 
- * Option 3: Add to nginx.conf (Nginx)
+ * Option 3: Add to nginx.conf (Nginx) only if you can inject a dynamic nonce
  * -----------
- * add_header Content-Security-Policy "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com;";
+ * Static nginx config also cannot generate a fresh nonce by itself. Use application-level
+ * middleware or server-side scripting that injects a unique nonce on every response; otherwise
+ * the CSP loses most of the protection that nonce-based execution is meant to provide.
  * 
  * Option 4: Disable in Cloudflare Dashboard (Recommended if not needed)
  * -----------
