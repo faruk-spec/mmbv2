@@ -115,7 +115,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 ?>
 <?php if (!empty($navbarSettings['custom_css'])): ?>
 <!-- Custom CSS from admin settings (admin-controlled, sanitized on save) -->
-<style><?= $navbarSettings['custom_css'] ?></style>
+<style nonce="<?= \Core\Security::getCspNonce() ?>"><?= $navbarSettings['custom_css'] ?></style>
 <?php endif; ?>
 <header class="universal-header"<?= $headerStyleAttr ?>>
     <div class="container header-content">
@@ -481,7 +481,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 </header>
 <!-- Navbar overlay: prevents click-through to page content when a popup is open -->
 <div id="nav-overlay" aria-hidden="true"></div>
-<script>
+<script nonce="<?= \Core\Security::getCspNonce() ?>">
 // Universal Navbar JavaScript
 (function() {
     // Debug: Log navbar load
@@ -673,7 +673,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
     }
 })();
 </script>
-<script>
+<script nonce="<?= \Core\Security::getCspNonce() ?>">
 // Notification Bell Widget
 (function() {
     const bell   = document.getElementById('notifBellBtn');
@@ -810,7 +810,7 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 })();
 </script>
 
-<style>
+<style nonce="<?= \Core\Security::getCspNonce() ?>">
 /* Universal Navbar Styles */
 html {
     scroll-behavior: smooth;
@@ -1514,7 +1514,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         </div>
     </div>
 </div>
-<script>
+<script nonce="<?= \Core\Security::getCspNonce() ?>">
 (function () {
     function openLogoutModal(e) {
         e && e.preventDefault();

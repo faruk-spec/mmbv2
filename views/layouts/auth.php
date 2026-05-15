@@ -450,52 +450,6 @@ $extraScripts = trim(ob_get_clean());
             position: relative;
             z-index: 1;
         }
-
-        /* Top navbar */
-        .auth-topbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            background: rgba(7, 17, 31, 0.72);
-            border-bottom: 1px solid rgba(89, 208, 255, 0.12);
-            backdrop-filter: blur(12px);
-            z-index: 10;
-        }
-
-        .auth-topbar-brand {
-            font-size: 1rem;
-            font-weight: 800;
-            color: var(--auth-text);
-            text-decoration: none;
-            letter-spacing: -0.01em;
-        }
-
-        .auth-topbar-brand:hover {
-            text-decoration: none;
-            color: var(--auth-primary);
-        }
-
-        .auth-topbar-back {
-            margin-left: auto;
-            font-size: 0.82rem;
-            color: var(--auth-muted);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .auth-topbar-back:hover {
-            color: var(--auth-primary);
-            text-decoration: none;
-        }
-
-        body { padding-top: 56px; }
     </style>
 <?php if ($extraStyles !== ''): ?>
     <style nonce="<?= View::e($nonce) ?>">
@@ -505,13 +459,7 @@ $extraScripts = trim(ob_get_clean());
 </head>
 <body>
     <canvas id="auth-particles"></canvas>
-    <nav class="auth-topbar">
-        <a href="/" class="auth-topbar-brand"><?= View::e(defined('APP_NAME') ? APP_NAME : 'Home') ?></a>
-        <a href="/" class="auth-topbar-back">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            Back to Home
-        </a>
-    </nav>
+    <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>
     <div class="auth-shell">
         <?php View::yield('content'); ?>
     </div>
