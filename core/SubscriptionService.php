@@ -721,7 +721,7 @@ class SubscriptionService
 
         $invoiceNo = $this->generateUniqueToken('INV-');
         $reference = $this->generateUniqueToken('PAY-');
-        $expiresAt = array_key_exists('expires_at', $data)
+        $expiresAt = (array_key_exists('expires_at', $data) && $data['expires_at'] !== null)
             ? $data['expires_at']
             : $this->calculateExpiry((string) ($data['billing_cycle'] ?? ''));
 
