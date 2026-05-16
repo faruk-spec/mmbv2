@@ -117,12 +117,14 @@
         <?php foreach ($payments as $payment): ?>
             <?php
             $refundStatus = $payment['refund_status'] ?? 'none';
-            $refundClass = match ($refundStatus) {
-                'requested' => 'sp-badge-refund-req',
-                'refunded', 'approved' => 'sp-badge-refund-ok',
-                'rejected' => 'sp-badge-refund-rej',
-                default => 'sp-badge-default',
-            };
+            $refundClass = 'sp-badge-default';
+            if ($refundStatus === 'requested') {
+                $refundClass = 'sp-badge-refund-req';
+            } elseif ($refundStatus === 'refunded' || $refundStatus === 'approved') {
+                $refundClass = 'sp-badge-refund-ok';
+            } elseif ($refundStatus === 'rejected') {
+                $refundClass = 'sp-badge-refund-rej';
+            }
             ?>
             <tr>
                 <td>

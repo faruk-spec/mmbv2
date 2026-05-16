@@ -458,17 +458,18 @@ class SubscriptionService
 
         try {
             if ($appKey === 'whatsapp') {
+                $planStatusCondition = $this->buildWhatsAppPlanStatusCondition();
                 $plan = ctype_digit($slugOrId)
                     ? $this->db->fetch(
-                        "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_id_column']} = ? AND {$config['plan_status_column']} = ? LIMIT 1",
-                        [(int) $slugOrId, $config['plan_active_value']]
+                        "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_id_column']} = ? AND {$planStatusCondition} LIMIT 1",
+                        [(int) $slugOrId]
                     )
                     : $this->db->fetch(
                         "SELECT * FROM {$config['plan_table']}
                          WHERE (LOWER(REPLACE(REPLACE({$config['plan_name_column']}, ' Plan', ''), ' ', '-')) = ? OR {$config['plan_slug_column']} = ?)
-                           AND {$config['plan_status_column']} = ?
+                           AND {$planStatusCondition}
                          LIMIT 1",
-                        [strtolower($slugOrId), strtolower($slugOrId), $config['plan_active_value']]
+                        [strtolower($slugOrId), strtolower($slugOrId)]
                     );
             } else {
                 $plan = $this->db->fetch(
@@ -498,10 +499,17 @@ class SubscriptionService
 
         try {
             $orderBy = $appKey === 'whatsapp' ? "{$config['plan_price_column']} ASC, {$config['plan_id_column']} ASC" : "sort_order ASC, {$config['plan_price_column']} ASC";
-            $plans = $this->db->fetchAll(
-                "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_status_column']} = ? ORDER BY {$orderBy}",
-                [$config['plan_active_value']]
-            );
+            if ($appKey === 'whatsapp') {
+                $planStatusCondition = $this->buildWhatsAppPlanStatusCondition();
+                $plans = $this->db->fetchAll(
+                    "SELECT * FROM {$config['plan_table']} WHERE {$planStatusCondition} ORDER BY {$orderBy}"
+                );
+            } else {
+                $plans = $this->db->fetchAll(
+                    "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_status_column']} = ? ORDER BY {$orderBy}",
+                    [$config['plan_active_value']]
+                );
+            }
             return array_map(fn(array $row) => $this->normalizePlanRow($appKey, $row), $plans);
         } catch (\Throwable $e) {
             return [];
@@ -510,6 +518,10 @@ class SubscriptionService
 
     public function getCurrentSubscription(string $appKey, int $userId): ?array
     {
+        if ($userId <= 0) {
+            return null;
+        }
+
         $config = $this->getAppConfig($appKey);
         if ($config === null) {
             return null;
@@ -550,7 +562,32 @@ class SubscriptionService
             return null;
         }
 
-        return $row ? $this->normalizeSubscriptionRow($appKey, $row) : null;
+        if ($row) {
+            return $this->normalizeSubscriptionRow($appKey, $row);
+        }
+
+        // Fallback: treat the app's free tier as active by default when no paid
+        // or explicit subscription row exists.
+        $freePlan = $this->getDefaultFreePlan($appKey);
+        if (!$freePlan) {
+            return null;
+        }
+
+        $fallback = [
+            'id' => 0,
+            'user_id' => $userId,
+            'plan_id' => $freePlan['id'] ?? 0,
+            'plan_name' => $freePlan['name'] ?? 'Free Plan',
+            'plan_slug' => $freePlan['slug'] ?? 'free',
+            'price' => 0,
+            'currency' => $freePlan['currency'] ?? 'USD',
+            'billing_cycle' => $freePlan['billing_cycle'] ?? (($appKey === 'whatsapp') ? (($freePlan['duration_days'] ?? 30) . ' days') : 'free'),
+            'started_at' => null,
+            'expires_at' => null,
+            'status' => 'active',
+        ];
+
+        return $this->normalizeSubscriptionRow($appKey, $fallback);
     }
 
     public function ensureUserHasDefaultPlatformPlan(int $userId): bool
@@ -3014,6 +3051,56 @@ HTML;
     private function getAppLabel(string $appKey): string
     {
         return htmlspecialchars((string) (self::APP_CONFIG[$appKey]['label'] ?? strtoupper($appKey)));
+    }
+
+    private function buildWhatsAppPlanStatusCondition(): string
+    {
+        try {
+            $columns = array_column($this->db->fetchAll("SHOW COLUMNS FROM whatsapp_subscription_plans"), 'Field');
+            if (in_array('is_active', $columns, true)) {
+                return "is_active = 1";
+            }
+            if (in_array('status', $columns, true)) {
+                return "status = 'active'";
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return "1=1";
+    }
+
+    private function getDefaultFreePlan(string $appKey): ?array
+    {
+        $config = $this->getAppConfig($appKey);
+        if ($config === null) {
+            return null;
+        }
+
+        try {
+            if ($appKey === 'whatsapp') {
+                $statusCondition = $this->buildWhatsAppPlanStatusCondition();
+                $plan = $this->db->fetch(
+                    "SELECT * FROM {$config['plan_table']}
+                     WHERE {$statusCondition}
+                       AND {$config['plan_price_column']} <= 0
+                     ORDER BY {$config['plan_price_column']} ASC, {$config['plan_id_column']} ASC
+                     LIMIT 1"
+                );
+            } else {
+                $plan = $this->db->fetch(
+                    "SELECT * FROM {$config['plan_table']}
+                     WHERE {$config['plan_status_column']} = ?
+                       AND {$config['plan_price_column']} <= 0
+                     ORDER BY {$config['plan_price_column']} ASC, {$config['plan_id_column']} ASC
+                     LIMIT 1",
+                    [$config['plan_active_value']]
+                );
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return is_array($plan) ? $this->normalizePlanRow($appKey, $plan) : null;
     }
 
     private function normalizePlanRow(string $appKey, array $row): array

@@ -26,10 +26,18 @@ class SubscriptionPaymentsController extends BaseController
     {
         $appKey = trim((string) ($_GET['app'] ?? ''));
         $appKey = in_array($appKey, ['resumex', 'qr', 'convertx', 'whatsapp'], true) ? $appKey : null;
+        $payments = [];
+
+        try {
+            $payments = $this->subscriptionService->getAdminPayments($appKey);
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionPaymentsController::index - ' . $e->getMessage());
+            $this->flash('error', 'Could not load subscription payments right now.');
+        }
 
         $this->view('admin/subscription-payments/index', [
             'title' => 'Subscription Payments',
-            'payments' => $this->subscriptionService->getAdminPayments($appKey),
+            'payments' => $payments,
             'activeApp' => $appKey,
         ]);
     }

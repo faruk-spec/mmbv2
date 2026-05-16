@@ -195,9 +195,9 @@
                     <?= $planName ? '<i class="fas fa-check-circle"></i> Active' : 'Free' ?>
                 </span>
                 <a href="<?= $meta['url'] ?>" class="btn-app btn-app-open"><i class="fas fa-external-link-alt"></i> Open</a>
-                <?php if ($planName && $manageId): ?>
+                <?php if ($planName && $manageId && (float) ($price ?? 0) > 0): ?>
                 <a href="/plans/payment/<?= $manageId ?>" class="btn-app btn-app-manage"><i class="fas fa-cog"></i> Manage</a>
-                <?php elseif (!$planName): ?>
+                <?php else: ?>
                 <a href="<?= $upgradeUrl ?>" class="btn-app btn-app-upgrade"><i class="fas fa-arrow-up"></i> Upgrade</a>
                 <?php endif; ?>
             </div>

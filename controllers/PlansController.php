@@ -814,6 +814,15 @@ class PlansController extends BaseController
             // Table may not exist yet
         }
 
+        foreach (['qr', 'convertx', 'whatsapp', 'resumex'] as $key) {
+            if (!isset($subs[$key])) {
+                $fallbackSub = $this->subscriptionService->getCurrentSubscription($key, $userId);
+                if ($fallbackSub) {
+                    $subs[$key] = $fallbackSub;
+                }
+            }
+        }
+
         return $subs;
     }
 
