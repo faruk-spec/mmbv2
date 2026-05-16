@@ -183,10 +183,11 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--cyan);
-    -webkit-text-fill-color: var(--cyan);
+    color: #00f0ff;
+    -webkit-text-fill-color: #00f0ff;
     background: none;
     text-decoration: none;
+    text-shadow: 0 0 8px rgba(0,240,255,.65), 0 0 20px rgba(0,240,255,.35);
 }
 
 .universal-header .logo.logo-both {
@@ -212,6 +213,7 @@ body {
 .universal-header .logo {
     color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?> !important;
     -webkit-text-fill-color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?> !important;
+    text-shadow: 0 0 8px <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>99, 0 0 20px <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>55 !important;
 }
 <?php endif; ?>
 

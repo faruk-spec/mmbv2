@@ -96,6 +96,24 @@ class SubscriptionPaymentsController extends BaseController
         $this->redirect('/admin/subscription-payments');
     }
 
+    public function manualRefund(string $id): void
+    {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/admin/subscription-payments');
+            return;
+        }
+
+        $note = trim((string) ($_POST['reason'] ?? ''));
+        if ($this->subscriptionService->adminInitiateRefund((int) $id, Auth::id(), $note)) {
+            $this->flash('success', 'Refund has been processed and subscription cancelled.');
+        } else {
+            $this->flash('error', 'Unable to process refund. Payment may not be eligible (already refunded, not paid, etc.).');
+        }
+
+        $this->redirect('/admin/subscription-payments');
+    }
+
     public function refunds(): void
     {
         $this->view('admin/subscription-payments/refunds', [

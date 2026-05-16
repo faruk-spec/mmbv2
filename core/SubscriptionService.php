@@ -1304,38 +1304,10 @@ class SubscriptionService
             [$paymentId, $userId]
         );
 
-        // Auto-cancel the subscription when a refund is requested so the user
-        // does not retain access while the refund is pending admin review.
-        if (!empty($payment['subscription_id'])) {
-            $config = $this->getAppConfig((string) ($payment['app_key'] ?? ''));
-            if ($config !== null) {
-                try {
-                    if (($payment['app_key'] ?? '') === 'whatsapp') {
-                        $this->db->query(
-                            "UPDATE whatsapp_subscriptions
-                             SET status = 'cancelled', updated_at = NOW()
-                             WHERE id = ? AND user_id = ?",
-                            [(int) $payment['subscription_id'], $userId]
-                        );
-                    } else {
-                        $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
-                        $sql = "UPDATE {$config['subscription_table']}
-                                SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
-                        if ($cancelledColumn) {
-                            $sql .= ", {$cancelledColumn} = NOW()";
-                        }
-                        $sql .= " WHERE id = ? AND {$config['subscription_user_column']} = ?";
-                        $this->db->query($sql, [(int) $payment['subscription_id'], $userId]);
-                    }
-                    $this->db->query(
-                        "UPDATE subscription_payments SET cancel_requested_at = NOW(), updated_at = NOW() WHERE id = ?",
-                        [$paymentId]
-                    );
-                } catch (\Throwable $e) {
-                    Logger::error('SubscriptionService::requestRefund auto-cancel - ' . $e->getMessage());
-                }
-            }
-        }
+        // NOTE: Do NOT auto-cancel the subscription here. The subscription remains
+        // active while the refund is pending admin review. If admin approves the
+        // refund, the subscription will be cancelled then. If admin rejects with
+        // "keep plan active", the user retains access as intended.
 
         // Send email notification and bell notification for refund request.
         try {
@@ -1669,6 +1641,120 @@ class SubscriptionService
         return time() <= $deadline
             ? ['allowed' => true, 'reason' => null, 'deadline' => $deadline]
             : ['allowed' => false, 'reason' => 'Refund window has ended.', 'deadline' => $deadline];
+    }
+
+    /**
+     * Admin-initiated refund: marks any paid payment as refunded without requiring
+     * a prior user refund request. Cancels the subscription and triggers the
+     * gateway refund API if applicable.
+     */
+    public function adminInitiateRefund(int $paymentId, int $adminId, string $note = ''): bool
+    {
+        $payment = $this->db->fetch(
+            "SELECT sp.*, u.id AS user_id_val, u.name AS user_name, u.email AS user_email
+             FROM subscription_payments sp
+             LEFT JOIN users u ON u.id = sp.user_id
+             WHERE sp.id = ? AND sp.status = 'paid'
+             AND sp.refund_status NOT IN ('approved','refunded') LIMIT 1",
+            [$paymentId]
+        );
+        if (!$payment) {
+            return false;
+        }
+
+        $finalStatus = 'refunded';
+
+        // Attempt gateway refund for Cashfree payments.
+        if (($payment['gateway'] ?? '') === 'cashfree' && !empty($payment['provider_order_id'])) {
+            $settings = $this->getPaymentSettings();
+            $gatewayResult = $this->triggerCashfreeRefund($payment, $settings, $note);
+            if (!$gatewayResult['success']) {
+                Logger::warning('SubscriptionService::adminInitiateRefund - Cashfree refund API failed: ' . ($gatewayResult['message'] ?? 'unknown'), [
+                    'payment_id' => $paymentId,
+                ]);
+                $note = trim($note . ' [Gateway error: ' . ($gatewayResult['message'] ?? 'unknown') . ' — process manually]');
+            } else {
+                $note = trim($note . ' [Gateway refund initiated: ' . ($gatewayResult['refund_id'] ?? 'OK') . ']');
+            }
+        }
+
+        $this->db->query(
+            "UPDATE subscription_payments
+             SET refund_status = ?, refund_requested_at = COALESCE(refund_requested_at, NOW()),
+                 refund_decided_at = NOW(), admin_notes = ?, updated_at = NOW()
+             WHERE id = ?",
+            [$finalStatus, $note, $paymentId]
+        );
+        Logger::activity($adminId, 'subscription_refund_admin_initiated', ['payment_id' => $paymentId]);
+
+        // Cancel the subscription.
+        if (!empty($payment['subscription_id'])) {
+            $config = $this->getAppConfig((string) ($payment['app_key'] ?? ''));
+            try {
+                if (($payment['app_key'] ?? '') === 'whatsapp') {
+                    $this->db->query(
+                        "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        [(int) $payment['subscription_id']]
+                    );
+                } elseif ($config !== null) {
+                    $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                    $sql = "UPDATE {$config['subscription_table']}
+                            SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                    if ($cancelledColumn) {
+                        $sql .= ", {$cancelledColumn} = NOW()";
+                    }
+                    $sql .= " WHERE id = ?";
+                    $this->db->query($sql, [(int) $payment['subscription_id']]);
+                }
+                $this->db->query(
+                    "UPDATE subscription_payments SET cancel_requested_at = NOW(), updated_at = NOW() WHERE id = ?",
+                    [$paymentId]
+                );
+            } catch (\Throwable $e) {
+                Logger::error('SubscriptionService::adminInitiateRefund cancel - ' . $e->getMessage());
+            }
+        }
+
+        // Notify the user.
+        try {
+            $userId    = (int) ($payment['user_id'] ?? $payment['user_id_val'] ?? 0);
+            $userEmail = (string) ($payment['user_email'] ?? '');
+            if ($userId > 0 && $userEmail !== '') {
+                $dashboardUrl = match ($payment['app_key'] ?? '') {
+                    'resumex'  => '/projects/resumex/plans',
+                    'qr'       => '/projects/qr/plans',
+                    'convertx' => '/projects/convertx/plans',
+                    'whatsapp' => '/projects/whatsapp/plans',
+                    default    => '/plans',
+                };
+                $this->ensureNotificationTemplates();
+                MailService::sendNotification(
+                    $userEmail,
+                    'refund-approved',
+                    [
+                        'user_name'     => $payment['user_name'] ?? 'User',
+                        'plan_name'     => $payment['plan_name'] ?? 'Subscription',
+                        'app_name'      => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                        'currency'      => $payment['currency'] ?? '',
+                        'amount'        => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                        'reference'     => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                        'admin_note'    => $note ?: 'Admin has processed a refund for your payment.',
+                        'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                    ],
+                    false
+                );
+                Notification::send(
+                    $userId,
+                    'refund_approved',
+                    'A refund has been processed for ' . ($payment['plan_name'] ?? 'your subscription') . '. Your subscription has been cancelled.',
+                    ['payment_id' => $paymentId]
+                );
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::adminInitiateRefund notify - ' . $e->getMessage());
+        }
+
+        return true;
     }
 
     public function getAdminPayments(?string $appKey = null): array

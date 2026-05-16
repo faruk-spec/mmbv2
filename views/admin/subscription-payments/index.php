@@ -162,6 +162,14 @@
                         <?php elseif ($refundStatus === 'none'): ?>
                         <span style="color:var(--text-secondary);font-size:.76rem;padding:6px 4px;">—</span>
                         <?php endif; ?>
+                        <?php if ($payment['status'] === 'paid' && !in_array($refundStatus, ['approved', 'refunded'], true)): ?>
+                        <button type="button" class="sp-btn sp-btn-refund"
+                            data-payment-id="<?= (int) $payment['id'] ?>"
+                            data-csrf="<?= View::e(\Core\Security::csrfToken()) ?>"
+                            onclick="openManualRefundModal(this)">
+                            <i class="fas fa-hand-holding-usd"></i> Refund
+                        </button>
+                        <?php endif; ?>
                         <?php if ($payment['status'] === 'paid'): ?>
                         <form method="POST" action="/admin/subscription-payments/<?= (int) $payment['id'] ?>/cancel-plan"
                               style="margin:0;"
@@ -180,5 +188,45 @@
     </div>
 </div>
 <?php endif; ?>
+
+<!-- Manual Refund Modal -->
+<div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;" id="manualRefundModal">
+    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:14px;padding:28px;max-width:420px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.5);">
+        <p style="font-size:1rem;font-weight:700;margin:0 0 6px;color:var(--text-primary);"><i class="fas fa-hand-holding-usd" style="color:#f59e0b;margin-right:7px;"></i>Manual Refund</p>
+        <p style="font-size:.83rem;color:var(--text-secondary);margin:0 0 20px;">This will mark the payment as refunded and cancel the subscription immediately. If it is a Cashfree payment the gateway refund API will be called automatically.</p>
+        <form method="POST" id="manualRefundForm">
+            <input type="hidden" name="_csrf_token" id="mrCsrf">
+            <div style="margin-bottom:16px;">
+                <label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:6px;">Admin note <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
+                <textarea id="mrReason" name="reason" rows="2" placeholder="Reason for manual refund…"
+                    style="width:100%;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;color:var(--text-primary);font-size:.84rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                <button type="button" class="sp-btn" style="border-color:var(--border-color);color:var(--text-secondary);" onclick="closeManualRefundModal()">Cancel</button>
+                <button type="submit" class="sp-btn sp-btn-refund"><i class="fas fa-undo"></i> Process Refund</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php View::section('scripts'); ?>
+<script>
+function openManualRefundModal(btn) {
+    var id = btn.getAttribute('data-payment-id');
+    var csrf = btn.getAttribute('data-csrf');
+    document.getElementById('manualRefundForm').action = '/admin/subscription-payments/' + id + '/manual-refund';
+    document.getElementById('mrCsrf').value = csrf;
+    document.getElementById('mrReason').value = '';
+    var modal = document.getElementById('manualRefundModal');
+    modal.style.display = 'flex';
+}
+function closeManualRefundModal() {
+    document.getElementById('manualRefundModal').style.display = 'none';
+}
+document.getElementById('manualRefundModal').addEventListener('click', function(e) {
+    if (e.target === this) closeManualRefundModal();
+});
+</script>
+<?php View::end(); ?>
 
 <?php View::endSection(); ?>

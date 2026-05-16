@@ -14,7 +14,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, .92fr);
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
 }
 .plans-col {
     min-width: 0;
@@ -22,17 +22,21 @@
     border: 1px solid var(--border-color);
     border-radius: .75rem;
     padding: .875rem;
+    display: flex;
+    flex-direction: column;
 }
 /* Scrollable container for Application Plans list */
 .plans-app-list {
-    max-height: 22rem;
+    flex: 1;
     overflow-y: auto;
     padding-right: 2px;
+    min-height: 8rem;
 }
 .plans-history-list {
-    max-height: 34rem;
+    flex: 1;
     overflow: auto;
     border-radius: .625rem;
+    min-height: 8rem;
 }
 
 /* Section titles */

@@ -96,7 +96,7 @@
             <input type="number" id="payment_default_refund_days" name="payment_default_refund_days"
                    value="<?= (int) ($settings['payment_default_refund_days'] ?? 7) ?>"
                    min="0" max="365" style="max-width:120px;">
-            <small>Number of days from payment date within which users can request a refund. When a refund is requested, the subscription is automatically cancelled immediately (access is revoked) and the refund is pending admin approval. Set to 0 to disable refunds by default.</small>
+            <small>Number of days from payment date within which users can request a refund. When a refund is requested, the subscription remains active while the request is pending admin review. If admin approves, the subscription is cancelled and refund processed. If admin rejects with "keep plan active", the user retains access. Set to 0 to disable refunds by default.</small>
         </div>
         <div class="form-group">
             <label for="payment_default_cancel_days">Default Cancellation Window (days)</label>
