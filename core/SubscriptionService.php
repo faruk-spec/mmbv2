@@ -1519,7 +1519,6 @@ class SubscriptionService
             [$userId]
         ) ?: [];
 
-        $appLabels = array_column(self::APP_CONFIG, 'label', null);
         $result = [];
         foreach ($rows as $row) {
             $appKey = (string) ($row['app_key'] ?? '');

@@ -266,14 +266,14 @@
     }
 
     function escHtml(str) {
-        return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
     function formatCurrency(amount, currency) {
         const num = parseFloat(amount) || 0;
         try {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 2 }).format(num);
-        } catch { return currency + ' ' + num.toFixed(2); }
+        } catch(e) { console.warn('Currency formatting error:', e); return currency + ' ' + num.toFixed(2); }
     }
 
     function formatDate(dateStr) {

@@ -53,7 +53,11 @@ class AdminPaidUsersController extends BaseController
         }
 
         $userId     = (int) ($_POST['user_id'] ?? 0);
-        $paymentIds = array_filter(array_map('intval', (array) ($_POST['payment_ids'] ?? [])));
+        $rawIds     = (array) ($_POST['payment_ids'] ?? []);
+        $paymentIds = array_values(array_filter(array_map(function ($v) {
+            $id = (int) $v;
+            return $id > 0 ? $id : null;
+        }, $rawIds)));
         $notify     = !empty($_POST['notify_user']);
         $issueRefund = !empty($_POST['issue_refund']);
 
