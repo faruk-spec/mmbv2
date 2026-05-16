@@ -1644,6 +1644,11 @@ class SubscriptionService
         $metadata = $this->decodePaymentMetadata($payment);
         $refundDays = (int) ($metadata['refund_days'] ?? 0);
         if ($refundDays <= 0) {
+            // Fall back to global payment_default_refund_days when plan has none set.
+            $paymentSettings = $this->getPaymentSettings();
+            $refundDays = (int) ($paymentSettings['payment_default_refund_days'] ?? 0);
+        }
+        if ($refundDays <= 0) {
             return ['allowed' => false, 'reason' => 'Refunds are not available for this plan.'];
         }
 

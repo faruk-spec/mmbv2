@@ -23,6 +23,12 @@
     border-radius: .75rem;
     padding: .875rem;
 }
+/* Scrollable container for Application Plans list */
+.plans-app-list {
+    max-height: 22rem;
+    overflow-y: auto;
+    padding-right: 2px;
+}
 .plans-history-list {
     max-height: 34rem;
     overflow: auto;
@@ -140,6 +146,7 @@
             Application Plans
         </p>
 
+        <div class="plans-app-list">
         <?php foreach ($appMeta as $appKey => $meta):
             $sub        = $appSubscriptions[$appKey] ?? null;
             $planName   = $sub['plan_name'] ?? null;
@@ -192,6 +199,7 @@
             </div>
         </div>
         <?php endforeach; ?>
+        </div><!-- /.plans-app-list -->
     </section>
 
     <?php if (!empty($paymentHistory) || ($payTotal ?? 0) > 0): ?>
