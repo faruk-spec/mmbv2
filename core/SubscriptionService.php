@@ -1361,6 +1361,36 @@ class SubscriptionService
                     'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been received and is pending review.',
                     ['payment_id' => $paymentId]
                 );
+
+                $adminUsers = $this->db->fetchAll(
+                    "SELECT id, email, name FROM users WHERE role LIKE '%admin%'"
+                ) ?: [];
+                foreach ($adminUsers as $adminUser) {
+                    if (!empty($adminUser['email'])) {
+                        MailService::sendNotification(
+                            (string) $adminUser['email'],
+                            'refund-requested-admin',
+                            [
+                                'user_name'  => $user['name'] ?? 'User',
+                                'user_email' => $user['email'] ?? '',
+                                'plan_name'  => $payment['plan_name'] ?? 'Subscription',
+                                'currency'   => $payment['currency'] ?? '',
+                                'amount'     => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                                'invoice_no' => $payment['invoice_no'] ?? '',
+                            ],
+                            false
+                        );
+                    }
+
+                    if ((int) ($adminUser['id'] ?? 0) > 0) {
+                        Notification::send(
+                            (int) $adminUser['id'],
+                            'refund_requested_admin',
+                            'New refund request from ' . ($user['name'] ?? 'a user') . ' for ' . ($payment['plan_name'] ?? 'a subscription') . '.',
+                            ['payment_id' => $paymentId, 'user_id' => $userId]
+                        );
+                    }
+                }
             }
         } catch (\Throwable $e) {
             Logger::error('SubscriptionService::requestRefund notify - ' . $e->getMessage());

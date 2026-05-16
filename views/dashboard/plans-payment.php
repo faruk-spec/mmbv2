@@ -4,8 +4,8 @@
 <?php View::section('styles'); ?>
 <style>
 /* ── Plans Payment page redesign ──────────────────────────────────────── */
-.pay-wrap  { max-width: 960px; margin: 0 auto; }
-.pay-grid  { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+.pay-wrap  { max-width: 60rem; margin: 0 auto; }
+.pay-grid  { display: grid; grid-template-columns: 1fr 18rem; gap: 1rem; align-items: start; }
 .secure-brand-bar {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -19,8 +19,8 @@
     margin-bottom: 22px;
 }
 .secure-brand-logo {
-    max-width: 130px;
-    max-height: 36px;
+    max-width: 7.5rem;
+    max-height: 2rem;
     object-fit: contain;
     background: #fff;
     border-radius: 8px;
@@ -94,8 +94,18 @@
              background: linear-gradient(135deg, rgba(153,69,255,.1), rgba(0,240,255,.07));
              display: flex; align-items: center; gap: 14px; }
 .pay-ch-icon { width: 44px; height: 44px; border-radius: 12px;
-               display: flex; align-items: center; justify-content: center;
-               font-size: 1.2rem; flex-shrink: 0; }
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.2rem; flex-shrink: 0; }
+.pay-gateway-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: .625rem;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    object-fit: contain;
+    padding: .25rem;
+    flex-shrink: 0;
+}
 .pay-cb    { padding: 24px 26px; }
 
 /* Status badge */
@@ -217,6 +227,24 @@ $secureBrandName = $invoiceSettings['invoice_company_name'] ?? (defined('APP_NAM
 $isPendingPayment = in_array((string) ($payment['status'] ?? ''), ['pending', 'verification_pending'], true);
 $isPaidPayment = ((string) ($payment['status'] ?? '')) === 'paid';
 $transactionId = (string) ($payment['provider_order_id'] ?? $payment['reference'] ?? ('TXN-' . (int) ($payment['id'] ?? 0)));
+$resolveLogoUrl = static function (?string $url): string {
+    $logo = trim((string) $url);
+    if ($logo === '') {
+        return '';
+    }
+    if ($logo[0] === '/' || str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://') || str_starts_with($logo, '//')) {
+        return $logo;
+    }
+    return '/' . ltrim($logo, '/');
+};
+$upiGatewayLogo = $resolveLogoUrl($paymentSettings['payment_upi_logo'] ?? '');
+$cashfreeGatewayLogo = $resolveLogoUrl($paymentSettings['payment_cashfree_logo'] ?? '');
+$manualGatewayLogo = $resolveLogoUrl($paymentSettings['payment_manual_review_logo'] ?? '');
+$activeGatewayLogo = match ((string) ($payment['gateway'] ?? '')) {
+    'upi' => $upiGatewayLogo,
+    'cashfree' => $cashfreeGatewayLogo,
+    default => $manualGatewayLogo,
+};
 ?>
 
 <?php if (Helpers::hasFlash('success')): ?>
@@ -329,25 +357,37 @@ $transactionId = (string) ($payment['provider_order_id'] ?? $payment['reference'
             <div class="pay-card">
                 <div class="pay-ch">
                     <?php if ($payment['gateway'] === 'upi'): ?>
+                    <?php if ($activeGatewayLogo !== ''): ?>
+                    <img src="<?= View::e($activeGatewayLogo) ?>" alt="UPI logo" class="pay-gateway-logo">
+                    <?php else: ?>
                     <div class="pay-ch-icon" style="background:rgba(0,240,255,.12);color:var(--cyan);">
                         <i class="fas fa-qrcode"></i>
                     </div>
+                    <?php endif; ?>
                     <div>
                         <div style="font-weight:800;font-size:1.05rem;">UPI / QR Payment</div>
                         <div style="font-size:.78rem;color:var(--text-secondary);">Scan with any UPI app to pay the exact amount</div>
                     </div>
                     <?php elseif ($payment['gateway'] === 'cashfree'): ?>
+                    <?php if ($activeGatewayLogo !== ''): ?>
+                    <img src="<?= View::e($activeGatewayLogo) ?>" alt="Cashfree logo" class="pay-gateway-logo">
+                    <?php else: ?>
                     <div class="pay-ch-icon" style="background:rgba(153,69,255,.15);color:var(--purple);">
                         <i class="fas fa-bolt"></i>
                     </div>
+                    <?php endif; ?>
                     <div>
                         <div style="font-weight:800;font-size:1.05rem;">Cashfree Checkout</div>
                         <div style="font-size:.78rem;color:var(--text-secondary);">Complete payment via Cashfree's secure gateway</div>
                     </div>
                     <?php else: ?>
+                    <?php if ($activeGatewayLogo !== ''): ?>
+                    <img src="<?= View::e($activeGatewayLogo) ?>" alt="Manual review logo" class="pay-gateway-logo">
+                    <?php else: ?>
                     <div class="pay-ch-icon" style="background:rgba(0,255,136,.1);color:var(--green);">
                         <i class="fas fa-clipboard-check"></i>
                     </div>
+                    <?php endif; ?>
                     <div>
                         <div style="font-weight:800;font-size:1.05rem;">Manual Review</div>
                         <div style="font-size:.78rem;color:var(--text-secondary);">Admin will review and activate your subscription</div>

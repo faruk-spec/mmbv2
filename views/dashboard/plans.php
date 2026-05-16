@@ -4,24 +4,29 @@
 <?php View::section('styles'); ?>
 <style>
 /* ── Plans page ──────────────────────────────────────────────────────────── */
-.plans-page { max-width: 980px; }
+.plans-page {
+    max-width: 68rem;
+    width: 100%;
+    margin: 0 auto;
+    padding-bottom: 1rem;
+}
 .plans-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .92fr);
+    gap: 1rem;
     align-items: start;
 }
 .plans-col {
     min-width: 0;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: .75rem;
+    padding: .875rem;
 }
 .plans-history-list {
-    max-height: 560px;
+    max-height: 34rem;
     overflow: auto;
-    border-radius: 10px;
+    border-radius: .625rem;
 }
 
 /* Section titles */
@@ -71,7 +76,7 @@
 .btn-app-upgrade:hover { opacity: .88; transform: translateY(-1px); }
 
 /* History rows */
-.history-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border-color); }
+.history-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: .75rem; padding: .75rem 1rem; border-bottom: 1px solid var(--border-color); }
 .history-row:last-child { border-bottom: none; }
 
 /* Section divider */
@@ -85,6 +90,9 @@
 .pay-pg-btn.disabled { opacity: .4; pointer-events: none; }
 
 /* Responsive */
+@media (max-width: 1100px) {
+    .plans-layout { grid-template-columns: 1fr; }
+}
 @media (max-width: 640px) {
     .plans-layout { grid-template-columns: 1fr; }
     .app-sub-row { grid-template-columns: 40px 1fr; gap: 12px; padding: 14px; }

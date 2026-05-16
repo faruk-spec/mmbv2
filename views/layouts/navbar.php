@@ -872,11 +872,12 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--cyan); /* fallback if gradient-clip is unsupported */
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .universal-header .logo.logo-both {
@@ -885,24 +886,27 @@ body {
     gap: 8px;
 }
 
-/* Image logos: constrain size so they never overflow the header */
 .universal-header .logo img {
     display: block;
-    max-height: 38px;
-    max-width: 140px;
+    max-height: 40px;
+    max-width: 120px;
     width: auto;
     object-fit: contain;
     flex-shrink: 0;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    -webkit-text-fill-color: initial;
 }
 
 .universal-header .logo.logo-both img {
-    max-height: 34px;
-    max-width: 120px;
+    max-height: 36px;
 }
 
 <?php if (!empty($navbarSettings['navbar_text_color'])): ?>
 .universal-header .logo {
     color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?> !important;
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
 }
 <?php endif; ?>
 
@@ -1348,6 +1352,11 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 }
 
 @media (max-width: 768px) {
+    .universal-header .logo img {
+        max-height: 34px;
+        max-width: 92px;
+    }
+
     .universal-nav {
         display: none;
         position: absolute;

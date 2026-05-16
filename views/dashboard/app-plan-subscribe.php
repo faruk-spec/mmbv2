@@ -4,8 +4,8 @@
 <?php View::section('styles'); ?>
 <style>
 /* ── Subscribe / Checkout redesign ─────────────────────────────────────── */
-.sub-wrap  { max-width: 960px; margin: 0 auto; }
-.sub-grid  { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
+.sub-wrap  { max-width: 60rem; margin: 0 auto; }
+.sub-grid  { display: grid; grid-template-columns: 1fr 20rem; gap: 1rem; align-items: start; }
 
 /* Progress bar */
 .chk-steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 36px; }
@@ -83,7 +83,7 @@
     display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
 }
 .pay-method-logo {
-    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    width: 2.4rem; height: 2.4rem; border-radius: .625rem; flex-shrink: 0;
     object-fit: contain; border: 1px solid var(--border-color); background: #fff; padding: 4px;
 }
 .pay-method-icon.upi      { background: rgba(0,240,255,.12); color: var(--cyan); }
@@ -166,9 +166,21 @@
 <?php
 $invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
 $appLogoUrl = $appMeta['logo_url'] ?? '';
-$upiGatewayLogo = trim((string) ($paymentSettings['payment_upi_logo'] ?? ''));
-$cashfreeGatewayLogo = trim((string) ($paymentSettings['payment_cashfree_logo'] ?? ''));
-$manualGatewayLogo = trim((string) ($paymentSettings['payment_manual_review_logo'] ?? ''));
+$resolveLogoUrl = static function (?string $url): string {
+    $logo = trim((string) $url);
+    if ($logo === '') {
+        return '';
+    }
+    if ($logo[0] === '/' || str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://') || str_starts_with($logo, '//')) {
+        return $logo;
+    }
+    return '/' . ltrim($logo, '/');
+};
+$appLogoUrl = $resolveLogoUrl($appLogoUrl);
+$invoiceLogoUrl = $resolveLogoUrl($invoiceLogoUrl);
+$upiGatewayLogo = $resolveLogoUrl($paymentSettings['payment_upi_logo'] ?? '');
+$cashfreeGatewayLogo = $resolveLogoUrl($paymentSettings['payment_cashfree_logo'] ?? '');
+$manualGatewayLogo = $resolveLogoUrl($paymentSettings['payment_manual_review_logo'] ?? '');
 if ($appLogoUrl === '') {
     $iconCandidate = (string) ($appMeta['icon'] ?? '');
     if (preg_match('#^(https?://|/)#', $iconCandidate) === 1) {
