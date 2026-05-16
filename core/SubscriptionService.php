@@ -5,6 +5,7 @@ namespace Core;
 class SubscriptionService
 {
     private Database $db;
+    private array $tableColumnsCache = [];
     private const APP_CONFIG = [
         'platform' => [
             'label' => 'MMB Platform',
@@ -629,6 +630,9 @@ class SubscriptionService
             'payment_cashfree_sandbox' => '1',
             'payment_currency' => 'INR',
             'payment_manual_review_enabled' => '1',
+            'payment_upi_logo' => '',
+            'payment_cashfree_logo' => '',
+            'payment_manual_review_logo' => '',
             'require_mobile_verification' => '0',
             'payment_default_refund_days' => '7',
             'payment_default_cancel_days' => '0',
@@ -673,6 +677,9 @@ class SubscriptionService
             'payment_manual_review_enabled' => !empty($input['payment_manual_review_enabled']) ? '1' : '0',
             'payment_default_refund_days' => max(0, (int) ($input['payment_default_refund_days'] ?? 7)),
             'payment_default_cancel_days' => max(0, (int) ($input['payment_default_cancel_days'] ?? 0)),
+            'payment_upi_logo' => trim((string) ($input['payment_upi_logo'] ?? '')),
+            'payment_cashfree_logo' => trim((string) ($input['payment_cashfree_logo'] ?? '')),
+            'payment_manual_review_logo' => trim((string) ($input['payment_manual_review_logo'] ?? '')),
         ];
 
         foreach ($data as $key => $value) {
@@ -1514,9 +1521,10 @@ class SubscriptionService
         $rows = $this->db->fetchAll(
             "SELECT sp.*
              FROM subscription_payments sp
-             WHERE sp.user_id = ?
-               AND sp.status = 'paid'
-             ORDER BY sp.id DESC",
+              WHERE sp.user_id = ?
+                AND sp.status = 'paid'
+                AND sp.amount > 0
+              ORDER BY sp.id DESC",
             [$userId]
         ) ?: [];
 
@@ -1588,19 +1596,21 @@ class SubscriptionService
                 // Cancel the linked subscription row in the app table
                 if (!empty($payment['subscription_id'])) {
                     if ($payment['app_key'] === 'whatsapp') {
-                        $this->db->query(
-                            "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        $this->cancelSubscriptionTableRows(
+                            'whatsapp_subscriptions',
+                            'status',
+                            null,
+                            'id = ?',
                             [(int) $payment['subscription_id']]
                         );
                     } elseif ($config !== null) {
-                        $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
-                        $sql = "UPDATE {$config['subscription_table']}
-                                SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
-                        if ($cancelledColumn) {
-                            $sql .= ", {$cancelledColumn} = NOW()";
-                        }
-                        $sql .= " WHERE id = ?";
-                        $this->db->query($sql, [(int) $payment['subscription_id']]);
+                        $this->cancelSubscriptionTableRows(
+                            (string) $config['subscription_table'],
+                            (string) $config['subscription_status_column'],
+                            $config['subscription_cancelled_column'] ?? null,
+                            'id = ?',
+                            [(int) $payment['subscription_id']]
+                        );
                     }
                 }
 
@@ -1617,13 +1627,18 @@ class SubscriptionService
                 $appKey = (string) ($payment['app_key'] ?? '');
                 $appConfig = self::APP_CONFIG[$appKey] ?? null;
                 if ($appConfig !== null && !empty($payment['plan_id'])) {
-                    $subTable  = $appConfig['subscription_table'];
-                    $userCol   = $appConfig['subscription_user_column'];
-                    $planCol   = $appConfig['subscription_plan_column'];
-                    $statusCol = $appConfig['subscription_status_column'];
-                    $this->db->query(
-                        "UPDATE `{$subTable}` SET `{$statusCol}` = 'cancelled', updated_at = NOW()
-                         WHERE `{$userCol}` = ? AND `{$planCol}` = ? AND `{$statusCol}` != 'cancelled'",
+                    $subTable = (string) $appConfig['subscription_table'];
+                    $statusCol = (string) $appConfig['subscription_status_column'];
+                    $this->cancelSubscriptionTableRows(
+                        $subTable,
+                        $statusCol,
+                        $appConfig['subscription_cancelled_column'] ?? null,
+                        sprintf(
+                            '`%s` = ? AND `%s` = ? AND `%s` != \'cancelled\'',
+                            $appConfig['subscription_user_column'],
+                            $appConfig['subscription_plan_column'],
+                            $statusCol
+                        ),
                         [(int) $userId, (int) $payment['plan_id']]
                     );
                 }
@@ -2637,6 +2652,42 @@ HTML;
             } catch (\Throwable $e) {
             }
         }
+    }
+
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        if (!isset($this->tableColumnsCache[$table])) {
+            try {
+                $cols = $this->db->fetchAll("SHOW COLUMNS FROM `{$table}`");
+                $this->tableColumnsCache[$table] = array_map(
+                    static fn(array $row) => (string) ($row['Field'] ?? ''),
+                    $cols ?: []
+                );
+            } catch (\Throwable $e) {
+                $this->tableColumnsCache[$table] = [];
+            }
+        }
+        return in_array($column, $this->tableColumnsCache[$table], true);
+    }
+
+    private function cancelSubscriptionTableRows(
+        string $table,
+        string $statusColumn,
+        ?string $cancelledColumn,
+        string $whereClause,
+        array $params
+    ): void {
+        $setParts = ["`{$statusColumn}` = 'cancelled'"];
+        if ($cancelledColumn !== null && $cancelledColumn !== '' && $this->tableHasColumn($table, $cancelledColumn)) {
+            $setParts[] = "`{$cancelledColumn}` = NOW()";
+        }
+        if ($this->tableHasColumn($table, 'updated_at')) {
+            $setParts[] = "`updated_at` = NOW()";
+        }
+        $this->db->query(
+            "UPDATE `{$table}` SET " . implode(', ', $setParts) . " WHERE {$whereClause}",
+            $params
+        );
     }
 
     private function getAppConfig(string $appKey): ?array

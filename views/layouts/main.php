@@ -982,14 +982,21 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
             justify-content: center;
             padding: 0 16px;
         }
-        @media (max-width: 1024px) {
-            footer { display: none !important; }
+        .site-footer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 32px;
+            padding-bottom: 32px;
         }
-        
-        /* Show footer only on home/pages for mobile/tablet */
         @media (max-width: 1024px) {
-            .site-footer-wrap { display: none; }
-            .site-footer-wrap.footer-always-show { display: block; }
+            .site-footer-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 640px) {
+            .site-footer-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
         /* Grid */
@@ -2543,7 +2550,7 @@ window.mmbSkeleton = (function(){
     <!-- Homepage 3-column footer -->
     <footer style="background:var(--bg-secondary);border-top:1px solid var(--border-color);margin-top:40px;padding:40px 0 0;">
         <div class="container" style="max-width:1200px;margin:0 auto;padding:0 24px;">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;padding-bottom:32px;">
+            <div class="site-footer-grid">
                 <!-- Column 1 -->
                 <div>
                     <div style="font-weight:800;font-size:.95rem;color:var(--text-primary);margin-bottom:12px;letter-spacing:.02em;">

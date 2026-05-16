@@ -5,6 +5,24 @@
 <style>
 /* ── Plans page ──────────────────────────────────────────────────────────── */
 .plans-page { max-width: 980px; }
+.plans-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    gap: 24px;
+    align-items: start;
+}
+.plans-col {
+    min-width: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+}
+.plans-history-list {
+    max-height: 560px;
+    overflow: auto;
+    border-radius: 10px;
+}
 
 /* Section titles */
 .plans-section-title {
@@ -68,6 +86,7 @@
 
 /* Responsive */
 @media (max-width: 640px) {
+    .plans-layout { grid-template-columns: 1fr; }
     .app-sub-row { grid-template-columns: 40px 1fr; gap: 12px; padding: 14px; }
     .app-actions { grid-column: 1 / -1; gap: 6px; }
     .btn-app { padding: 7px 12px; font-size: .76rem; }
@@ -105,8 +124,9 @@
         <p style="color:var(--text-secondary);font-size:.875rem;">Manage your active subscriptions and explore upgrade options for each application.</p>
     </div>
 
+    <div class="plans-layout">
     <!-- ── Section 1: Application Plans ── -->
-    <section style="margin-bottom:28px;">
+    <section class="plans-col">
         <p class="plans-section-title">
             <i class="fas fa-th-large" style="color:var(--purple);"></i>
             Application Plans
@@ -167,8 +187,7 @@
     </section>
 
     <?php if (!empty($paymentHistory) || ($payTotal ?? 0) > 0): ?>
-    <hr class="plans-divider">
-    <section id="payment-history" style="margin-bottom:28px;">
+    <section id="payment-history" class="plans-col">
         <p class="plans-section-title">
             <i class="fas fa-history" style="color:var(--magenta);"></i>
             Payment History
@@ -176,7 +195,7 @@
             <span style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;padding:2px 10px;font-size:.7rem;font-weight:600;color:var(--text-secondary);"><?= (int) $payTotal ?> total</span>
             <?php endif; ?>
         </p>
-        <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;overflow:hidden;">
+        <div class="plans-history-list" style="border:1px solid var(--border-color);">
             <?php foreach ($paymentHistory as $payment): ?>
             <div class="history-row">
                 <div>
@@ -232,6 +251,7 @@
         <?php endif; ?>
     </section>
     <?php endif; ?>
+    </div>
 
 </div>
 

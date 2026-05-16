@@ -13,6 +13,7 @@
     color:var(--text-primary); padding:9px 12px; font-size:.9rem; width:100%; max-width:500px; box-sizing:border-box;
 }
 .form-group input:focus, .form-group select:focus { outline:none; border-color:var(--cyan); }
+.form-group input[type="file"] { max-width:500px; }
 .toggle-row { display:flex; align-items:center; gap:12px; }
 .toggle-switch { position:relative; width:48px; height:26px; flex-shrink:0; }
 .toggle-switch input { opacity:0; width:0; height:0; }
@@ -22,6 +23,9 @@
 .toggle-switch input:checked + .slider::before { transform:translateX(22px); background:#fff; }
 .alert-success { background:rgba(0,255,136,.1); color:var(--green); border:1px solid var(--green); padding:12px 16px; border-radius:8px; margin-bottom:20px; }
 .alert-danger  { background:rgba(255,107,107,.1); color:var(--red); border:1px solid var(--red); padding:12px 16px; border-radius:8px; margin-bottom:20px; }
+.gateway-logo-preview-wrap { display:flex; align-items:center; gap:10px; }
+.gateway-logo-preview { width:62px; height:62px; border-radius:10px; border:1px solid var(--border-color); background:#fff; object-fit:contain; padding:6px; }
+.gateway-remove { display:inline-flex; align-items:center; gap:8px; font-size:.84rem; color:var(--text-secondary); }
 </style>
 <?php View::endSection(); ?>
 
@@ -40,7 +44,7 @@
 <div class="alert-danger"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
 <?php endif; ?>
 
-<form method="POST" action="/admin/payment-settings">
+<form method="POST" action="/admin/payment-settings" enctype="multipart/form-data">
     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf) ?>">
 
     <!-- General -->
@@ -114,6 +118,23 @@
                    placeholder="yourname@phonepe" style="max-width:340px;">
             <small>This UPI ID is used to generate the payment QR code for each plan amount.</small>
         </div>
+        <div class="form-group">
+            <label for="payment_upi_logo">Gateway Logo URL (optional)</label>
+            <input type="text" id="payment_upi_logo" name="payment_upi_logo"
+                   value="<?= htmlspecialchars($settings['payment_upi_logo'] ?? '') ?>"
+                   placeholder="/uploads/payment-gateways/upi-logo.png or https://...">
+            <small>Optional custom logo shown in plan checkout for UPI payment method.</small>
+        </div>
+        <div class="form-group">
+            <label for="payment_upi_logo_file">Upload UPI Logo (optional)</label>
+            <input type="file" id="payment_upi_logo_file" name="payment_upi_logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+            <?php if (!empty($settings['payment_upi_logo'])): ?>
+            <div class="gateway-logo-preview-wrap">
+                <img src="<?= htmlspecialchars($settings['payment_upi_logo']) ?>" alt="UPI logo" class="gateway-logo-preview">
+                <label class="gateway-remove"><input type="checkbox" name="remove_payment_upi_logo" value="1"> Remove current logo</label>
+            </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Cashfree -->
@@ -156,6 +177,44 @@
                 <span style="font-size:.9rem;">Use sandbox (test) environment</span>
             </div>
             <small>Disable sandbox when you are ready for live payments.</small>
+        </div>
+        <div class="form-group">
+            <label for="payment_cashfree_logo">Gateway Logo URL (optional)</label>
+            <input type="text" id="payment_cashfree_logo" name="payment_cashfree_logo"
+                   value="<?= htmlspecialchars($settings['payment_cashfree_logo'] ?? '') ?>"
+                   placeholder="/uploads/payment-gateways/cashfree-logo.png or https://...">
+            <small>Optional custom logo shown in plan checkout for Cashfree.</small>
+        </div>
+        <div class="form-group">
+            <label for="payment_cashfree_logo_file">Upload Cashfree Logo (optional)</label>
+            <input type="file" id="payment_cashfree_logo_file" name="payment_cashfree_logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+            <?php if (!empty($settings['payment_cashfree_logo'])): ?>
+            <div class="gateway-logo-preview-wrap">
+                <img src="<?= htmlspecialchars($settings['payment_cashfree_logo']) ?>" alt="Cashfree logo" class="gateway-logo-preview">
+                <label class="gateway-remove"><input type="checkbox" name="remove_payment_cashfree_logo" value="1"> Remove current logo</label>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="pay-card">
+        <h3><i class="fas fa-clipboard-check"></i> Manual Review</h3>
+        <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:16px;">Optional branding for the Manual Review payment method tile.</p>
+        <div class="form-group">
+            <label for="payment_manual_review_logo">Gateway Logo URL (optional)</label>
+            <input type="text" id="payment_manual_review_logo" name="payment_manual_review_logo"
+                   value="<?= htmlspecialchars($settings['payment_manual_review_logo'] ?? '') ?>"
+                   placeholder="/uploads/payment-gateways/manual-review-logo.png or https://...">
+        </div>
+        <div class="form-group">
+            <label for="payment_manual_review_logo_file">Upload Manual Review Logo (optional)</label>
+            <input type="file" id="payment_manual_review_logo_file" name="payment_manual_review_logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+            <?php if (!empty($settings['payment_manual_review_logo'])): ?>
+            <div class="gateway-logo-preview-wrap">
+                <img src="<?= htmlspecialchars($settings['payment_manual_review_logo']) ?>" alt="Manual review logo" class="gateway-logo-preview">
+                <label class="gateway-remove"><input type="checkbox" name="remove_payment_manual_review_logo" value="1"> Remove current logo</label>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 

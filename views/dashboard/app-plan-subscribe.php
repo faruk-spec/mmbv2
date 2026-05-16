@@ -82,6 +82,10 @@
     width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
 }
+.pay-method-logo {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    object-fit: contain; border: 1px solid var(--border-color); background: #fff; padding: 4px;
+}
 .pay-method-icon.upi      { background: rgba(0,240,255,.12); color: var(--cyan); }
 .pay-method-icon.cashfree { background: rgba(153,69,255,.15); color: var(--purple); }
 .pay-method-icon.manual   { background: rgba(0,255,136,.1);  color: var(--green); }
@@ -162,6 +166,9 @@
 <?php
 $invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
 $appLogoUrl = $appMeta['logo_url'] ?? '';
+$upiGatewayLogo = trim((string) ($paymentSettings['payment_upi_logo'] ?? ''));
+$cashfreeGatewayLogo = trim((string) ($paymentSettings['payment_cashfree_logo'] ?? ''));
+$manualGatewayLogo = trim((string) ($paymentSettings['payment_manual_review_logo'] ?? ''));
 if ($appLogoUrl === '') {
     $iconCandidate = (string) ($appMeta['icon'] ?? '');
     if (preg_match('#^(https?://|/)#', $iconCandidate) === 1) {
@@ -170,6 +177,12 @@ if ($appLogoUrl === '') {
 }
 ?>
 <div class="sub-wrap">
+    <?php if (\Core\Helpers::hasFlash('error')): ?>
+    <div class="alert alert-error" style="margin-bottom:14px;"><?= View::e(\Core\Helpers::getFlash('error')) ?></div>
+    <?php endif; ?>
+    <?php if (\Core\Helpers::hasFlash('success')): ?>
+    <div class="alert alert-success" style="margin-bottom:14px;"><?= View::e(\Core\Helpers::getFlash('success')) ?></div>
+    <?php endif; ?>
 
     <!-- Back link -->
     <a href="<?= View::e($appMeta['url'] ?? '/plans') ?>"
@@ -291,6 +304,9 @@ if ($appLogoUrl === '') {
                         if ($defaultPaymentMethod === 'upi' && !$hasUpi) {
                             $defaultPaymentMethod = $cashfreeEnabled ? 'cashfree' : 'request';
                         }
+                        if ($defaultPaymentMethod === 'request' && !$canUseManualReview) {
+                            $defaultPaymentMethod = $hasUpi ? 'upi' : ($cashfreeEnabled ? 'cashfree' : '');
+                        }
                         $anyMethodAvailable = $hasUpi || $cashfreeEnabled || $canUseManualReview;
                         ?>
 
@@ -305,7 +321,11 @@ if ($appLogoUrl === '') {
                         <label class="pay-method-tile">
                             <input type="radio" name="payment_method" value="upi" <?= $defaultPaymentMethod === 'upi' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
+                            <?php if ($upiGatewayLogo !== ''): ?>
+                            <img src="<?= View::e($upiGatewayLogo) ?>" alt="UPI logo" class="pay-method-logo">
+                            <?php else: ?>
                             <div class="pay-method-icon upi"><i class="fas fa-qrcode"></i></div>
+                            <?php endif; ?>
                             <div style="flex:1;">
                                 <div class="pay-method-label">UPI / QR Code</div>
                                 <div class="pay-method-desc">Scan QR or use UPI app to pay instantly</div>
@@ -318,7 +338,11 @@ if ($appLogoUrl === '') {
                         <label class="pay-method-tile">
                             <input type="radio" name="payment_method" value="cashfree" <?= $defaultPaymentMethod === 'cashfree' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
+                            <?php if ($cashfreeGatewayLogo !== ''): ?>
+                            <img src="<?= View::e($cashfreeGatewayLogo) ?>" alt="Cashfree logo" class="pay-method-logo">
+                            <?php else: ?>
                             <div class="pay-method-icon cashfree"><i class="fas fa-bolt"></i></div>
+                            <?php endif; ?>
                             <div style="flex:1;">
                                 <div class="pay-method-label">Cashfree Payments</div>
                                 <div class="pay-method-desc">Cards, UPI, Netbanking via Cashfree</div>
@@ -331,7 +355,11 @@ if ($appLogoUrl === '') {
                         <label class="pay-method-tile">
                             <input type="radio" name="payment_method" value="request" <?= $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
+                            <?php if ($manualGatewayLogo !== ''): ?>
+                            <img src="<?= View::e($manualGatewayLogo) ?>" alt="Manual review logo" class="pay-method-logo">
+                            <?php else: ?>
                             <div class="pay-method-icon manual"><i class="fas fa-clipboard-check"></i></div>
+                            <?php endif; ?>
                             <div style="flex:1;">
                                 <div class="pay-method-label">Manual Review</div>
                                 <div class="pay-method-desc">Admin verifies and activates your plan</div>
