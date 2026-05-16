@@ -209,14 +209,6 @@ body {
     max-height: 36px;
 }
 
-<?php if (!empty($navbarSettings['navbar_text_color'])): ?>
-.universal-header .logo {
-    color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?> !important;
-    -webkit-text-fill-color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?> !important;
-    text-shadow: 0 0 8px <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>99, 0 0 20px <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>55 !important;
-}
-<?php endif; ?>
-
 .universal-nav {
     display: flex;
     gap: 20px;
