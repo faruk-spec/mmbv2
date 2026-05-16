@@ -1798,33 +1798,37 @@ class SubscriptionService
 
     public function getAdminPayments(?string $appKey = null): array
     {
+        $orderSql = $this->buildAdminPaymentStatusOrderSql('sp.status');
+
         if ($appKey !== null) {
             return $this->db->fetchAll(
                 "SELECT sp.*, u.name AS user_name, u.email AS user_email
-                 FROM subscription_payments sp
-                 JOIN users u ON u.id = sp.user_id
-                 WHERE sp.app_key = ?
-                 ORDER BY FIELD(sp.status,'verification_pending','pending','paid','failed','cancelled'), sp.id DESC",
+                  FROM subscription_payments sp
+                  LEFT JOIN users u ON u.id = sp.user_id
+                  WHERE sp.app_key = ?
+                  ORDER BY {$orderSql}, sp.id DESC",
                 [$appKey]
             );
         }
 
         return $this->db->fetchAll(
             "SELECT sp.*, u.name AS user_name, u.email AS user_email
-             FROM subscription_payments sp
-             JOIN users u ON u.id = sp.user_id
-             ORDER BY FIELD(sp.status,'verification_pending','pending','paid','failed','cancelled'), sp.id DESC"
+              FROM subscription_payments sp
+              LEFT JOIN users u ON u.id = sp.user_id
+              ORDER BY {$orderSql}, sp.id DESC"
         );
     }
 
     public function getAdminRefundPayments(): array
     {
+        $orderSql = $this->buildAdminRefundStatusOrderSql('sp.refund_status');
+
         return $this->db->fetchAll(
             "SELECT sp.*, u.name AS user_name, u.email AS user_email
-             FROM subscription_payments sp
-             JOIN users u ON u.id = sp.user_id
-             WHERE sp.refund_status IN ('requested','approved','refunded','rejected')
-             ORDER BY FIELD(sp.refund_status,'requested','approved','refunded','rejected'), sp.refund_requested_at DESC, sp.id DESC"
+              FROM subscription_payments sp
+              LEFT JOIN users u ON u.id = sp.user_id
+              WHERE sp.refund_status IN ('requested','approved','refunded','rejected')
+              ORDER BY {$orderSql}, sp.refund_requested_at DESC, sp.id DESC"
         );
     }
 
@@ -3133,5 +3137,28 @@ HTML;
     {
         $value = strtoupper(trim((string) $currency));
         return $value !== '' ? $value : 'USD';
+    }
+
+    private function buildAdminPaymentStatusOrderSql(string $column): string
+    {
+        return "CASE {$column}
+            WHEN 'verification_pending' THEN 1
+            WHEN 'pending' THEN 2
+            WHEN 'paid' THEN 3
+            WHEN 'failed' THEN 4
+            WHEN 'cancelled' THEN 5
+            ELSE 6
+        END";
+    }
+
+    private function buildAdminRefundStatusOrderSql(string $column): string
+    {
+        return "CASE {$column}
+            WHEN 'requested' THEN 1
+            WHEN 'approved' THEN 2
+            WHEN 'refunded' THEN 3
+            WHEN 'rejected' THEN 4
+            ELSE 5
+        END";
     }
 }

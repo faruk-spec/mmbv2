@@ -18,8 +18,12 @@ class SubscriptionPaymentsController extends BaseController
         $this->requireAuth();
         $this->requireAdmin();
         $this->subscriptionService = new SubscriptionService(Database::getInstance());
-        $this->subscriptionService->ensureInfrastructure();
-        $this->subscriptionService->ensureNotificationTemplates();
+        try {
+            $this->subscriptionService->ensureInfrastructure();
+            $this->subscriptionService->ensureNotificationTemplates();
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionPaymentsController::__construct - ' . $e->getMessage());
+        }
     }
 
     public function index(): void
