@@ -2456,6 +2456,12 @@ window.mmbSkeleton = (function(){
                                 <span>Refunds</span>
                             </a>
                             <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/paid-plan-users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/paid-plan-users') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-user-times"></i>
+                                <span>Users with Paid Plans</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.session')): ?>
                             <a href="/admin/settings/session" class="menu-link">
                                 <i class="fas fa-clock"></i>

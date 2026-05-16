@@ -1468,6 +1468,189 @@ class SubscriptionService
         );
     }
 
+    /**
+     * Return a list of users who currently hold at least one active paid
+     * (price > 0) subscription — either a platform plan or an app-level
+     * subscription_payment with status = 'paid'.
+     *
+     * @return array  Each row has: user_id, user_name, user_email, plan_sources (comma list)
+     */
+    public function getUsersWithActivePaidPlans(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT u.id AS user_id, u.name AS user_name, u.email AS user_email,
+                    GROUP_CONCAT(DISTINCT src.source ORDER BY src.source SEPARATOR ', ') AS plan_sources
+             FROM users u
+             JOIN (
+                 /* Platform subscriptions with a non-free plan */
+                 SELECT s.user_id, 'platform' AS source
+                 FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                   AND p.price > 0
+                 UNION
+                 /* App-specific paid payments still active */
+                 SELECT sp.user_id, sp.app_key AS source
+                 FROM subscription_payments sp
+                 WHERE sp.status = 'paid'
+                   AND sp.app_key != 'platform'
+             ) AS src ON src.user_id = u.id
+             GROUP BY u.id, u.name, u.email
+             ORDER BY u.name ASC"
+        ) ?: [];
+    }
+
+    /**
+     * Return all active paid subscription_payments for a user, enriched with
+     * refund-eligibility information.
+     *
+     * @return array  Each row is a subscription_payments row plus:
+     *                app_label, refund_eligible (bool), refund_amount, refund_days_left
+     */
+    public function getUserActivePaidPayments(int $userId): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT sp.*
+             FROM subscription_payments sp
+             WHERE sp.user_id = ?
+               AND sp.status = 'paid'
+             ORDER BY sp.id DESC",
+            [$userId]
+        ) ?: [];
+
+        $appLabels = array_column(self::APP_CONFIG, 'label', null);
+        $result = [];
+        foreach ($rows as $row) {
+            $appKey = (string) ($row['app_key'] ?? '');
+            $row['app_label'] = self::APP_CONFIG[$appKey]['label'] ?? ucfirst($appKey);
+
+            $refundCheck = $this->canRequestRefund($row);
+            $row['refund_eligible'] = $refundCheck['allowed'];
+            $row['refund_amount']   = $refundCheck['allowed'] ? (float) ($row['amount'] ?? 0) : 0.0;
+            $row['refund_days_left'] = 0;
+            if ($refundCheck['allowed'] && !empty($refundCheck['deadline'])) {
+                $row['refund_days_left'] = max(0, (int) ceil(($refundCheck['deadline'] - time()) / 86400));
+            }
+            $result[] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Admin bulk-cancel a user's selected paid subscriptions and auto-assign
+     * the free platform plan.
+     *
+     * For each cancelled payment:
+     *  - Marks payment as 'cancelled'.
+     *  - If $issueRefund is true AND the payment is refund-eligible, auto-creates
+     *    a refund request (status = 'requested') so admin can approve it on the
+     *    refunds page. (The caller already confirmed via popup.)
+     *  - Optionally sends the cancellation notification email.
+     *
+     * After all cancellations the user is guaranteed to have the free plan.
+     *
+     * @param int   $userId      Target user.
+     * @param int[] $paymentIds  IDs of subscription_payments rows to cancel.
+     * @param bool  $issueRefund Whether to auto-create refund requests where eligible.
+     * @param bool  $notify      Whether to send cancellation email to the user.
+     * @param int   $adminId     Acting admin.
+     * @return array ['cancelled' => int, 'refunds_queued' => int]
+     */
+    public function adminBulkCancelUserPlans(
+        int $userId,
+        array $paymentIds,
+        bool $issueRefund,
+        bool $notify,
+        int $adminId
+    ): array {
+        $cancelled     = 0;
+        $refundsQueued = 0;
+
+        foreach ($paymentIds as $rawId) {
+            $paymentId = (int) $rawId;
+            if ($paymentId <= 0) {
+                continue;
+            }
+
+            $payment = $this->db->fetch(
+                "SELECT * FROM subscription_payments WHERE id = ? AND user_id = ? LIMIT 1",
+                [$paymentId, $userId]
+            );
+            if (!$payment || $payment['status'] !== 'paid') {
+                continue;
+            }
+
+            $config = $this->getAppConfig((string) $payment['app_key']);
+
+            try {
+                // Cancel the linked subscription row in the app table
+                if (!empty($payment['subscription_id'])) {
+                    if ($payment['app_key'] === 'whatsapp') {
+                        $this->db->query(
+                            "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                            [(int) $payment['subscription_id']]
+                        );
+                    } elseif ($config !== null) {
+                        $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                        $sql = "UPDATE {$config['subscription_table']}
+                                SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                        if ($cancelledColumn) {
+                            $sql .= ", {$cancelledColumn} = NOW()";
+                        }
+                        $sql .= " WHERE id = ?";
+                        $this->db->query($sql, [(int) $payment['subscription_id']]);
+                    }
+                }
+
+                // Cancel the payment record
+                $this->db->query(
+                    "UPDATE subscription_payments
+                     SET status = 'cancelled', cancel_requested_at = NOW(), updated_at = NOW()
+                     WHERE id = ?",
+                    [$paymentId]
+                );
+                $cancelled++;
+
+                // Auto-queue refund if eligible and requested
+                if ($issueRefund) {
+                    $refundCheck = $this->canRequestRefund($payment);
+                    if (
+                        $refundCheck['allowed']
+                        && ($payment['refund_status'] ?? 'none') === 'none'
+                        && (float) ($payment['amount'] ?? 0) > 0
+                    ) {
+                        $this->db->query(
+                            "UPDATE subscription_payments
+                             SET refund_status = 'requested', refund_requested_at = NOW(), updated_at = NOW()
+                             WHERE id = ?",
+                            [$paymentId]
+                        );
+                        $refundsQueued++;
+                    }
+                }
+
+                Logger::activity($adminId, 'admin_bulk_subscription_cancelled', [
+                    'payment_id' => $paymentId,
+                    'user_id'    => $userId,
+                    'refund'     => $issueRefund,
+                ]);
+
+                if ($notify) {
+                    $this->sendCancellationEmail($paymentId, $issueRefund && ($this->canRequestRefund($payment)['allowed'] ?? false));
+                }
+            } catch (\Throwable $e) {
+                Logger::error('SubscriptionService::adminBulkCancelUserPlans payment ' . $paymentId . ' - ' . $e->getMessage());
+            }
+        }
+
+        // Always ensure the user lands on the free platform plan
+        $this->ensureUserHasDefaultPlatformPlan($userId);
+
+        return ['cancelled' => $cancelled, 'refunds_queued' => $refundsQueued];
+    }
+
     public function markUserPaymentSubmitted(int $paymentId, int $userId): bool
     {
         $payment = $this->getUserPayment($paymentId, $userId);
