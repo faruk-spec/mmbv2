@@ -257,7 +257,9 @@ class PlansController extends BaseController
                 $this->redirect('/plans');
                 return;
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+            Logger::error('PlansController::processSubscribe duplicate subscription check failed — ' . $e->getMessage());
+        }
 
         $payment = $this->subscriptionService->createOrReusePayment([
             'user_id' => $userId,

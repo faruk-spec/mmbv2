@@ -1490,18 +1490,11 @@ class SubscriptionService
                    AND (s.expires_at IS NULL OR s.expires_at > NOW())
                    AND p.price > 0
                  UNION
-                 /* Platform paid payments */
-                 SELECT sp.user_id, 'platform' AS source
+                 /* App-specific and platform paid payments */
+                 SELECT sp.user_id,
+                        CASE WHEN sp.app_key = 'platform' THEN 'platform' ELSE sp.app_key END AS source
                  FROM subscription_payments sp
                  WHERE sp.status = 'paid'
-                   AND sp.app_key = 'platform'
-                   AND sp.amount > 0
-                 UNION
-                 /* App-specific paid payments still active */
-                 SELECT sp.user_id, sp.app_key AS source
-                 FROM subscription_payments sp
-                 WHERE sp.status = 'paid'
-                   AND sp.app_key != 'platform'
                    AND sp.amount > 0
              ) AS src ON src.user_id = u.id
              GROUP BY u.id, u.name, u.email
