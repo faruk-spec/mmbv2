@@ -6,6 +6,7 @@ class SubscriptionService
 {
     private Database $db;
     private array $tableColumnsCache = [];
+    private ?array $paymentSettingsCache = null;
     private const APP_CONFIG = [
         'platform' => [
             'label' => 'MMB Platform',
@@ -668,6 +669,11 @@ class SubscriptionService
 
     public function getPaymentSettings(bool $forDisplay = false): array
     {
+        // Use instance cache for non-display calls (display masks the secret)
+        if (!$forDisplay && $this->paymentSettingsCache !== null) {
+            return $this->paymentSettingsCache;
+        }
+
         $defaults = [
             'payment_method' => 'request',
             'payment_upi_id' => '',
@@ -702,6 +708,8 @@ class SubscriptionService
             $plain = $defaults['payment_cashfree_secret'];
             $defaults['payment_cashfree_secret'] = $plain === '' ? '' : '••••••••';
             $defaults['payment_cashfree_secret_set'] = $plain !== '';
+        } else {
+            $this->paymentSettingsCache = $defaults;
         }
 
         return $defaults;
