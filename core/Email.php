@@ -302,6 +302,8 @@ class Email
         }
         
         // Default layout
+        $appName = $data['app_name'] ?? 'MMB Platform';
+        $year = date('Y');
         return <<<HTML
 <!DOCTYPE html>
 <html>
@@ -319,13 +321,13 @@ class Email
 <body>
     <div class="container">
         <div class="header">
-            <h1>{$data['app_name'] ?? 'MMB Platform'}</h1>
+            <h1>{$appName}</h1>
         </div>
         <div class="content">
             {$content}
         </div>
         <div class="footer">
-            <p>&copy; " . date('Y') . " {$data['app_name'] ?? 'MMB Platform'}. All rights reserved.</p>
+            <p>&copy; {$year} {$appName}. All rights reserved.</p>
         </div>
     </div>
 </body>
