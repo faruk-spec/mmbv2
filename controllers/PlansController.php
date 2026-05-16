@@ -736,6 +736,7 @@ class PlansController extends BaseController
                  FROM qr_user_subscriptions s
                  JOIN qr_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$userId]
             );
@@ -756,6 +757,7 @@ class PlansController extends BaseController
                  FROM convertx_user_subscriptions s
                  JOIN convertx_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$userId]
             );
@@ -776,8 +778,9 @@ class PlansController extends BaseController
                         s.start_date AS started_at, s.end_date AS expires_at
                  FROM whatsapp_subscriptions s
                  LEFT JOIN whatsapp_subscription_plans p
-                   ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
+                  ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.end_date IS NULL OR s.end_date > NOW())
                  ORDER BY s.created_at DESC LIMIT 1",
                 [$userId]
             );
@@ -798,6 +801,7 @@ class PlansController extends BaseController
                  FROM resumex_user_subscriptions s
                  JOIN resumex_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$userId]
             );

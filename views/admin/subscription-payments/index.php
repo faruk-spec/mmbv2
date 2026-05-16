@@ -84,19 +84,24 @@
         <tbody>
         <?php foreach ($payments as $payment): ?>
             <?php
-            $statusClass = match ($payment['status']) {
-                'paid'   => 'sp-badge-paid',
-                'verification_pending', 'pending' => 'sp-badge-pending',
-                'failed' => 'sp-badge-failed',
-                'cancelled' => 'sp-badge-cancelled',
-                default => 'sp-badge-default',
-            };
+            $status = (string) ($payment['status'] ?? '');
+            $statusClass = 'sp-badge-default';
+            if ($status === 'paid') {
+                $statusClass = 'sp-badge-paid';
+            } elseif ($status === 'verification_pending' || $status === 'pending') {
+                $statusClass = 'sp-badge-pending';
+            } elseif ($status === 'failed') {
+                $statusClass = 'sp-badge-failed';
+            } elseif ($status === 'cancelled') {
+                $statusClass = 'sp-badge-cancelled';
+            }
             $refundStatus = $payment['refund_status'] ?? 'none';
-            $refundClass = match ($refundStatus) {
-                'requested' => 'sp-badge-refund-req',
-                'refunded', 'approved' => 'sp-badge-refund-ok',
-                default => '',
-            };
+            $refundClass = '';
+            if ($refundStatus === 'requested') {
+                $refundClass = 'sp-badge-refund-req';
+            } elseif ($refundStatus === 'refunded' || $refundStatus === 'approved') {
+                $refundClass = 'sp-badge-refund-ok';
+            }
             ?>
             <tr>
                 <td>

@@ -61,6 +61,9 @@ if (!$navbarSettings) {
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
         'navbar_text_color' => null,
+        'logo_text_gradient_enabled' => 0,
+        'logo_text_gradient_start' => '#00f0ff',
+        'logo_text_gradient_end' => '#ff2ec4',
         'navbar_border_color' => null,
         'custom_css' => null,
         'custom_links' => null
@@ -86,6 +89,9 @@ if (!$navbarSettings) {
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
         'navbar_text_color' => null,
+        'logo_text_gradient_enabled' => 0,
+        'logo_text_gradient_start' => '#00f0ff',
+        'logo_text_gradient_end' => '#ff2ec4',
         'navbar_border_color' => null,
         'custom_css' => null,
         'custom_links' => null
@@ -208,6 +214,25 @@ body {
 .universal-header .logo.logo-both img {
     max-height: 36px;
 }
+
+<?php
+$logoGradientEnabled = !empty($navbarSettings['logo_text_gradient_enabled']);
+$logoGradientStart = (string) ($navbarSettings['logo_text_gradient_start'] ?? '#00f0ff');
+$logoGradientEnd = (string) ($navbarSettings['logo_text_gradient_end'] ?? '#ff2ec4');
+$logoGradientStart = preg_match('/^#[0-9A-Fa-f]{6}$/', $logoGradientStart) ? $logoGradientStart : '#00f0ff';
+$logoGradientEnd = preg_match('/^#[0-9A-Fa-f]{6}$/', $logoGradientEnd) ? $logoGradientEnd : '#ff2ec4';
+?>
+<?php if ($logoGradientEnabled): ?>
+.universal-header .logo.logo-text,
+.universal-header .logo.logo-both .logo-text-part {
+    background: linear-gradient(135deg, <?= htmlspecialchars($logoGradientStart) ?>, <?= htmlspecialchars($logoGradientEnd) ?>);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: none;
+}
+<?php endif; ?>
 
 .universal-nav {
     display: flex;
@@ -924,10 +949,10 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
             <a href="/" class="logo logo-both">
                 <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
                      alt="Logo">
-                <span><?= htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME) ?></span>
+                <span class="logo-text-part"><?= htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME) ?></span>
             </a>
         <?php else: ?>
-            <a href="/" class="logo"><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
+            <a href="/" class="logo logo-text"><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
         <?php endif; ?>
         
         <nav class="universal-nav" id="mainNav">

@@ -1189,6 +1189,11 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
             transition: width 0.3s ease, left 0.3s ease;
             min-width: 0;
         }
+
+        .left-sidebar.left-sidebar-unlimited {
+            height: auto;
+            max-height: none;
+        }
         
         .dashboard-main-content {
             padding: 20px;
@@ -1645,7 +1650,7 @@ window.mmbSkeleton = (function(){
             <!-- Dashboard Layout with Left and Right Sidebars -->
             <div class="full-dashboard-layout">
                 <!-- Left Navigation Sidebar -->
-                <aside class="left-sidebar" id="leftSidebar">
+                <aside class="left-sidebar<?= (($title ?? '') === 'My Plans') ? ' left-sidebar-unlimited' : '' ?>" id="leftSidebar">
                     <!-- Toggle Button -->
                     <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                         <span class="sidebar-title" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Navigation</span>

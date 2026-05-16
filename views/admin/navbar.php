@@ -123,9 +123,18 @@
         cursor: pointer;
     }
     
-    .color-input-group input[type="text"] {
-        flex: 1;
-    }
+.color-input-group input[type="text"] {
+    flex: 1;
+}
+
+.logo-gradient-preview {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
     
     .custom-link-item {
         background: var(--bg-secondary);
@@ -279,6 +288,11 @@
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
+<?php
+$settings['logo_text_gradient_enabled'] = (int) ($settings['logo_text_gradient_enabled'] ?? 0);
+$settings['logo_text_gradient_start'] = $settings['logo_text_gradient_start'] ?? '#00f0ff';
+$settings['logo_text_gradient_end'] = $settings['logo_text_gradient_end'] ?? '#ff2ec4';
+?>
 
 <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 24px;">
     <div class="page-header" style="margin-bottom: 32px;">
@@ -443,6 +457,35 @@
                     <input type="color" name="navbar_text_color" value="<?= View::e($settings['navbar_text_color']) ?>">
                     <input type="text" class="form-control" value="<?= View::e($settings['navbar_text_color']) ?>" readonly>
                 </div>
+            </div>
+
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" name="logo_text_gradient_enabled" id="logoTextGradientEnabled" <?= $settings['logo_text_gradient_enabled'] ? 'checked' : '' ?>>
+                    <span class="slider"></span>
+                </label>
+                <span>Enable Logo Text Gradient</span>
+            </div>
+
+            <div id="logoGradientFields" style="<?= $settings['logo_text_gradient_enabled'] ? '' : 'display:none;' ?>">
+                <div class="form-group">
+                    <label>Logo Gradient Start Color</label>
+                    <div class="color-input-group">
+                        <input type="color" name="logo_text_gradient_start" id="logoGradientStart" value="<?= View::e($settings['logo_text_gradient_start']) ?>">
+                        <input type="text" class="form-control" value="<?= View::e($settings['logo_text_gradient_start']) ?>" readonly>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Logo Gradient End Color</label>
+                    <div class="color-input-group">
+                        <input type="color" name="logo_text_gradient_end" id="logoGradientEnd" value="<?= View::e($settings['logo_text_gradient_end']) ?>">
+                        <input type="text" class="form-control" value="<?= View::e($settings['logo_text_gradient_end']) ?>" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logo-gradient-preview" id="logoGradientPreview">
+                <?= View::e($settings['logo_text'] ?: 'MyMultiBranch') ?>
             </div>
             
             <div class="form-group">
@@ -674,6 +717,43 @@ function previewNavbarLogo(input) {
 // Live preview when URL is pasted/typed
 document.addEventListener('DOMContentLoaded', function() {
     const urlInput = document.querySelector('input[name="logo_image_url"]');
+    const logoTextInput = document.querySelector('input[name="logo_text"]');
+    const gradientToggle = document.getElementById('logoTextGradientEnabled');
+    const gradientFields = document.getElementById('logoGradientFields');
+    const gradientStart = document.getElementById('logoGradientStart');
+    const gradientEnd = document.getElementById('logoGradientEnd');
+    const gradientPreview = document.getElementById('logoGradientPreview');
+
+    function updateGradientPreview() {
+        if (!gradientPreview) return;
+        if (logoTextInput) {
+            gradientPreview.textContent = logoTextInput.value.trim() || 'MyMultiBranch';
+        }
+        if (gradientToggle && gradientToggle.checked) {
+            const start = (gradientStart && gradientStart.value) ? gradientStart.value : '#00f0ff';
+            const end = (gradientEnd && gradientEnd.value) ? gradientEnd.value : '#ff2ec4';
+            gradientPreview.style.background = `linear-gradient(135deg, ${start}, ${end})`;
+            gradientPreview.style.webkitBackgroundClip = 'text';
+            gradientPreview.style.backgroundClip = 'text';
+            gradientPreview.style.webkitTextFillColor = 'transparent';
+            gradientPreview.style.color = 'transparent';
+            if (gradientFields) gradientFields.style.display = '';
+        } else {
+            gradientPreview.style.background = 'none';
+            gradientPreview.style.webkitBackgroundClip = 'initial';
+            gradientPreview.style.backgroundClip = 'initial';
+            gradientPreview.style.webkitTextFillColor = 'var(--text-primary)';
+            gradientPreview.style.color = 'var(--text-primary)';
+            if (gradientFields) gradientFields.style.display = 'none';
+        }
+    }
+
+    if (logoTextInput) logoTextInput.addEventListener('input', updateGradientPreview);
+    if (gradientToggle) gradientToggle.addEventListener('change', updateGradientPreview);
+    if (gradientStart) gradientStart.addEventListener('input', updateGradientPreview);
+    if (gradientEnd) gradientEnd.addEventListener('input', updateGradientPreview);
+    updateGradientPreview();
+
     if (urlInput) {
         urlInput.addEventListener('input', function() {
             const preview = document.getElementById('logo-image-preview');

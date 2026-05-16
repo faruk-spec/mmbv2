@@ -524,9 +524,10 @@ class SubscriptionService
                      FROM whatsapp_subscriptions s
                      LEFT JOIN whatsapp_subscription_plans p
                        ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
-                     WHERE s.user_id = ? AND s.status = 'active'
-                     ORDER BY s.created_at DESC
-                     LIMIT 1",
+                      WHERE s.user_id = ? AND s.status = 'active'
+                       AND (s.end_date IS NULL OR s.end_date > NOW())
+                      ORDER BY s.created_at DESC
+                      LIMIT 1",
                     [$userId]
                 );
             } else {
@@ -536,11 +537,12 @@ class SubscriptionService
                             s.{$config['subscription_expires_column']} AS expires_at,
                             p.{$config['plan_name_column']} AS plan_name,
                             p.{$config['plan_slug_column']} AS plan_slug
-                     FROM {$config['subscription_table']} s
-                     JOIN {$config['plan_table']} p ON p.{$config['plan_id_column']} = s.{$config['subscription_plan_column']}
-                     WHERE s.{$config['subscription_user_column']} = ? AND s.{$config['subscription_status_column']} = ?
-                     ORDER BY s.{$config['subscription_started_column']} DESC
-                     LIMIT 1",
+                      FROM {$config['subscription_table']} s
+                      JOIN {$config['plan_table']} p ON p.{$config['plan_id_column']} = s.{$config['subscription_plan_column']}
+                      WHERE s.{$config['subscription_user_column']} = ? AND s.{$config['subscription_status_column']} = ?
+                       AND (s.{$config['subscription_expires_column']} IS NULL OR s.{$config['subscription_expires_column']} > NOW())
+                      ORDER BY s.{$config['subscription_started_column']} DESC
+                      LIMIT 1",
                     [$userId, $config['subscription_active_value']]
                 );
             }
