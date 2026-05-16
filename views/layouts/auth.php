@@ -1,4 +1,4 @@
-<?php use Core\Security; use Core\View; ?>
+<?php use Core\Security; use Core\View; use Core\Database; ?>
 <?php
 $nonce = Security::getCspNonce();
 $pageTitle = trim(($title ?? '') !== '' ? ($title . ' - ' . APP_NAME) : APP_NAME);
@@ -8,9 +8,19 @@ $extraStyles = trim(ob_get_clean());
 ob_start();
 View::yield('scripts');
 $extraScripts = trim(ob_get_clean());
+
+// Fetch default theme from DB (same as main.php / navbar)
+$_authDefaultTheme = 'dark';
+try {
+    $_authDb = Database::getInstance();
+    $_authNavSettings = $_authDb->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
+    if (!empty($_authNavSettings['default_theme'])) {
+        $_authDefaultTheme = $_authNavSettings['default_theme'];
+    }
+} catch (\Exception $_e) {}
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="<?= View::e($_authDefaultTheme) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -485,12 +495,65 @@ $extraScripts = trim(ob_get_clean());
             .auth-actions-row { align-items: flex-start; }
         }
 
+        /* ── Light mode overrides ─────────────────────────────────────────── */
+        [data-theme="light"] {
+            --auth-bg: #f0f4ff;
+            --auth-panel: rgba(255,255,255,0.96);
+            --auth-panel-strong: #ffffff;
+            --auth-border: rgba(0,0,0,0.12);
+            --auth-border-strong: rgba(3,105,161,0.4);
+            --auth-text: #1a1a1a;
+            --auth-muted: #555555;
+            --auth-primary: #0369a1;
+            --auth-primary-dark: #f0f4ff;
+            --auth-primary-soft: rgba(3,105,161,0.08);
+            --auth-danger: #dc2626;
+            --auth-success: #059669;
+            --auth-warning: #d97706;
+            --auth-shadow: 0 30px 70px rgba(0,0,0,0.12);
+        }
+        [data-theme="light"] body { background: #f0f4ff; color: #1a1a1a; }
+        [data-theme="light"] body::before {
+            background: radial-gradient(ellipse at 20% 0%,rgba(3,105,161,.06) 0%,transparent 50%),
+                        radial-gradient(ellipse at 80% 100%,rgba(124,58,237,.05) 0%,transparent 50%);
+        }
+        [data-theme="light"] body::after { animation: none; background: none; }
+        [data-theme="light"] .form-input,
+        [data-theme="light"] .form-control,
+        [data-theme="light"] .tfa-backup-input,
+        [data-theme="light"] .auth-code-input {
+            background: #ffffff;
+            color: #1a1a1a;
+        }
+        [data-theme="light"] .form-input:focus,
+        [data-theme="light"] .form-control:focus,
+        [data-theme="light"] .tfa-backup-input:focus,
+        [data-theme="light"] .auth-code-input:focus {
+            background: #f8faff;
+        }
+        [data-theme="light"] .alert-error {
+            background: rgba(220,38,38,0.08);
+            color: #7f1d1d;
+            border-color: rgba(220,38,38,0.3);
+        }
+        [data-theme="light"] .alert-success {
+            background: rgba(5,150,105,0.08);
+            color: #064e3b;
+            border-color: rgba(5,150,105,0.3);
+        }
+        [data-theme="light"] .alert-info {
+            background: rgba(3,105,161,0.08);
+            color: #0c4a6e;
+            border-color: rgba(3,105,161,0.24);
+        }
+
     </style>
 <?php if ($extraStyles !== ''): ?>
     <style nonce="<?= View::e($nonce) ?>">
 <?= $extraStyles ?>
     </style>
 <?php endif; ?>
+    <script nonce="<?= View::e($nonce) ?>">(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
 </head>
 <body>
     <?php include BASE_PATH . '/views/layouts/navbar.php'; ?>

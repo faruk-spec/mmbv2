@@ -1490,11 +1490,19 @@ class SubscriptionService
                    AND (s.expires_at IS NULL OR s.expires_at > NOW())
                    AND p.price > 0
                  UNION
+                 /* Platform paid payments */
+                 SELECT sp.user_id, 'platform' AS source
+                 FROM subscription_payments sp
+                 WHERE sp.status = 'paid'
+                   AND sp.app_key = 'platform'
+                   AND sp.amount > 0
+                 UNION
                  /* App-specific paid payments still active */
                  SELECT sp.user_id, sp.app_key AS source
                  FROM subscription_payments sp
                  WHERE sp.status = 'paid'
                    AND sp.app_key != 'platform'
+                   AND sp.amount > 0
              ) AS src ON src.user_id = u.id
              GROUP BY u.id, u.name, u.email
              ORDER BY u.name ASC"
@@ -1611,6 +1619,21 @@ class SubscriptionService
                     [$paymentId]
                 );
                 $cancelled++;
+
+                // Also directly cancel any active subscription rows for this user+plan in the app table
+                $appKey = (string) ($payment['app_key'] ?? '');
+                $appConfig = self::APP_CONFIG[$appKey] ?? null;
+                if ($appConfig !== null && !empty($payment['plan_id'])) {
+                    $subTable  = $appConfig['subscription_table'];
+                    $userCol   = $appConfig['subscription_user_column'];
+                    $planCol   = $appConfig['subscription_plan_column'];
+                    $statusCol = $appConfig['subscription_status_column'];
+                    $this->db->query(
+                        "UPDATE `{$subTable}` SET `{$statusCol}` = 'cancelled', updated_at = NOW()
+                         WHERE `{$userCol}` = ? AND `{$planCol}` = ? AND `{$statusCol}` != 'cancelled'",
+                        [(int) $userId, (int) $payment['plan_id']]
+                    );
+                }
 
                 // Auto-queue refund if eligible and requested
                 if ($issueRefund) {

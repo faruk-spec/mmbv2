@@ -245,6 +245,20 @@ class PlansController extends BaseController
         }
 
         $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
+
+        // Block if user already has an active paid subscription for this exact plan
+        try {
+            $alreadyActiveSamePlan = $this->db->fetch(
+                "SELECT id FROM platform_user_subscriptions WHERE user_id = ? AND plan_id = ? AND status = 'active' LIMIT 1",
+                [$userId, $plan['id']]
+            );
+            if ($alreadyActiveSamePlan) {
+                $this->flash('error', 'You already have an active subscription for this plan.');
+                $this->redirect('/plans');
+                return;
+            }
+        } catch (\Exception $e) {}
+
         $payment = $this->subscriptionService->createOrReusePayment([
             'user_id' => $userId,
             'app_key' => 'platform',

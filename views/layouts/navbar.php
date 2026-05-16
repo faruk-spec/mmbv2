@@ -1487,6 +1487,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 }
 </style>
 
+<?php if ($isLoggedIn): ?>
 <!-- ── Logout Confirmation Modal ───────────────────────────────────────────── -->
 <div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
     <!-- Backdrop -->
@@ -1560,3 +1561,4 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     window.closeLogoutModal = closeLogoutModal;
 })();
 </script>
+<?php endif; // $isLoggedIn ?>
