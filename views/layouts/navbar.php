@@ -872,12 +872,11 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--cyan); /* fallback if gradient-clip is unsupported */
-    background: linear-gradient(135deg, var(--cyan), var(--magenta));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .universal-header .logo.logo-both {
@@ -886,24 +885,24 @@ body {
     gap: 8px;
 }
 
-/* Reset gradient-text clip for image logos so the <img> is always visible */
+/* Image logos: constrain size so they never overflow the header */
 .universal-header .logo img {
     display: block;
-    max-height: 40px;
-    -webkit-background-clip: initial;
-    background-clip: initial;
-    -webkit-text-fill-color: initial;
+    max-height: 38px;
+    max-width: 140px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
 .universal-header .logo.logo-both img {
-    max-height: 36px;
+    max-height: 34px;
+    max-width: 120px;
 }
 
 <?php if (!empty($navbarSettings['navbar_text_color'])): ?>
 .universal-header .logo {
     color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?> !important;
-    background: none !important;
-    -webkit-text-fill-color: currentColor !important;
 }
 <?php endif; ?>
 

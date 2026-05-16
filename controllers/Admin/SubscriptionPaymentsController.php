@@ -116,7 +116,9 @@ class SubscriptionPaymentsController extends BaseController
             ? (string) $_POST['decision']
             : 'rejected';
 
-        if ($this->subscriptionService->reviewRefundRequest((int) $id, $decision, Auth::id(), trim((string) ($_POST['reason'] ?? '')))) {
+        $cancelSubscription = !empty($_POST['cancel_subscription']) && $_POST['cancel_subscription'] === '1';
+
+        if ($this->subscriptionService->reviewRefundRequest((int) $id, $decision, Auth::id(), trim((string) ($_POST['reason'] ?? '')), $cancelSubscription)) {
             $this->flash('success', 'Refund request updated.');
         } else {
             $this->flash('error', 'Unable to update refund request.');

@@ -323,6 +323,53 @@ class SubscriptionService
 <p style=\"color:#888;font-size:.85em;\">If you did not request this, you can safely ignore this email.</p>',
                         '[\"name\",\"otp\",\"phone\",\"expires_minutes\"]',
                         1
+                    ),
+                    (
+                        'refund-requested',
+                        'Refund Request Received',
+                        'Your refund request for {{plan_name}} has been received',
+                        '<h2>Hi {{user_name}},</h2>
+<p>We have received your refund request for your <strong>{{plan_name}}</strong> subscription on <strong>{{app_name}}</strong>.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Amount</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{currency}} {{amount}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reference</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{reference}}</td></tr>
+</table>
+<p>Your subscription access has been suspended pending the refund review. An admin will process your request shortly and you will be notified by email once a decision is made.</p>
+<p><a href=\"{{dashboard_url}}\">View your subscription</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"currency\",\"amount\",\"reference\",\"dashboard_url\"]',
+                        1
+                    ),
+                    (
+                        'refund-approved',
+                        'Refund Approved',
+                        'Your refund for {{plan_name}} has been approved',
+                        '<h2>Hi {{user_name}},</h2>
+<p>Great news! Your refund request for your <strong>{{plan_name}}</strong> subscription on <strong>{{app_name}}</strong> has been <strong style=\"color:#27ae60;\">approved</strong>.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Amount</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{currency}} {{amount}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reference</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{reference}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Admin Note</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{admin_note}}</td></tr>
+</table>
+<p>The refund will be processed to your original payment method. Please allow 5–10 business days for the amount to reflect in your account.</p>
+<p><a href=\"{{dashboard_url}}\">View your subscription</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"currency\",\"amount\",\"reference\",\"admin_note\",\"dashboard_url\"]',
+                        1
+                    ),
+                    (
+                        'refund-rejected',
+                        'Refund Request Declined',
+                        'Your refund request for {{plan_name}} has been declined',
+                        '<h2>Hi {{user_name}},</h2>
+<p>We have reviewed your refund request for your <strong>{{plan_name}}</strong> subscription on <strong>{{app_name}}</strong> and unfortunately it has been <strong style=\"color:#e74c3c;\">declined</strong>.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reference</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{reference}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reason</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{admin_note}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Subscription Status</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{subscription_status}}</td></tr>
+</table>
+<p>If you have questions, please contact our support team.</p>
+<p><a href=\"{{dashboard_url}}\">View your subscription</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"reference\",\"admin_note\",\"subscription_status\",\"dashboard_url\"]',
+                        1
                     )
             ");
         } catch (\Throwable $e) {
@@ -1282,15 +1329,58 @@ class SubscriptionService
             }
         }
 
+        // Send email notification and bell notification for refund request.
+        try {
+            $user = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ? LIMIT 1", [$userId]);
+            if ($user && !empty($user['email'])) {
+                $dashboardUrl = match ($payment['app_key'] ?? '') {
+                    'resumex'  => '/projects/resumex/plans',
+                    'qr'       => '/projects/qr/plans',
+                    'convertx' => '/projects/convertx/plans',
+                    'whatsapp' => '/projects/whatsapp/plans',
+                    default    => '/plans',
+                };
+                $this->ensureNotificationTemplates();
+                MailService::sendNotification(
+                    $user['email'],
+                    'refund-requested',
+                    [
+                        'user_name'     => $user['name'] ?? 'User',
+                        'plan_name'     => $payment['plan_name'] ?? 'Subscription',
+                        'app_name'      => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                        'currency'      => $payment['currency'] ?? '',
+                        'amount'        => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                        'reference'     => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                        'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                    ],
+                    false
+                );
+                Notification::send(
+                    $userId,
+                    'refund_requested',
+                    'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been received and is pending review.',
+                    ['payment_id' => $paymentId]
+                );
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::requestRefund notify - ' . $e->getMessage());
+        }
+
         return true;
     }
 
-    public function reviewRefundRequest(int $paymentId, string $decision, int $adminId, string $note = ''): bool
+    public function reviewRefundRequest(int $paymentId, string $decision, int $adminId, string $note = '', bool $cancelSubscription = false): bool
     {
         if (!in_array($decision, ['approved', 'rejected', 'refunded'], true)) {
             return false;
         }
-        $payment = $this->db->fetch("SELECT * FROM subscription_payments WHERE id = ? LIMIT 1", [$paymentId]);
+        $payment = $this->db->fetch(
+            "SELECT sp.*, u.id AS user_id_val, u.name AS user_name, u.email AS user_email
+             FROM subscription_payments sp
+             LEFT JOIN users u ON u.id = sp.user_id
+             WHERE sp.id = ? LIMIT 1",
+            [$paymentId]
+        );
         if (!$payment || ($payment['refund_status'] ?? 'none') !== 'requested') {
             return false;
         }
@@ -1320,6 +1410,101 @@ class SubscriptionService
             [$finalStatus, $note, $paymentId]
         );
         Logger::activity($adminId, 'subscription_refund_reviewed', ['payment_id' => $paymentId, 'decision' => $finalStatus]);
+
+        // On approval: always auto-cancel the subscription (ensure access is revoked).
+        // On rejection: cancel only if admin explicitly chose to cancel.
+        $shouldCancelSub = ($decision === 'approved') || ($decision === 'rejected' && $cancelSubscription);
+        if ($shouldCancelSub && !empty($payment['subscription_id'])) {
+            $config = $this->getAppConfig((string) ($payment['app_key'] ?? ''));
+            try {
+                if (($payment['app_key'] ?? '') === 'whatsapp') {
+                    $this->db->query(
+                        "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        [(int) $payment['subscription_id']]
+                    );
+                } elseif ($config !== null) {
+                    $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                    $sql = "UPDATE {$config['subscription_table']}
+                            SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                    if ($cancelledColumn) {
+                        $sql .= ", {$cancelledColumn} = NOW()";
+                    }
+                    $sql .= " WHERE id = ?";
+                    $this->db->query($sql, [(int) $payment['subscription_id']]);
+                }
+                $this->db->query(
+                    "UPDATE subscription_payments SET cancel_requested_at = NOW(), updated_at = NOW() WHERE id = ?",
+                    [$paymentId]
+                );
+            } catch (\Throwable $e) {
+                Logger::error('SubscriptionService::reviewRefundRequest auto-cancel - ' . $e->getMessage());
+            }
+        }
+
+        // Send email + bell notification to the user.
+        try {
+            $userId = (int) ($payment['user_id'] ?? $payment['user_id_val'] ?? 0);
+            $userEmail = (string) ($payment['user_email'] ?? '');
+            if ($userId > 0 && $userEmail !== '') {
+                $dashboardUrl = match ($payment['app_key'] ?? '') {
+                    'resumex'  => '/projects/resumex/plans',
+                    'qr'       => '/projects/qr/plans',
+                    'convertx' => '/projects/convertx/plans',
+                    'whatsapp' => '/projects/whatsapp/plans',
+                    default    => '/plans',
+                };
+                $this->ensureNotificationTemplates();
+                if ($decision === 'rejected') {
+                    $subStatus = $cancelSubscription ? 'Cancelled' : 'Kept active';
+                    MailService::sendNotification(
+                        $userEmail,
+                        'refund-rejected',
+                        [
+                            'user_name'          => $payment['user_name'] ?? 'User',
+                            'plan_name'          => $payment['plan_name'] ?? 'Subscription',
+                            'app_name'           => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                            'reference'          => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                            'admin_note'         => $note ?: 'No reason provided.',
+                            'subscription_status' => $subStatus,
+                            'dashboard_url'      => $this->absoluteUrl($dashboardUrl),
+                        ],
+                        false
+                    );
+                    Notification::send(
+                        $userId,
+                        'refund_rejected',
+                        'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been declined. Subscription: ' . $subStatus . '.',
+                        ['payment_id' => $paymentId]
+                    );
+                } else {
+                    // Approved or refunded
+                    MailService::sendNotification(
+                        $userEmail,
+                        'refund-approved',
+                        [
+                            'user_name'    => $payment['user_name'] ?? 'User',
+                            'plan_name'    => $payment['plan_name'] ?? 'Subscription',
+                            'app_name'     => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                            'currency'     => $payment['currency'] ?? '',
+                            'amount'       => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                            'reference'    => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                            'admin_note'   => $note ?: 'Approved by admin.',
+                            'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                        ],
+                        false
+                    );
+                    Notification::send(
+                        $userId,
+                        'refund_approved',
+                        'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been approved. Please allow 5–10 business days for the amount to reflect.',
+                        ['payment_id' => $paymentId]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::reviewRefundRequest notify - ' . $e->getMessage());
+        }
+
         return true;
     }
 
