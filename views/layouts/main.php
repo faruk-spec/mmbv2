@@ -2993,15 +2993,20 @@ window.mmbSkeleton = (function(){
         if (panel.style.display === 'none' || !panel.style.display) {
             panel.style.display = 'flex';
             panel.style.flexDirection = 'column';
-            // Check for existing session
-            var stored = sessionStorage.getItem('support_chat_key');
-            if (stored) { chatKey = stored; resumeChat(); }
         } else {
             panel.style.display = 'none';
         }
     };
 
     window.startSupportChat = function() {
+        if (!chatActive) {
+            var stored = chatKey || sessionStorage.getItem('support_chat_key');
+            if (stored) {
+                chatKey = stored;
+                resumeChat();
+                return;
+            }
+        }
         var name = (document.getElementById('chat-guest-name') || {value:''}).value.trim();
         var email = (document.getElementById('chat-guest-email') || {value:''}).value.trim();
         var errorBox = document.getElementById('chat-start-error');
