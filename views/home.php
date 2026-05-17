@@ -721,10 +721,10 @@ a.project-card:hover {
 .project-card {
     position: relative;
     overflow: hidden;
-    border-radius: 16px;
+    border-radius: 14px;
     aspect-ratio: 4 / 3;
     min-height: 340px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.36);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -781,16 +781,12 @@ a.project-card:hover {
     top: 12px;
     right: 12px;
     z-index: 3;
-    padding: 4px 10px;
-    border-radius: 999px;
+    padding: 3px 10px;
+    border-radius: 10px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.45px;
-    max-width: calc(100% - 24px);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.6px;
 }
 
 /* Content sits above overlay */
@@ -905,21 +901,10 @@ a.project-card:hover {
         min-height: 300px;
     }
 
-    .project-card__tier {
-        top: 10px;
-        right: 10px;
-        font-size: 9px;
-        padding: 3px 9px;
-    }
-
     .project-card__logo {
-        width: 84px;
-        height: 84px;
+        width: 96px;
+        height: 96px;
         border-radius: 16px;
-    }
-
-    .project-card__title {
-        font-size: 1rem;
     }
 }
 
@@ -934,29 +919,13 @@ a.project-card:hover {
     }
 
     .project-card__logo {
-        width: 62px;
-        height: 62px;
-        border-radius: 12px;
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
     }
 
     .project-card__title {
-        font-size: 0.9rem;
-    }
-
-    .project-card__tier {
-        top: 8px;
-        right: 8px;
-        font-size: 8px;
-        padding: 2px 7px;
-        max-width: calc(100% - 16px);
-    }
-
-    .project-card__header {
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-start;
-        text-align: left;
-        gap: 10px;
+        font-size: 0.95rem;
     }
 
     .project-card__features {
@@ -988,13 +957,6 @@ a.project-card:hover {
 @media (max-width: 640px) {
     .project-card {
         min-height: 240px;
-    }
-
-    .project-card__tier {
-        top: 7px;
-        right: 7px;
-        font-size: 7.5px;
-        letter-spacing: 0.3px;
     }
 
     .project-card__features {
