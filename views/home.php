@@ -199,17 +199,20 @@
         box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
     }
 
-    /* 481–768 px: 2 columns for project grid (smooth transition, no jarring 3→1 jump) */
+    /* 481–768 px: 2 columns for project grid (smooth transition, no jarring jump) */
     @media (min-width: 481px) and (max-width: 768px) {
-        .grid-3 {
+        .grid-3, .grid-4 {
             grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 480px) {
         .grid-4 {
             grid-template-columns: 1fr;
         }
+    }
+
+    @media (max-width: 768px) {
 
         .hero-grid {
             grid-template-columns: 1fr !important;
@@ -556,7 +559,7 @@ if ($showStats):
         </button>
     </div>
     
-    <div class="grid grid-3" id="projectsGrid">
+    <div class="grid grid-4" id="projectsGrid">
         <?php 
         // Show enabled DB rows; merge config projects that have NO DB row at all.
         // Projects in DB with is_enabled=0 must not be re-added from config.
