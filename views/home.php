@@ -818,6 +818,7 @@ a.project-card:hover {
    (margin-top = calc(-1 * var(--pc-logo-size) / 2)). */
 .project-card__logo {
     --pc-logo-size: 84px;
+    --pc-logo-overlap: calc(var(--pc-logo-size) / 2);
     width: var(--pc-logo-size);
     height: var(--pc-logo-size);
     min-width: var(--pc-logo-size);
@@ -828,7 +829,7 @@ a.project-card:hover {
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    margin-top: calc(-1 * var(--pc-logo-size) / 2);
+    margin-top: calc(-1 * var(--pc-logo-overlap));
     margin-bottom: 12px;
     position: relative;
     z-index: 4;
@@ -956,8 +957,10 @@ a.project-card:hover {
     }
 
     .project-card__logo {
-        --pc-logo-size: 80px;
-        border-radius: 18px;
+        --pc-logo-size: 96px;
+        /* ~62% overlap keeps the larger logo visually anchored to the banner on full-width cards. */
+        --pc-logo-overlap: calc(var(--pc-logo-size) * 0.62);
+        border-radius: 20px;
     }
 
     .project-card__body {
