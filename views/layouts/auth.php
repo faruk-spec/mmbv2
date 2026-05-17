@@ -1,7 +1,15 @@
 <?php use Core\Security; use Core\View; use Core\Database; ?>
 <?php
 $nonce = Security::getCspNonce();
-$pageTitle = trim(($title ?? '') !== '' ? ($title . ' - ' . APP_NAME) : APP_NAME);
+$authSiteName = APP_NAME;
+try {
+    $_authDb = Database::getInstance();
+    $_authSiteNameRow = $_authDb->fetch("SELECT value FROM settings WHERE `key` = 'site_name'");
+    if (!empty($_authSiteNameRow['value'])) {
+        $authSiteName = trim((string) $_authSiteNameRow['value']);
+    }
+} catch (\Exception $_e) {}
+$pageTitle = trim(($title ?? '') !== '' ? ($title . ' - ' . $authSiteName) : $authSiteName);
 ob_start();
 View::yield('styles');
 $extraStyles = trim(ob_get_clean());
@@ -12,7 +20,9 @@ $extraScripts = trim(ob_get_clean());
 // Fetch default theme from DB (same as main.php / navbar)
 $_authDefaultTheme = 'dark';
 try {
-    $_authDb = Database::getInstance();
+    if (!isset($_authDb)) {
+        $_authDb = Database::getInstance();
+    }
     $_authNavSettings = $_authDb->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
     if (!empty($_authNavSettings['default_theme'])) {
         $_authDefaultTheme = $_authNavSettings['default_theme'];
