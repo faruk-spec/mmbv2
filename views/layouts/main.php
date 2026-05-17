@@ -2948,11 +2948,14 @@ window.mmbSkeleton = (function(){
             <p style="color:var(--text-secondary,#8892a6);font-size:.85rem;margin-bottom:16px;">Chat with our support team or AI assistant.</p>
             <div id="chat-start-error" style="display:none;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:#f87171;font-size:.8rem;margin-bottom:10px;"></div>
             <?php if (\Core\Auth::check()): ?>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                <a href="/support/live" style="display:flex;align-items:center;justify-content:center;padding:10px;border-radius:8px;border:1px solid var(--border-color,rgba(255,255,255,.1));background:rgba(0,240,255,.08);color:var(--text-primary,#e8eefc);font-size:.82rem;font-weight:600;text-decoration:none;">
-                    Live Support
-                </a>
-                <a href="/support" style="display:flex;align-items:center;justify-content:center;padding:10px;border-radius:8px;border:1px solid var(--border-color,rgba(255,255,255,.1));background:rgba(255,46,196,.08);color:var(--text-primary,#e8eefc);font-size:.82rem;font-weight:600;text-decoration:none;">
+            <div id="chat-loggedin-options" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px;">
+                <div style="font-size:.79rem;color:var(--text-secondary,#8892a6);margin-bottom:2px;">Choose an option</div>
+                <button type="button" onclick="startSupportChat()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 12px;border-radius:10px;border:1px solid rgba(0,240,255,.45);background:rgba(0,240,255,.08);color:var(--text-primary,#e8eefc);font-size:.84rem;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-headset" style="color:#00f0ff;"></i>
+                    Live Support Chat
+                </button>
+                <a href="/support" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,46,196,.45);background:rgba(255,46,196,.08);color:var(--text-primary,#e8eefc);font-size:.84rem;font-weight:600;text-decoration:none;">
+                    <i class="fas fa-life-ring" style="color:#ff2ec4;"></i>
                     Help Center
                 </a>
             </div>
@@ -2960,8 +2963,8 @@ window.mmbSkeleton = (function(){
             <?php if (!\Core\Auth::check()): ?>
             <input type="text" id="chat-guest-name" placeholder="Your name" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <input type="email" id="chat-guest-email" placeholder="Your email" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
-            <?php endif; ?>
             <button onclick="startSupportChat()" style="width:100%;padding:10px;background:linear-gradient(135deg,#00f0ff,#ff2ec4);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;font-size:.9rem;">Start Chat</button>
+            <?php endif; ?>
         </div>
         <!-- Messages area -->
         <div id="chat-messages-area" style="display:none;flex-direction:column;height:300px;">
