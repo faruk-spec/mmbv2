@@ -1,0 +1,6 @@
+-- INSERT IGNORE is intentional: this migration is idempotent and should not
+-- fail or overwrite admin-customised templates on repeat runs.
+INSERT IGNORE INTO `mail_notification_templates` (`slug`, `name`, `subject`, `body`, `variables`, `is_enabled`) VALUES
+('refund-requested', 'Refund Requested (User)', 'Your refund request has been received', '<p>Hi {{user_name}},</p><p>We received your refund request for <strong>{{plan_name}}</strong> — {{currency}} {{amount}}. We will process it within 5-7 business days.</p>', '["user_name","plan_name","currency","amount"]', 1),
+('refund-approved',  'Refund Approved (User)',  'Your refund has been approved', '<p>Hi {{user_name}},</p><p>Your refund of <strong>{{currency}} {{amount}}</strong> for <strong>{{plan_name}}</strong> has been approved and is being processed.</p>', '["user_name","plan_name","currency","amount"]', 1),
+('refund-requested-admin', 'Refund Requested (Admin Notify)', 'New refund request: {{plan_name}}', '<p>User {{user_name}} ({{user_email}}) requested a refund of {{currency}} {{amount}} for {{plan_name}}. Invoice: {{invoice_no}}. <a href="/admin/refunds">Review →</a></p>', '["user_name","user_email","plan_name","currency","amount","invoice_no"]', 1);

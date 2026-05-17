@@ -207,6 +207,13 @@ class Auth
                 'user_id' => $userId,
                 'created_at' => date('Y-m-d H:i:s')
             ]);
+
+            try {
+                $subscriptionService = new SubscriptionService($db);
+                $subscriptionService->ensureUserHasDefaultPlatformPlan((int) $userId);
+            } catch (\Throwable $e) {
+                Logger::error('Failed to auto-assign default free plan: ' . $e->getMessage());
+            }
             
             // Send OTP verification email
             try {

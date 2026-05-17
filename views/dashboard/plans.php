@@ -3,109 +3,116 @@
 
 <?php View::section('styles'); ?>
 <style>
-/* ── Plans page styles ──────────────────────────────────────────────────── */
-.plans-page { max-width: 960px; }
-.plans-section-title {
-    font-size: .95rem; font-weight: 700; margin: 0 0 14px;
-    display: flex; align-items: center; gap: 8px;
+/* ── Plans page ──────────────────────────────────────────────────────────── */
+.plans-page {
+    max-width: 68rem;
+    width: 100%;
+    margin: 0 auto;
+    padding-bottom: 1rem;
 }
+.plans-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .92fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+.plans-col {
+    min-width: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: .75rem;
+    padding: .875rem;
+    display: flex;
+    flex-direction: column;
+}
+/* Scrollable container for Application Plans list */
+.plans-app-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 2px;
+    min-height: 8rem;
+}
+.plans-history-list {
+    flex: 1;
+    overflow: auto;
+    border-radius: .625rem;
+    min-height: 8rem;
+}
+
+/* Section titles */
+.plans-section-title {
+    font-size: .9rem; font-weight: 700; margin: 0 0 16px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
 /* App subscription rows */
 .app-sub-row {
     display: grid;
-    grid-template-columns: 44px 1fr auto auto;
-    align-items: center; gap: 14px;
+    grid-template-columns: 44px 1fr auto;
+    align-items: center; gap: 16px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 14px 18px;
+    border-radius: 12px;
+    padding: 16px 20px;
     margin-bottom: 10px;
-    transition: border-color .2s;
+    transition: border-color .2s, box-shadow .2s;
 }
-.app-sub-row:hover { border-color: rgba(0,240,255,.25); }
+.app-sub-row:hover { border-color: rgba(0,240,255,.25); box-shadow: 0 2px 12px rgba(0,0,0,.12); }
 .app-icon {
     width: 44px; height: 44px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    flex-shrink: 0; font-size: 1.15rem;
 }
 .app-info { min-width: 0; }
-.app-name  { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.app-meta  { font-size: .78rem; color: var(--text-secondary); margin-top: 3px; }
+.app-name  { font-weight: 700; font-size: .9rem; }
+.app-meta  { font-size: .78rem; color: var(--text-secondary); margin-top: 3px; line-height: 1.5; }
 .sub-badge {
-    padding: 4px 12px; border-radius: 20px; font-size: .72rem; font-weight: 600;
-    white-space: nowrap; flex-shrink: 0;
+    padding: 4px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700;
+    white-space: nowrap; flex-shrink: 0; border: 1px solid transparent;
 }
-.sub-badge-active  { background: rgba(0,255,136,.15); color: var(--green); }
-.sub-badge-free    { background: rgba(255,170,0,.15);  color: #ffaa00; }
-.app-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
-.btn-app { padding: 6px 14px; border-radius: 6px; font-size: .78rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; }
-.btn-app-open     { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); }
+.sub-badge-active  { background: rgba(0,255,136,.12); color: var(--green); border-color: rgba(0,255,136,.2); }
+.sub-badge-free    { background: rgba(255,170,0,.12);  color: #ffaa00; border-color: rgba(255,170,0,.2); }
+.app-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+
+/* Buttons */
+.btn-app { padding: 7px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .2s; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 5px; }
+.btn-app-open     { background: var(--bg-secondary); border-color: var(--border-color); color: var(--text-primary); }
 .btn-app-open:hover { border-color: var(--cyan); color: var(--cyan); }
-.btn-app-manage   { background: rgba(153,69,255,.12); border: 1px solid rgba(153,69,255,.25); color: var(--purple); }
-.btn-app-manage:hover { background: rgba(153,69,255,.2); }
-.btn-app-invoice  { background: rgba(0,240,255,.1); border: 1px solid rgba(0,240,255,.2); color: var(--cyan); }
-.btn-app-invoice:hover { background: rgba(0,240,255,.18); }
-.btn-app-upgrade  { background: linear-gradient(135deg,var(--purple),var(--cyan)); border: none; color: #fff; }
-.btn-app-upgrade:hover { opacity: .88; }
-/* Plan cards grid */
-.plan-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-}
-.plan-card {
-    background: var(--bg-card);
-    border: 2px solid var(--border-color);
-    border-radius: 14px; overflow: hidden;
-    transition: border-color .25s, transform .2s;
-    display: flex; flex-direction: column;
-}
-.plan-card:hover { transform: translateY(-2px); }
-.plan-card-header { padding: 20px 20px 14px; }
-.plan-card-body   { padding: 0 20px 20px; flex: 1; display: flex; flex-direction: column; }
-.plan-price { font-size: 1.5rem; font-weight: 800; margin: 8px 0 4px; }
-.plan-price small { font-size: .72rem; font-weight: 400; color: var(--text-secondary); }
-.plan-apps { display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0 16px; }
-.plan-app-chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 9px; border-radius: 20px; font-size: .72rem; font-weight: 600;
-    text-decoration: none;
-}
-.plan-cta {
-    display: block; width: 100%; padding: 10px;
-    border: none; border-radius: 8px; text-align: center;
-    font-size: .85rem; font-weight: 700; cursor: pointer;
-    text-decoration: none; transition: opacity .2s; margin-top: auto;
-}
-.plan-cta:hover { opacity: .88; }
-.plan-cta-active { background: rgba(0,255,136,.1); color: var(--green); cursor: default; }
-/* Active platform sub cards */
-.active-sub-card {
-    background: var(--bg-card);
-    border-radius: 12px; padding: 18px 22px; margin-bottom: 12px;
-    border: 2px solid;
-}
+.btn-app-manage   { background: rgba(153,69,255,.1); border-color: rgba(153,69,255,.25); color: var(--purple); }
+.btn-app-manage:hover { background: rgba(153,69,255,.18); }
+.btn-app-invoice  { background: rgba(0,240,255,.08); border-color: rgba(0,240,255,.2); color: var(--cyan); }
+.btn-app-invoice:hover { background: rgba(0,240,255,.14); }
+.btn-app-upgrade  { background: linear-gradient(135deg,var(--purple),var(--cyan)); border: none; color: #06060a; font-weight: 700; }
+.btn-app-upgrade:hover { opacity: .88; transform: translateY(-1px); }
+
+/* History rows */
+.history-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: .75rem; padding: .75rem 1rem; border-bottom: 1px solid var(--border-color); }
+.history-row:last-child { border-bottom: none; }
+
 /* Section divider */
-.plans-divider {
-    margin: 28px 0;
-    border: none; border-top: 1px solid var(--border-color);
-}
+.plans-divider { margin: 28px 0; border: none; border-top: 1px solid var(--border-color); }
+
 /* Pagination */
-.pay-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
-.pay-pg-btn {
-    padding: 6px 13px; border-radius: 7px; font-size: .8rem; font-weight: 600; text-decoration: none;
-    border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary);
-    transition: all .2s;
-}
+.pay-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+.pay-pg-btn { padding: 7px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary); transition: all .2s; }
 .pay-pg-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 .pay-pg-btn.active { background: var(--cyan); color: #06060a; border-color: var(--cyan); cursor: default; }
 .pay-pg-btn.disabled { opacity: .4; pointer-events: none; }
+
 /* Responsive */
+@media (max-width: 1100px) {
+    .plans-layout { grid-template-columns: 1fr; }
+}
 @media (max-width: 640px) {
-    .app-sub-row { grid-template-columns: 36px 1fr; gap: 10px; padding: 12px; }
-    .sub-badge, .app-actions { grid-column: 2; }
-    .plan-grid { grid-template-columns: 1fr; }
-    .active-sub-card { padding: 14px 16px; }
-    .btn-app { padding: 5px 10px; font-size: .74rem; }
+    .plans-layout { grid-template-columns: 1fr; }
+    .app-sub-row { grid-template-columns: 40px 1fr; gap: 12px; padding: 14px; }
+    .app-actions { grid-column: 1 / -1; gap: 6px; }
+    .btn-app { padding: 7px 12px; font-size: .76rem; }
+    .history-row { grid-template-columns: 1fr auto; gap: 8px; }
+    .history-row .app-actions { grid-column: 1 / -1; }
+}
+@media (max-width: 400px) {
+    .btn-app { padding: 6px 10px; font-size: .72rem; }
 }
 </style>
 <?php View::end(); ?>
@@ -118,297 +125,102 @@
 <?php if (Helpers::hasFlash('error')): ?>
 <div class="alert alert-error"><?= View::e(Helpers::getFlash('error')) ?></div>
 <?php endif; ?>
+<?php if (Helpers::hasFlash('info')): ?>
+<div class="alert alert-info"><?= View::e(Helpers::getFlash('info')) ?></div>
+<?php endif; ?>
 
 <div class="plans-page">
 
     <!-- Page heading -->
-    <div style="margin-bottom:24px;">
-        <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-            </svg>
+    <div style="margin-bottom:28px;">
+        <h1 style="font-size:1.35rem;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:10px;">
+            <span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--purple),var(--cyan));display:inline-flex;align-items:center;justify-content:center;font-size:1rem;color:#06060a;">
+                <i class="fas fa-layer-group"></i>
+            </span>
             My Plans &amp; Subscriptions
         </h1>
-        <p style="color:var(--text-secondary);font-size:.875rem;">Manage your active subscriptions and explore upgrade options.</p>
+        <p style="color:var(--text-secondary);font-size:.875rem;">Manage your active subscriptions and explore upgrade options for each application.</p>
     </div>
 
-    <!-- ── Section 1: Per-app subscriptions ── -->
-    <section style="margin-bottom:28px;">
+    <div class="plans-layout">
+    <!-- ── Section 1: Application Plans ── -->
+    <section class="plans-col">
         <p class="plans-section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-            </svg>
+            <i class="fas fa-th-large" style="color:var(--purple);"></i>
             Application Plans
         </p>
 
+        <div class="plans-app-list">
         <?php foreach ($appMeta as $appKey => $meta):
-            $sub      = $appSubscriptions[$appKey] ?? null;
-            $planName = $sub['plan_name'] ?? null;
-            $price    = $sub['price']     ?? null;
-            $billing  = $sub['billing_cycle'] ?? null;
-            $since    = $sub['started_at']    ?? null;
-            $expires  = $sub['expires_at']    ?? null;
+            $sub        = $appSubscriptions[$appKey] ?? null;
+            $planName   = $sub['plan_name'] ?? null;
+            $price      = $sub['price']     ?? null;
+            $billing    = $sub['billing_cycle'] ?? null;
+            $since      = $sub['started_at']    ?? null;
+            $expires    = $sub['expires_at']    ?? null;
+            $manageId   = $appManagePaymentIds[$appKey] ?? null;
             $upgradeUrl = match ($appKey) {
-                'resumex' => '/projects/resumex/plans',
-                'qr' => '/projects/qr/plans',
+                'resumex'  => '/projects/resumex/plans',
+                'qr'       => '/projects/qr/plans',
                 'convertx' => '/projects/convertx/plans',
                 'whatsapp' => '/projects/whatsapp/plans',
-                default => '#platform-plans',
+                default    => '/plans',
             };
         ?>
         <div class="app-sub-row">
             <!-- Icon -->
-            <div class="app-icon" style="background:<?= $meta['color'] ?>20;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="<?= $meta['color'] ?>" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                </svg>
+            <div class="app-icon" style="background:<?= $meta['color'] ?>20;color:<?= $meta['color'] ?>;">
+                <i class="fas fa-cube"></i>
             </div>
             <!-- Info -->
             <div class="app-info">
                 <div class="app-name"><?= View::e($meta['name']) ?></div>
                 <div class="app-meta">
                     <?php if ($planName): ?>
-                        Plan: <strong style="color:var(--cyan);"><?= View::e($planName) ?></strong>
+                        <span style="color:var(--cyan);font-weight:600;"><?= View::e($planName) ?></span>
                         <?php if ($price !== null): ?>
-                            &mdash; <?php $cur = $sub['currency'] ?? 'USD'; echo $price == 0 ? 'Free' : (htmlspecialchars($cur).'&nbsp;'.number_format((float)$price,2).' / '.htmlspecialchars($billing)); ?>
+                            &mdash; <?php $cur = $sub['currency'] ?? 'USD'; echo $price == 0 ? '<span style="color:var(--green);">Free</span>' : (htmlspecialchars($cur).'&nbsp;'.number_format((float)$price,2).' / '.htmlspecialchars($billing ?? '')); ?>
                         <?php endif; ?>
                         <?php if ($since): ?>
-                            &middot; Active since <?= date('M j, Y', strtotime($since)) ?>
-                            <?php if ($expires): ?> &middot; Expires <?= date('M j, Y', strtotime($expires)) ?><?php endif; ?>
+                            <br><span style="opacity:.7;">Active since <?= date('M j, Y', strtotime($since)) ?><?php if ($expires): ?> &middot; Expires <?= date('M j, Y', strtotime($expires)) ?><?php endif; ?></span>
                         <?php endif; ?>
                     <?php else: ?>
                         No active subscription &mdash; using free tier
                     <?php endif; ?>
                 </div>
             </div>
-            <!-- Badge -->
-            <span class="sub-badge <?= $planName ? 'sub-badge-active' : 'sub-badge-free' ?>">
-                <?= $planName ? 'Active' : 'Free' ?>
-            </span>
             <!-- Actions -->
             <div class="app-actions">
-                <a href="<?= $meta['url'] ?>" class="btn-app btn-app-open">Open</a>
-                <?php if (!$planName): ?>
-                <a href="<?= $upgradeUrl ?>" class="btn-app btn-app-upgrade">Upgrade</a>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    </section>
-
-    <?php if (!empty($userPlatformSubs)): ?>
-    <hr class="plans-divider">
-    <!-- ── Section 2: Active platform subscriptions ── -->
-    <section style="margin-bottom:28px;" id="active-platform">
-        <p class="plans-section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-            Active Platform Subscriptions
-        </p>
-        <?php foreach ($userPlatformSubs as $sub):
-            $apps = json_decode($sub['included_apps'] ?? '[]', true) ?: [];
-            $col  = View::e($sub['color'] ?? '#9945ff');
-            // Find most recent paid payment for this subscription
-            $subPaymentId = null;
-            foreach ($allPayments ?? [] as $ph) {
-                if (($ph['subscription_id'] ?? null) == $sub['id'] && $ph['status'] === 'paid') {
-                    $subPaymentId = $ph['id'];
-                    break;
-                }
-            }
-            $subPaymentUrl = $subPaymentId ? '/plans/payment/' . (int) $subPaymentId : '/plans';
-        ?>
-        <div class="active-sub-card" style="border-color:<?= $col ?>;">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                <div style="flex:1;min-width:0;">
-                    <div style="font-weight:700;font-size:1.05rem;color:<?= $col ?>;"><?= View::e($sub['plan_name']) ?></div>
-                    <div style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;">
-                        <?php $subCur = htmlspecialchars($sub['currency'] ?? 'USD'); echo $sub['price'] == 0 ? 'Free' : ($subCur.'&nbsp;'.number_format((float)$sub['price'],2).' / '.htmlspecialchars($sub['billing_cycle'])); ?>
-                        &middot; Active since <?= date('M j, Y', strtotime($sub['started_at'])) ?>
-                        <?php if (!empty($sub['expires_at'])): ?>
-                            &middot; Expires <?= date('M j, Y', strtotime($sub['expires_at'])) ?>
-                        <?php endif; ?>
-                    </div>
-                    <div class="plan-apps" style="margin-top:10px;">
-                        <?php foreach ($apps as $ak):
-                            $m = $appMeta[$ak] ?? null; if (!$m) continue; ?>
-                        <a href="<?= $m['url'] ?>" class="plan-app-chip" style="background:<?= $m['color'] ?>20;color:<?= $m['color'] ?>;">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                            <?= View::e($m['name']) ?>
-                        </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0;">
-                    <span class="sub-badge sub-badge-active">Active</span>
-                    <div class="app-actions">
-                        <a href="/plans/invoice/<?= (int) $sub['id'] ?>" class="btn-app btn-app-invoice">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:3px;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
-                            Invoice
-                        </a>
-                        <?php if ($subPaymentId): ?>
-                        <a href="<?= $subPaymentUrl ?>" class="btn-app btn-app-open">View</a>
-                        <?php else: ?>
-                        <a href="/plans" class="btn-app btn-app-open">View</a>
-                        <?php endif; ?>
-                        <a href="<?= $subPaymentUrl ?>" class="btn-app btn-app-manage" title="Manage your active subscriptions and billing history.">
-                            Manage Subscription
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    </section>
-    <?php endif; ?>
-
-    <?php if (!empty($platformPlans)): ?>
-    <hr class="plans-divider">
-
-    <!-- ── Section 3: Available platform plans ── -->
-    <section id="platform-plans" style="margin-bottom:28px;">
-        <p class="plans-section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-            Platform Plans
-        </p>
-        <p style="color:var(--text-secondary);font-size:.85rem;margin-bottom:18px;">One plan covering multiple applications.</p>
-
-        <?php /* $platformPlans is non-empty — loop directly */ ?>
-        <?php
-        // Determine if user has any active PAID platform subscription
-        $userHasPaidActiveSub = false;
-        foreach ($userPlatformSubs as $_aps) {
-            if ((float)($_aps['price'] ?? 0) > 0) { $userHasPaidActiveSub = true; break; }
-        }
-        ?>
-        <div class="plan-grid">
-        <?php foreach ($platformPlans as $plan):
-            $isActive  = in_array($plan['id'], $activePlatformPlanIds);
-            $planApps  = $plan['included_apps'] ?? [];
-            $planColor = $plan['color'] ?? '#9945ff';
-            $isFree    = ((float)($plan['price'] ?? 0) == 0);
-            // Disable free plan card when user has an active paid plan
-            $isDisabledFree = ($isFree && !$isActive && $userHasPaidActiveSub);
-        ?>
-        <div class="plan-card" style="border-color:<?= $isActive ? $planColor : 'var(--border-color)' ?>;<?= $isDisabledFree ? 'opacity:.5;pointer-events:none;' : '' ?>"
-             <?= !$isDisabledFree ? "onmouseover=\"this.style.borderColor='{$planColor}'\" onmouseout=\"this.style.borderColor='" . ($isActive ? $planColor : 'var(--border-color)') . "'\"" : '' ?>>
-            <div class="plan-card-header" style="background:linear-gradient(135deg,<?= $planColor ?>22,<?= $planColor ?>08);">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                    <div style="font-weight:700;font-size:1rem;color:<?= $planColor ?>;"><?= View::e($plan['name']) ?></div>
-                    <?php if ($isActive): ?>
-                    <span class="sub-badge sub-badge-active">Active</span>
-                    <?php elseif ($isDisabledFree): ?>
-                    <span class="sub-badge" style="background:rgba(120,120,120,.15);color:#888;">Locked</span>
-                    <?php endif; ?>
-                </div>
-                <div class="plan-price">
-                    <?php $ppCur = htmlspecialchars($plan['currency'] ?? 'USD'); echo $plan['price'] == 0 ? 'Free' : ($ppCur.'&nbsp;'.number_format((float)$plan['price'],2)); ?>
-                    <?php if ($plan['price'] > 0): ?>
-                    <small>/ <?= $plan['billing_cycle'] ?></small>
-                    <?php endif; ?>
-                </div>
-                <?php if (!empty($plan['description'])): ?>
-                <p style="font-size:.8rem;color:var(--text-secondary);line-height:1.5;"><?= View::e($plan['description']) ?></p>
-                <?php endif; ?>
-            </div>
-            <div class="plan-card-body">
-                <?php if (!empty($planApps)): ?>
-                <div style="font-size:.72rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Includes</div>
-                <div class="plan-apps">
-                    <?php foreach ($planApps as $ak):
-                        $m = $appMeta[$ak] ?? null; if (!$m) continue; ?>
-                    <span class="plan-app-chip" style="background:<?= $m['color'] ?>15;color:<?= $m['color'] ?>;">
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        <?= View::e($m['name']) ?>
-                    </span>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-
-                <?php if ($isActive): ?>
-                <div class="plan-cta plan-cta-active">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    You're subscribed
-                </div>
-                <?php elseif ($isDisabledFree): ?>
-                <div class="plan-cta" style="background:rgba(120,120,120,.12);color:#888;cursor:not-allowed;">
-                    Not available with paid plan
-                </div>
-                <?php elseif ($userHasPaidActiveSub && !$isFree): ?>
-                <a href="/plans/subscribe/<?= urlencode($plan['slug']) ?>"
-                   class="plan-cta"
-                   style="background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>aa);color:#fff;">
-                    Upgrade to <?= View::e($plan['name']) ?> →
-                </a>
-                <?php else: ?>
-                <a href="/plans/subscribe/<?= urlencode($plan['slug']) ?>"
-                   class="plan-cta"
-                   style="background:linear-gradient(135deg,<?= $planColor ?>,<?= $planColor ?>aa);color:#fff;">
-                    Get <?= View::e($plan['name']) ?> →
-                </a>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endforeach; ?>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <?php if (!empty($platformHistory)): ?>
-    <hr class="plans-divider">
-    <section style="margin-bottom:28px;">
-        <p class="plans-section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2">
-                <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
-            </svg>
-            Subscription History
-        </p>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-            <?php foreach ($platformHistory as $history): ?>
-            <div class="app-sub-row" style="grid-template-columns:1fr auto auto;">
-                <div class="app-info">
-                    <div class="app-name"><?= View::e($history['plan_name']) ?></div>
-                    <div class="app-meta">
-                        <?= View::e($history['currency'] ?? 'USD') ?>&nbsp;<?= number_format((float) ($history['price'] ?? 0), 2) ?> / <?= View::e($history['billing_cycle'] ?? 'monthly') ?>
-                        &middot; Started <?= date('M j, Y', strtotime($history['started_at'])) ?>
-                        <?php if (!empty($history['expires_at'])): ?>
-                            &middot; Expires <?= date('M j, Y', strtotime($history['expires_at'])) ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <span class="sub-badge <?= ($history['status'] ?? '') === 'active' ? 'sub-badge-active' : 'sub-badge-free' ?>">
-                    <?= View::e(ucfirst($history['status'] ?? 'unknown')) ?>
+                <span class="sub-badge <?= $planName ? 'sub-badge-active' : 'sub-badge-free' ?>">
+                    <?= $planName ? '<i class="fas fa-check-circle"></i> Active' : 'Free' ?>
                 </span>
-                <div class="app-actions">
-                    <a href="/plans/invoice/<?= (int) $history['id'] ?>" class="btn-app btn-app-open">Invoice</a>
-                </div>
+                <a href="<?= $meta['url'] ?>" class="btn-app btn-app-open"><i class="fas fa-external-link-alt"></i> Open</a>
+                <?php if ($planName && $manageId && (float) ($price ?? 0) > 0): ?>
+                <a href="/plans/payment/<?= $manageId ?>" class="btn-app btn-app-manage"><i class="fas fa-cog"></i> Manage</a>
+                <?php else: ?>
+                <a href="<?= $upgradeUrl ?>" class="btn-app btn-app-upgrade"><i class="fas fa-arrow-up"></i> Upgrade</a>
+                <?php endif; ?>
             </div>
-            <?php endforeach; ?>
         </div>
+        <?php endforeach; ?>
+        </div><!-- /.plans-app-list -->
     </section>
-    <?php endif; ?>
 
     <?php if (!empty($paymentHistory) || ($payTotal ?? 0) > 0): ?>
-    <hr class="plans-divider">
-    <section id="payment-history" style="margin-bottom:28px;">
+    <section id="payment-history" class="plans-col">
         <p class="plans-section-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="2">
-                <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
-            </svg>
+            <i class="fas fa-history" style="color:var(--magenta);"></i>
             Payment History
             <?php if (($payTotal ?? 0) > 0): ?>
-            <span style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:600;color:var(--text-secondary);"><?= (int) $payTotal ?> total</span>
+            <span style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;padding:2px 10px;font-size:.7rem;font-weight:600;color:var(--text-secondary);"><?= (int) $payTotal ?> total</span>
             <?php endif; ?>
         </p>
-        <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="plans-history-list" style="border:1px solid var(--border-color);">
             <?php foreach ($paymentHistory as $payment): ?>
-            <div class="app-sub-row" style="grid-template-columns:1fr auto auto;">
-                <div class="app-info">
-                    <div class="app-name"><?= View::e($payment['plan_name']) ?></div>
-                    <div class="app-meta">
+            <div class="history-row">
+                <div>
+                    <div style="font-weight:600;font-size:.875rem;"><?= View::e($payment['plan_name']) ?></div>
+                    <div style="font-size:.76rem;color:var(--text-secondary);margin-top:2px;">
                         <?= View::e($payment['currency']) ?>&nbsp;<?= number_format((float) $payment['amount'], 2) ?>
                         &middot; <?= View::e(strtoupper($payment['app_key'])) ?>
                         &middot; <?= strtoupper(View::e($payment['gateway'])) ?>
@@ -421,7 +233,7 @@
                 <div class="app-actions">
                     <a href="/plans/payment/<?= (int) $payment['id'] ?>" class="btn-app btn-app-open">View</a>
                     <?php if (($payment['status'] ?? '') === 'paid'): ?>
-                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn-app btn-app-invoice">Invoice</a>
+                    <a href="/plans/payment/<?= (int) $payment['id'] ?>/invoice" class="btn-app btn-app-invoice"><i class="fas fa-file-invoice"></i> Invoice</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -431,14 +243,14 @@
         <nav class="pay-pagination" aria-label="Payment history pages">
             <?php $isPrevDisabled = ($payPage ?? 1) <= 1; ?>
             <?php if ($isPrevDisabled): ?>
-            <span class="pay-pg-btn disabled" aria-disabled="true">&laquo; Prev</span>
+            <span class="pay-pg-btn disabled">&laquo;</span>
             <?php else: ?>
-            <a href="?pay_page=<?= max(1, ($payPage ?? 1) - 1) ?>#payment-history" class="pay-pg-btn">&laquo; Prev</a>
+            <a href="?pay_page=<?= max(1, ($payPage ?? 1) - 1) ?>#payment-history" class="pay-pg-btn">&laquo;</a>
             <?php endif; ?>
             <?php
             $start = max(1, ($payPage ?? 1) - 2);
             $end   = min($payTotalPages ?? 1, ($payPage ?? 1) + 2);
-            if ($start > 1): ?><a href="?pay_page=1#payment-history" class="pay-pg-btn">1</a><?php if ($start > 2): ?><span class="pay-pg-btn disabled" aria-hidden="true">&hellip;</span><?php endif; ?>
+            if ($start > 1): ?><a href="?pay_page=1#payment-history" class="pay-pg-btn">1</a><?php if ($start > 2): ?><span class="pay-pg-btn disabled">&hellip;</span><?php endif; ?>
             <?php endif;
             for ($p = $start; $p <= $end; $p++): ?>
             <?php if ($p === ($payPage ?? 1)): ?>
@@ -447,18 +259,19 @@
             <a href="?pay_page=<?= $p ?>#payment-history" class="pay-pg-btn"><?= $p ?></a>
             <?php endif; ?>
             <?php endfor;
-            if ($end < ($payTotalPages ?? 1)): ?><?php if ($end < ($payTotalPages ?? 1) - 1): ?><span class="pay-pg-btn disabled" aria-hidden="true">&hellip;</span><?php endif; ?><a href="?pay_page=<?= $payTotalPages ?>#payment-history" class="pay-pg-btn"><?= $payTotalPages ?></a>
+            if ($end < ($payTotalPages ?? 1)): ?><?php if ($end < ($payTotalPages ?? 1) - 1): ?><span class="pay-pg-btn disabled">&hellip;</span><?php endif; ?><a href="?pay_page=<?= $payTotalPages ?>#payment-history" class="pay-pg-btn"><?= $payTotalPages ?></a>
             <?php endif; ?>
             <?php $isNextDisabled = ($payPage ?? 1) >= ($payTotalPages ?? 1); ?>
             <?php if ($isNextDisabled): ?>
-            <span class="pay-pg-btn disabled" aria-disabled="true">Next &raquo;</span>
+            <span class="pay-pg-btn disabled">&raquo;</span>
             <?php else: ?>
-            <a href="?pay_page=<?= min($payTotalPages ?? 1, ($payPage ?? 1) + 1) ?>#payment-history" class="pay-pg-btn">Next &raquo;</a>
+            <a href="?pay_page=<?= min($payTotalPages ?? 1, ($payPage ?? 1) + 1) ?>#payment-history" class="pay-pg-btn">&raquo;</a>
             <?php endif; ?>
         </nav>
         <?php endif; ?>
     </section>
     <?php endif; ?>
+    </div>
 
 </div>
 

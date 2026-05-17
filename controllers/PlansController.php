@@ -53,13 +53,6 @@ class PlansController extends BaseController
         // ── Per-app active subscriptions ──────────────────────────────────────
         $appSubscriptions = $this->getAppSubscriptions($userId);
 
-        // ── Platform (universal) plans — all active ones ──────────────────────
-        $platformPlans = $this->getPlatformPlans();
-
-        // ── User's active platform subscription(s) ────────────────────────────
-        $userPlatformSubs = $this->getUserPlatformSubscriptions($userId);
-        $platformHistory = $this->getPlatformSubscriptionHistory($userId);
-
         // ── Payment History — paginated ───────────────────────────────────────
         $payPerPage  = 10;
         $payPage     = max(1, (int) ($_GET['pay_page'] ?? 1));
@@ -71,8 +64,13 @@ class PlansController extends BaseController
 
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
 
-        // Map plan_id → subscription so the view can check if a plan is active
-        $activePlatformPlanIds = array_column($userPlatformSubs, 'plan_id');
+        // ── Map app_key → latest paid payment ID for "Manage Subscription" links ──
+        $appManagePaymentIds = [];
+        foreach ($allPayments as $p) {
+            if (($p['status'] ?? '') === 'paid' && isset(self::APP_META[$p['app_key'] ?? '']) && !isset($appManagePaymentIds[$p['app_key']])) {
+                $appManagePaymentIds[$p['app_key']] = (int) $p['id'];
+            }
+        }
 
         Logger::activity($userId, 'plans_viewed');
 
@@ -92,10 +90,7 @@ class PlansController extends BaseController
         $this->view('dashboard/plans', [
             'title'                 => 'My Plans',
             'appSubscriptions'      => $appSubscriptions,
-            'platformPlans'         => $platformPlans,
-            'userPlatformSubs'      => $userPlatformSubs,
-            'activePlatformPlanIds' => $activePlatformPlanIds,
-            'platformHistory'       => $platformHistory,
+            'appManagePaymentIds'   => $appManagePaymentIds,
             'allPayments'           => $allPayments,
             'paymentHistory'        => $paymentHistory,
             'payPage'               => $payPage,
@@ -250,6 +245,22 @@ class PlansController extends BaseController
         }
 
         $paymentTitle = preg_replace('/[^a-zA-Z0-9 .,_-]/', '', (string) $plan['name']) ?: 'Plan';
+
+        // Block if user already has an active paid subscription for this exact plan
+        try {
+            $alreadyActiveSamePlan = $this->db->fetch(
+                "SELECT id FROM platform_user_subscriptions WHERE user_id = ? AND plan_id = ? AND status = 'active' LIMIT 1",
+                [$userId, $plan['id']]
+            );
+            if ($alreadyActiveSamePlan) {
+                $this->flash('error', 'You already have an active subscription for this plan.');
+                $this->redirect('/plans');
+                return;
+            }
+        } catch (\Exception $e) {
+            Logger::error('PlansController::processSubscribe duplicate subscription check failed — ' . $e->getMessage());
+        }
+
         $payment = $this->subscriptionService->createOrReusePayment([
             'user_id' => $userId,
             'app_key' => 'platform',
@@ -387,6 +398,11 @@ class PlansController extends BaseController
 
         $existing = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
 
+        // Detect downgrade: user has an active higher-priced plan and wants a lower-priced one.
+        $isDowngrade = $existing !== null
+            && (float) ($existing['price'] ?? 0) > 0
+            && (float) ($plan['price'] ?? 0) < (float) ($existing['price'] ?? 0);
+
         if (!$this->checkSubscriptionPrerequisites('/plans/project/' . urlencode($app) . '/' . urlencode($slug))) {
             return;
         }
@@ -409,6 +425,7 @@ class PlansController extends BaseController
             'app' => $app,
             'appMeta' => $appMeta,
             'existing' => $existing,
+            'isDowngrade' => $isDowngrade,
             'paymentSettings' => $this->subscriptionService->getPaymentSettings(),
             'invoiceSettings' => $this->subscriptionService->getInvoiceSettings(true),
         ]);
@@ -429,8 +446,34 @@ class PlansController extends BaseController
             return;
         }
 
+        // Downgrade protection: if user has an active higher-priced plan, block downgrade.
+        $existingForDowngrade = $this->subscriptionService->getCurrentSubscription($app, Auth::id());
+        if ($existingForDowngrade !== null
+            && (float) ($existingForDowngrade['price'] ?? 0) > 0
+            && (float) ($plan['price'] ?? 0) < (float) ($existingForDowngrade['price'] ?? 0)
+        ) {
+            $this->flash('error', 'Downgrade not allowed. Please cancel your current "' . ($existingForDowngrade['plan_name'] ?? 'current plan') . '" plan before switching to a lower tier, or consider upgrading instead.');
+            $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
+            return;
+        }
+
         $paymentSettings = $this->subscriptionService->getPaymentSettings();
-        $paymentMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
+        $cashfreeEnabled = ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
+            && !empty($paymentSettings['payment_cashfree_app_id'])
+            && !empty($paymentSettings['payment_cashfree_secret']);
+        $hasUpi = !empty($paymentSettings['payment_upi_id']);
+        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
+
+        // Determine the effective payment method; ensure it is one that is actually available.
+        $requestedMethod = $_POST['payment_method'] ?? ($paymentSettings['payment_method'] ?? 'request');
+        if ($requestedMethod === 'cashfree' && !$cashfreeEnabled) {
+            $requestedMethod = $hasUpi ? 'upi' : 'request';
+        }
+        if ($requestedMethod === 'upi' && !$hasUpi) {
+            $requestedMethod = $cashfreeEnabled ? 'cashfree' : 'request';
+        }
+        $paymentMethod = $requestedMethod;
+
         $user = Auth::user();
         $policy = [
             'cancel_days' => (int) ($plan['cancel_days'] ?? 0),
@@ -438,9 +481,8 @@ class PlansController extends BaseController
         ];
 
         // If manual review is disabled, reject any attempt to use it.
-        $manualReviewEnabled = ($paymentSettings['payment_manual_review_enabled'] ?? '1') === '1';
         if ($paymentMethod === 'request' && !$manualReviewEnabled && (float) ($plan['price'] ?? 0) > 0) {
-            $this->flash('error', 'Manual review is not available. Please select a different payment method.');
+            $this->flash('error', 'Payment methods are currently unavailable. Please contact the administrator to set up payment processing.');
             $this->redirect('/plans/project/' . urlencode($app) . '/' . urlencode($slug));
             return;
         }
@@ -484,7 +526,7 @@ class PlansController extends BaseController
             'status' => $paymentMethod === 'request' ? 'verification_pending' : 'pending',
             'amount' => (float) $plan['price'],
             'currency' => (string) ($plan['currency'] ?? ($paymentSettings['payment_currency'] ?? 'USD')),
-            'payment_payload' => $paymentMethod === 'upi' && !empty($paymentSettings['payment_upi_id'])
+            'payment_payload' => $paymentMethod === 'upi' && $hasUpi
                 ? 'upi://pay?' . http_build_query([
                     'pa' => $paymentSettings['payment_upi_id'],
                     'pn' => self::APP_META[$app]['name'] ?? ucfirst($app),
@@ -498,9 +540,7 @@ class PlansController extends BaseController
 
         // Only create a new Cashfree order when none exists yet (prevents 409 on retry).
         if ($paymentMethod === 'cashfree'
-            && ($paymentSettings['payment_cashfree_enabled'] ?? '0') === '1'
-            && !empty($paymentSettings['payment_cashfree_app_id'])
-            && !empty($paymentSettings['payment_cashfree_secret'])
+            && $cashfreeEnabled
             && empty($payment['provider_order_id'])
         ) {
             $result = $this->subscriptionService->createCashfreeOrder(
@@ -696,6 +736,7 @@ class PlansController extends BaseController
                  FROM qr_user_subscriptions s
                  JOIN qr_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$userId]
             );
@@ -716,6 +757,7 @@ class PlansController extends BaseController
                  FROM convertx_user_subscriptions s
                  JOIN convertx_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$userId]
             );
@@ -736,8 +778,9 @@ class PlansController extends BaseController
                         s.start_date AS started_at, s.end_date AS expires_at
                  FROM whatsapp_subscriptions s
                  LEFT JOIN whatsapp_subscription_plans p
-                   ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
+                  ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.end_date IS NULL OR s.end_date > NOW())
                  ORDER BY s.created_at DESC LIMIT 1",
                 [$userId]
             );
@@ -758,6 +801,7 @@ class PlansController extends BaseController
                  FROM resumex_user_subscriptions s
                  JOIN resumex_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$userId]
             );
@@ -768,6 +812,15 @@ class PlansController extends BaseController
             }
         } catch (\Exception $e) {
             // Table may not exist yet
+        }
+
+        foreach (['qr', 'convertx', 'whatsapp', 'resumex'] as $key) {
+            if (!isset($subs[$key])) {
+                $fallbackSub = $this->subscriptionService->getCurrentSubscription($key, $userId);
+                if ($fallbackSub) {
+                    $subs[$key] = $fallbackSub;
+                }
+            }
         }
 
         return $subs;

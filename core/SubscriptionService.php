@@ -5,6 +5,8 @@ namespace Core;
 class SubscriptionService
 {
     private Database $db;
+    private array $tableColumnsCache = [];
+    private ?array $paymentSettingsCache = null;
     private const APP_CONFIG = [
         'platform' => [
             'label' => 'MMB Platform',
@@ -322,6 +324,53 @@ class SubscriptionService
 <p style=\"color:#888;font-size:.85em;\">If you did not request this, you can safely ignore this email.</p>',
                         '[\"name\",\"otp\",\"phone\",\"expires_minutes\"]',
                         1
+                    ),
+                    (
+                        'refund-requested',
+                        'Refund Request Received',
+                        'Your refund request for {{plan_name}} has been received',
+                        '<h2>Hi {{user_name}},</h2>
+<p>We have received your refund request for your <strong>{{plan_name}}</strong> subscription on <strong>{{app_name}}</strong>.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Amount</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{currency}} {{amount}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reference</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{reference}}</td></tr>
+</table>
+<p>Your subscription access has been suspended pending the refund review. An admin will process your request shortly and you will be notified by email once a decision is made.</p>
+<p><a href=\"{{dashboard_url}}\">View your subscription</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"currency\",\"amount\",\"reference\",\"dashboard_url\"]',
+                        1
+                    ),
+                    (
+                        'refund-approved',
+                        'Refund Approved',
+                        'Your refund for {{plan_name}} has been approved',
+                        '<h2>Hi {{user_name}},</h2>
+<p>Great news! Your refund request for your <strong>{{plan_name}}</strong> subscription on <strong>{{app_name}}</strong> has been <strong style=\"color:#27ae60;\">approved</strong>.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Amount</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{currency}} {{amount}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reference</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{reference}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Admin Note</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{admin_note}}</td></tr>
+</table>
+<p>The refund will be processed to your original payment method. Please allow 5–10 business days for the amount to reflect in your account.</p>
+<p><a href=\"{{dashboard_url}}\">View your subscription</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"currency\",\"amount\",\"reference\",\"admin_note\",\"dashboard_url\"]',
+                        1
+                    ),
+                    (
+                        'refund-rejected',
+                        'Refund Request Declined',
+                        'Your refund request for {{plan_name}} has been declined',
+                        '<h2>Hi {{user_name}},</h2>
+<p>We have reviewed your refund request for your <strong>{{plan_name}}</strong> subscription on <strong>{{app_name}}</strong> and unfortunately it has been <strong style=\"color:#e74c3c;\">declined</strong>.</p>
+<table style=\"border-collapse:collapse;width:100%;margin:16px 0;\">
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reference</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{reference}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Reason</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{admin_note}}</td></tr>
+<tr><td style=\"padding:8px;border:1px solid #ddd;\"><strong>Subscription Status</strong></td><td style=\"padding:8px;border:1px solid #ddd;\">{{subscription_status}}</td></tr>
+</table>
+<p>If you have questions, please contact our support team.</p>
+<p><a href=\"{{dashboard_url}}\">View your subscription</a></p>',
+                        '[\"user_name\",\"plan_name\",\"app_name\",\"reference\",\"admin_note\",\"subscription_status\",\"dashboard_url\"]',
+                        1
                     )
             ");
         } catch (\Throwable $e) {
@@ -409,17 +458,18 @@ class SubscriptionService
 
         try {
             if ($appKey === 'whatsapp') {
+                $planStatusCondition = $this->buildWhatsAppPlanStatusCondition();
                 $plan = ctype_digit($slugOrId)
                     ? $this->db->fetch(
-                        "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_id_column']} = ? AND {$config['plan_status_column']} = ? LIMIT 1",
-                        [(int) $slugOrId, $config['plan_active_value']]
+                        "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_id_column']} = ? AND {$planStatusCondition} LIMIT 1",
+                        [(int) $slugOrId]
                     )
                     : $this->db->fetch(
                         "SELECT * FROM {$config['plan_table']}
                          WHERE (LOWER(REPLACE(REPLACE({$config['plan_name_column']}, ' Plan', ''), ' ', '-')) = ? OR {$config['plan_slug_column']} = ?)
-                           AND {$config['plan_status_column']} = ?
+                           AND {$planStatusCondition}
                          LIMIT 1",
-                        [strtolower($slugOrId), strtolower($slugOrId), $config['plan_active_value']]
+                        [strtolower($slugOrId), strtolower($slugOrId)]
                     );
             } else {
                 $plan = $this->db->fetch(
@@ -449,10 +499,17 @@ class SubscriptionService
 
         try {
             $orderBy = $appKey === 'whatsapp' ? "{$config['plan_price_column']} ASC, {$config['plan_id_column']} ASC" : "sort_order ASC, {$config['plan_price_column']} ASC";
-            $plans = $this->db->fetchAll(
-                "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_status_column']} = ? ORDER BY {$orderBy}",
-                [$config['plan_active_value']]
-            );
+            if ($appKey === 'whatsapp') {
+                $planStatusCondition = $this->buildWhatsAppPlanStatusCondition();
+                $plans = $this->db->fetchAll(
+                    "SELECT * FROM {$config['plan_table']} WHERE {$planStatusCondition} ORDER BY {$orderBy}"
+                );
+            } else {
+                $plans = $this->db->fetchAll(
+                    "SELECT * FROM {$config['plan_table']} WHERE {$config['plan_status_column']} = ? ORDER BY {$orderBy}",
+                    [$config['plan_active_value']]
+                );
+            }
             return array_map(fn(array $row) => $this->normalizePlanRow($appKey, $row), $plans);
         } catch (\Throwable $e) {
             return [];
@@ -461,6 +518,10 @@ class SubscriptionService
 
     public function getCurrentSubscription(string $appKey, int $userId): ?array
     {
+        if ($userId <= 0) {
+            return null;
+        }
+
         $config = $this->getAppConfig($appKey);
         if ($config === null) {
             return null;
@@ -475,9 +536,10 @@ class SubscriptionService
                      FROM whatsapp_subscriptions s
                      LEFT JOIN whatsapp_subscription_plans p
                        ON p.id = COALESCE(s.plan_id, (SELECT id FROM whatsapp_subscription_plans WHERE LOWER(REPLACE(REPLACE(name, ' Plan', ''), ' ', '-')) = s.plan_type LIMIT 1))
-                     WHERE s.user_id = ? AND s.status = 'active'
-                     ORDER BY s.created_at DESC
-                     LIMIT 1",
+                      WHERE s.user_id = ? AND s.status = 'active'
+                       AND (s.end_date IS NULL OR s.end_date > NOW())
+                      ORDER BY s.created_at DESC
+                      LIMIT 1",
                     [$userId]
                 );
             } else {
@@ -487,11 +549,12 @@ class SubscriptionService
                             s.{$config['subscription_expires_column']} AS expires_at,
                             p.{$config['plan_name_column']} AS plan_name,
                             p.{$config['plan_slug_column']} AS plan_slug
-                     FROM {$config['subscription_table']} s
-                     JOIN {$config['plan_table']} p ON p.{$config['plan_id_column']} = s.{$config['subscription_plan_column']}
-                     WHERE s.{$config['subscription_user_column']} = ? AND s.{$config['subscription_status_column']} = ?
-                     ORDER BY s.{$config['subscription_started_column']} DESC
-                     LIMIT 1",
+                      FROM {$config['subscription_table']} s
+                      JOIN {$config['plan_table']} p ON p.{$config['plan_id_column']} = s.{$config['subscription_plan_column']}
+                      WHERE s.{$config['subscription_user_column']} = ? AND s.{$config['subscription_status_column']} = ?
+                       AND (s.{$config['subscription_expires_column']} IS NULL OR s.{$config['subscription_expires_column']} > NOW())
+                      ORDER BY s.{$config['subscription_started_column']} DESC
+                      LIMIT 1",
                     [$userId, $config['subscription_active_value']]
                 );
             }
@@ -499,7 +562,105 @@ class SubscriptionService
             return null;
         }
 
-        return $row ? $this->normalizeSubscriptionRow($appKey, $row) : null;
+        if ($row) {
+            return $this->normalizeSubscriptionRow($appKey, $row);
+        }
+
+        // Fallback: treat the app's free tier as active by default when no paid
+        // or explicit subscription row exists.
+        $freePlan = $this->getDefaultFreePlan($appKey);
+        if (!$freePlan) {
+            return null;
+        }
+
+        $fallback = [
+            'id' => 0,
+            'user_id' => $userId,
+            'plan_id' => $freePlan['id'] ?? 0,
+            'plan_name' => $freePlan['name'] ?? 'Free Plan',
+            'plan_slug' => $freePlan['slug'] ?? 'free',
+            'price' => 0,
+            'currency' => $freePlan['currency'] ?? 'USD',
+            'billing_cycle' => $freePlan['billing_cycle'] ?? (($appKey === 'whatsapp') ? (($freePlan['duration_days'] ?? 30) . ' days') : 'free'),
+            'started_at' => null,
+            'expires_at' => null,
+            'status' => 'active',
+        ];
+
+        return $this->normalizeSubscriptionRow($appKey, $fallback);
+    }
+
+    public function ensureUserHasDefaultPlatformPlan(int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        try {
+            $this->ensureInfrastructure();
+            $this->ensurePlatformPlanTables();
+
+            $active = $this->db->fetch(
+                "SELECT s.id
+                 FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                 LIMIT 1",
+                [$userId]
+            );
+            if ($active) {
+                return true;
+            }
+
+            $freePlan = $this->db->fetch(
+                "SELECT *
+                 FROM platform_plans
+                 WHERE status = 'active' AND (slug = 'free' OR price <= 0)
+                 ORDER BY (slug = 'free') DESC, sort_order ASC, id ASC
+                 LIMIT 1"
+            );
+
+            if (!$freePlan) {
+                $freePlanId = $this->db->insert('platform_plans', [
+                    'name' => 'Free Plan',
+                    'slug' => 'free',
+                    'description' => 'Default free access plan available until upgrade.',
+                    'price' => 0.00,
+                    'currency' => 'USD',
+                    'billing_cycle' => 'lifetime',
+                    'cancel_days' => 0,
+                    'refund_days' => 0,
+                    'color' => '#00f0ff',
+                    'included_apps' => json_encode(['qr', 'whatsapp', 'convertx', 'resumex']),
+                    'app_features' => json_encode((object) []),
+                    'status' => 'active',
+                    'sort_order' => -1000,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+                $freePlan = $this->db->fetch("SELECT * FROM platform_plans WHERE id = ? LIMIT 1", [(int) $freePlanId]);
+            }
+
+            if (!$freePlan) {
+                return false;
+            }
+
+            $this->db->insert('platform_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => (int) $freePlan['id'],
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => null,
+                'assigned_by' => null,
+                'notes' => 'Auto-assigned default free plan',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::ensureUserHasDefaultPlatformPlan - ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function getSubscriptionHistory(string $appKey, int $userId, int $limit = 20): array
@@ -547,6 +708,11 @@ class SubscriptionService
 
     public function getPaymentSettings(bool $forDisplay = false): array
     {
+        // Use instance cache for non-display calls (display masks the secret)
+        if (!$forDisplay && $this->paymentSettingsCache !== null) {
+            return $this->paymentSettingsCache;
+        }
+
         $defaults = [
             'payment_method' => 'request',
             'payment_upi_id' => '',
@@ -556,7 +722,12 @@ class SubscriptionService
             'payment_cashfree_sandbox' => '1',
             'payment_currency' => 'INR',
             'payment_manual_review_enabled' => '1',
+            'payment_upi_logo' => '',
+            'payment_cashfree_logo' => '',
+            'payment_manual_review_logo' => '',
             'require_mobile_verification' => '0',
+            'payment_default_refund_days' => '7',
+            'payment_default_cancel_days' => '0',
         ];
 
         try {
@@ -576,6 +747,8 @@ class SubscriptionService
             $plain = $defaults['payment_cashfree_secret'];
             $defaults['payment_cashfree_secret'] = $plain === '' ? '' : '••••••••';
             $defaults['payment_cashfree_secret_set'] = $plain !== '';
+        } else {
+            $this->paymentSettingsCache = $defaults;
         }
 
         return $defaults;
@@ -596,6 +769,11 @@ class SubscriptionService
             'payment_cashfree_sandbox' => !empty($input['payment_cashfree_sandbox']) ? '1' : '0',
             'payment_currency' => trim((string) ($input['payment_currency'] ?? 'INR')),
             'payment_manual_review_enabled' => !empty($input['payment_manual_review_enabled']) ? '1' : '0',
+            'payment_default_refund_days' => max(0, (int) ($input['payment_default_refund_days'] ?? 7)),
+            'payment_default_cancel_days' => max(0, (int) ($input['payment_default_cancel_days'] ?? 0)),
+            'payment_upi_logo' => trim((string) ($input['payment_upi_logo'] ?? '')),
+            'payment_cashfree_logo' => trim((string) ($input['payment_cashfree_logo'] ?? '')),
+            'payment_manual_review_logo' => trim((string) ($input['payment_manual_review_logo'] ?? '')),
         ];
 
         foreach ($data as $key => $value) {
@@ -635,20 +813,47 @@ class SubscriptionService
         );
 
         if ($existing) {
+            $updates = [];
+            $updateParams = [];
+
             // If a fresh UPI payload is supplied but the existing record has none, update it now.
             if (!empty($data['payment_payload']) && empty($existing['payment_payload'])) {
-                $this->db->query(
-                    "UPDATE subscription_payments SET payment_payload = ?, updated_at = NOW() WHERE id = ?",
-                    [$data['payment_payload'], (int) $existing['id']]
-                );
+                $updates[] = 'payment_payload = ?';
+                $updateParams[] = $data['payment_payload'];
                 $existing['payment_payload'] = $data['payment_payload'];
             }
+
+            // Sync amount/currency if the plan price was changed since the payment was created.
+            $newAmount = isset($data['amount']) ? (float) $data['amount'] : null;
+            if ($newAmount !== null && abs((float) $existing['amount'] - $newAmount) > 0.0001) {
+                $updates[] = 'amount = ?';
+                $updateParams[] = $newAmount;
+                $existing['amount'] = $newAmount;
+            }
+            $newCurrency = isset($data['currency']) ? (string) $data['currency'] : null;
+            if ($newCurrency !== null && $existing['currency'] !== $newCurrency) {
+                $updates[] = 'currency = ?';
+                $updateParams[] = $newCurrency;
+                $existing['currency'] = $newCurrency;
+            }
+
+            if (!empty($updates)) {
+                $updates[] = 'updated_at = NOW()';
+                $updateParams[] = (int) $existing['id'];
+                $this->db->query(
+                    "UPDATE subscription_payments SET " . implode(', ', $updates) . " WHERE id = ?",
+                    $updateParams
+                );
+            }
+
             return $existing;
         }
 
         $invoiceNo = $this->generateUniqueToken('INV-');
         $reference = $this->generateUniqueToken('PAY-');
-        $expiresAt = $data['expires_at'] ?? date('Y-m-d H:i:s', strtotime('+1 day'));
+        $expiresAt = (array_key_exists('expires_at', $data) && $data['expires_at'] !== null)
+            ? $data['expires_at']
+            : $this->calculateExpiry((string) ($data['billing_cycle'] ?? ''));
 
         $paymentId = $this->db->insert('subscription_payments', [
             'user_id' => (int) $data['user_id'],
@@ -1138,27 +1343,283 @@ class SubscriptionService
             [$paymentId, $userId]
         );
 
+        // NOTE: Do NOT auto-cancel the subscription here. The subscription remains
+        // active while the refund is pending admin review. If admin approves the
+        // refund, the subscription will be cancelled then. If admin rejects with
+        // "keep plan active", the user retains access as intended.
+
+        // Send email notification and bell notification for refund request.
+        try {
+            $user = $this->db->fetch("SELECT id, name, email FROM users WHERE id = ? LIMIT 1", [$userId]);
+            if ($user && !empty($user['email'])) {
+                $dashboardUrl = match ($payment['app_key'] ?? '') {
+                    'resumex'  => '/projects/resumex/plans',
+                    'qr'       => '/projects/qr/plans',
+                    'convertx' => '/projects/convertx/plans',
+                    'whatsapp' => '/projects/whatsapp/plans',
+                    default    => '/plans',
+                };
+                $this->ensureNotificationTemplates();
+                MailService::sendNotification(
+                    $user['email'],
+                    'refund-requested',
+                    [
+                        'user_name'     => $user['name'] ?? 'User',
+                        'plan_name'     => $payment['plan_name'] ?? 'Subscription',
+                        'app_name'      => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                        'currency'      => $payment['currency'] ?? '',
+                        'amount'        => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                        'reference'     => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                        'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                    ],
+                    false
+                );
+                Notification::send(
+                    $userId,
+                    'refund_requested',
+                    'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been received and is pending review.',
+                    ['payment_id' => $paymentId]
+                );
+
+                $adminUsers = $this->db->fetchAll(
+                    "SELECT id, email, name FROM users WHERE role LIKE '%admin%'"
+                ) ?: [];
+                foreach ($adminUsers as $adminUser) {
+                    if (!empty($adminUser['email'])) {
+                        MailService::sendNotification(
+                            (string) $adminUser['email'],
+                            'refund-requested-admin',
+                            [
+                                'user_name'  => $user['name'] ?? 'User',
+                                'user_email' => $user['email'] ?? '',
+                                'plan_name'  => $payment['plan_name'] ?? 'Subscription',
+                                'currency'   => $payment['currency'] ?? '',
+                                'amount'     => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                                'invoice_no' => $payment['invoice_no'] ?? '',
+                            ],
+                            false
+                        );
+                    }
+
+                    if ((int) ($adminUser['id'] ?? 0) > 0) {
+                        Notification::send(
+                            (int) $adminUser['id'],
+                            'refund_requested_admin',
+                            'New refund request from ' . ($user['name'] ?? 'a user') . ' for ' . ($payment['plan_name'] ?? 'a subscription') . '.',
+                            ['payment_id' => $paymentId, 'user_id' => $userId]
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::requestRefund notify - ' . $e->getMessage());
+        }
+
         return true;
     }
 
-    public function reviewRefundRequest(int $paymentId, string $decision, int $adminId, string $note = ''): bool
+    public function reviewRefundRequest(int $paymentId, string $decision, int $adminId, string $note = '', bool $cancelSubscription = false): bool
     {
         if (!in_array($decision, ['approved', 'rejected', 'refunded'], true)) {
             return false;
         }
-        $payment = $this->db->fetch("SELECT * FROM subscription_payments WHERE id = ? LIMIT 1", [$paymentId]);
+        $payment = $this->db->fetch(
+            "SELECT sp.*, u.id AS user_id_val, u.name AS user_name, u.email AS user_email
+             FROM subscription_payments sp
+             LEFT JOIN users u ON u.id = sp.user_id
+             WHERE sp.id = ? LIMIT 1",
+            [$paymentId]
+        );
         if (!$payment || ($payment['refund_status'] ?? 'none') !== 'requested') {
             return false;
+        }
+
+        $finalStatus = $decision;
+
+        // When admin approves a Cashfree payment, attempt gateway refund automatically.
+        if ($decision === 'approved' && ($payment['gateway'] ?? '') === 'cashfree' && !empty($payment['provider_order_id'])) {
+            $settings = $this->getPaymentSettings();
+            $gatewayResult = $this->triggerCashfreeRefund($payment, $settings, $note);
+            if ($gatewayResult['success']) {
+                $finalStatus = 'refunded';
+                $note = trim($note . ' [Gateway refund initiated: ' . ($gatewayResult['refund_id'] ?? 'OK') . ']');
+            } else {
+                // Log gateway failure but still mark as approved so admin can follow up manually.
+                Logger::warning('SubscriptionService::reviewRefundRequest - Cashfree refund API failed: ' . ($gatewayResult['message'] ?? 'unknown'), [
+                    'payment_id' => $paymentId,
+                ]);
+                $note = trim($note . ' [Gateway error: ' . ($gatewayResult['message'] ?? 'unknown') . ' — process manually]');
+            }
         }
 
         $this->db->query(
             "UPDATE subscription_payments
              SET refund_status = ?, refund_decided_at = NOW(), admin_notes = ?, updated_at = NOW()
              WHERE id = ?",
-            [$decision, $note, $paymentId]
+            [$finalStatus, $note, $paymentId]
         );
-        Logger::activity($adminId, 'subscription_refund_reviewed', ['payment_id' => $paymentId, 'decision' => $decision]);
+        Logger::activity($adminId, 'subscription_refund_reviewed', ['payment_id' => $paymentId, 'decision' => $finalStatus]);
+
+        // On approval: always auto-cancel the subscription (ensure access is revoked).
+        // On rejection: cancel only if admin explicitly chose to cancel.
+        $shouldCancelSub = ($decision === 'approved') || ($decision === 'rejected' && $cancelSubscription);
+        if ($shouldCancelSub && !empty($payment['subscription_id'])) {
+            $config = $this->getAppConfig((string) ($payment['app_key'] ?? ''));
+            try {
+                if (($payment['app_key'] ?? '') === 'whatsapp') {
+                    $this->db->query(
+                        "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        [(int) $payment['subscription_id']]
+                    );
+                } elseif ($config !== null) {
+                    $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                    $sql = "UPDATE {$config['subscription_table']}
+                            SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                    if ($cancelledColumn) {
+                        $sql .= ", {$cancelledColumn} = NOW()";
+                    }
+                    $sql .= " WHERE id = ?";
+                    $this->db->query($sql, [(int) $payment['subscription_id']]);
+                }
+                $this->db->query(
+                    "UPDATE subscription_payments SET cancel_requested_at = NOW(), updated_at = NOW() WHERE id = ?",
+                    [$paymentId]
+                );
+            } catch (\Throwable $e) {
+                Logger::error('SubscriptionService::reviewRefundRequest auto-cancel - ' . $e->getMessage());
+            }
+        }
+
+        // Send email + bell notification to the user.
+        try {
+            $userId = (int) ($payment['user_id'] ?? $payment['user_id_val'] ?? 0);
+            $userEmail = (string) ($payment['user_email'] ?? '');
+            if ($userId > 0 && $userEmail !== '') {
+                $dashboardUrl = match ($payment['app_key'] ?? '') {
+                    'resumex'  => '/projects/resumex/plans',
+                    'qr'       => '/projects/qr/plans',
+                    'convertx' => '/projects/convertx/plans',
+                    'whatsapp' => '/projects/whatsapp/plans',
+                    default    => '/plans',
+                };
+                $this->ensureNotificationTemplates();
+                if ($decision === 'rejected') {
+                    $subStatus = $cancelSubscription ? 'Cancelled' : 'Kept active';
+                    MailService::sendNotification(
+                        $userEmail,
+                        'refund-rejected',
+                        [
+                            'user_name'          => $payment['user_name'] ?? 'User',
+                            'plan_name'          => $payment['plan_name'] ?? 'Subscription',
+                            'app_name'           => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                            'reference'          => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                            'admin_note'         => $note ?: 'No reason provided.',
+                            'subscription_status' => $subStatus,
+                            'dashboard_url'      => $this->absoluteUrl($dashboardUrl),
+                        ],
+                        false
+                    );
+                    Notification::send(
+                        $userId,
+                        'refund_rejected',
+                        'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been declined. Subscription: ' . $subStatus . '.',
+                        ['payment_id' => $paymentId]
+                    );
+                } else {
+                    // Approved or refunded
+                    MailService::sendNotification(
+                        $userEmail,
+                        'refund-approved',
+                        [
+                            'user_name'    => $payment['user_name'] ?? 'User',
+                            'plan_name'    => $payment['plan_name'] ?? 'Subscription',
+                            'app_name'     => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                            'currency'     => $payment['currency'] ?? '',
+                            'amount'       => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                            'reference'    => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                            'admin_note'   => $note ?: 'Approved by admin.',
+                            'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                        ],
+                        false
+                    );
+                    Notification::send(
+                        $userId,
+                        'refund_approved',
+                        'Your refund request for ' . ($payment['plan_name'] ?? 'your subscription') . ' has been approved. Please allow 5–10 business days for the amount to reflect.',
+                        ['payment_id' => $paymentId]
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::reviewRefundRequest notify - ' . $e->getMessage());
+        }
+
         return true;
+    }
+
+    /**
+     * Call the Cashfree refunds API to initiate a gateway-level refund.
+     *
+     * @param array  $payment  The subscription_payments row (must have provider_order_id and amount).
+     * @param array  $settings Payment settings (cashfree credentials).
+     * @param string $note     Optional reason / note for the refund.
+     * @return array ['success' => bool, 'refund_id' => string|null, 'message' => string|null]
+     */
+    private function triggerCashfreeRefund(array $payment, array $settings, string $note = ''): array
+    {
+        $orderId = (string) ($payment['provider_order_id'] ?? '');
+        if ($orderId === '') {
+            return ['success' => false, 'message' => 'Missing Cashfree order ID.'];
+        }
+
+        $isSandbox = ($settings['payment_cashfree_sandbox'] ?? '1') === '1';
+        $baseUrl = $isSandbox
+            ? 'https://sandbox.cashfree.com/pg/orders/'
+            : 'https://api.cashfree.com/pg/orders/';
+
+        $refundId = 'refund_' . $payment['id'] . '_' . time();
+        $payload  = [
+            'refund_amount' => (float) $payment['amount'],
+            'refund_id'     => $refundId,
+            'refund_note'   => $note ?: 'Admin-approved refund',
+        ];
+
+        $url = $baseUrl . rawurlencode($orderId) . '/refunds';
+        $ch  = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'x-api-version: 2023-08-01',
+                'x-client-id: '     . ($settings['payment_cashfree_app_id'] ?? ''),
+                'x-client-secret: ' . ($settings['payment_cashfree_secret'] ?? ''),
+            ],
+            CURLOPT_TIMEOUT        => 30,
+        ]);
+
+        $response  = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpStatus = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+
+        if ($response === false || $curlError !== '') {
+            return ['success' => false, 'message' => $curlError ?: 'cURL error contacting Cashfree.'];
+        }
+
+        $decoded = json_decode($response, true);
+        // Cashfree returns 200 on success; refund_status will be PENDING or SUCCESS.
+        if ($httpStatus >= 200 && $httpStatus < 300 && is_array($decoded)) {
+            return [
+                'success'   => true,
+                'refund_id' => $decoded['refund_id'] ?? $refundId,
+                'message'   => $decoded['refund_message'] ?? null,
+            ];
+        }
+
+        $errMsg = is_array($decoded) ? ($decoded['message'] ?? 'Cashfree refund failed.') : 'Cashfree refund failed.';
+        return ['success' => false, 'message' => $errMsg];
     }
 
     /**
@@ -1168,7 +1629,14 @@ class SubscriptionService
     public function getCancelRefundWindowDays(array $payment): int
     {
         $meta = $this->decodePaymentMetadata($payment);
-        return (int) ($meta['refund_days'] ?? 7);
+        $refundDays = (int) ($meta['refund_days'] ?? -1);
+        if ($refundDays >= 0) {
+            return $refundDays;
+        }
+        // Fall back to the global default set in payment settings.
+        $paymentSettings = $this->getPaymentSettings();
+        $globalDefault = (int) ($paymentSettings['payment_default_refund_days'] ?? 7);
+        return $globalDefault >= 0 ? $globalDefault : 7;
     }
 
     public function canCancelPayment(array $payment): array
@@ -1195,6 +1663,11 @@ class SubscriptionService
         $metadata = $this->decodePaymentMetadata($payment);
         $refundDays = (int) ($metadata['refund_days'] ?? 0);
         if ($refundDays <= 0) {
+            // Fall back to global payment_default_refund_days when plan has none set.
+            $paymentSettings = $this->getPaymentSettings();
+            $refundDays = (int) ($paymentSettings['payment_default_refund_days'] ?? 0);
+        }
+        if ($refundDays <= 0) {
             return ['allowed' => false, 'reason' => 'Refunds are not available for this plan.'];
         }
 
@@ -1209,25 +1682,360 @@ class SubscriptionService
             : ['allowed' => false, 'reason' => 'Refund window has ended.', 'deadline' => $deadline];
     }
 
+    /**
+     * Admin-initiated refund: marks any paid payment as refunded without requiring
+     * a prior user refund request. Cancels the subscription and triggers the
+     * gateway refund API if applicable.
+     */
+    public function adminInitiateRefund(int $paymentId, int $adminId, string $note = ''): bool
+    {
+        $payment = $this->db->fetch(
+            "SELECT sp.*, u.id AS user_id_val, u.name AS user_name, u.email AS user_email
+             FROM subscription_payments sp
+             LEFT JOIN users u ON u.id = sp.user_id
+             WHERE sp.id = ? AND sp.status = 'paid'
+             AND sp.refund_status NOT IN ('approved','refunded') LIMIT 1",
+            [$paymentId]
+        );
+        if (!$payment) {
+            return false;
+        }
+
+        $finalStatus = 'refunded';
+
+        // Attempt gateway refund for Cashfree payments.
+        if (($payment['gateway'] ?? '') === 'cashfree' && !empty($payment['provider_order_id'])) {
+            $settings = $this->getPaymentSettings();
+            $gatewayResult = $this->triggerCashfreeRefund($payment, $settings, $note);
+            if (!$gatewayResult['success']) {
+                Logger::warning('SubscriptionService::adminInitiateRefund - Cashfree refund API failed: ' . ($gatewayResult['message'] ?? 'unknown'), [
+                    'payment_id' => $paymentId,
+                ]);
+                $note = trim($note . ' [Gateway error: ' . ($gatewayResult['message'] ?? 'unknown') . ' — process manually]');
+            } else {
+                $note = trim($note . ' [Gateway refund initiated: ' . ($gatewayResult['refund_id'] ?? 'OK') . ']');
+            }
+        }
+
+        $this->db->query(
+            "UPDATE subscription_payments
+             SET refund_status = ?, refund_requested_at = COALESCE(refund_requested_at, NOW()),
+                 refund_decided_at = NOW(), admin_notes = ?, updated_at = NOW()
+             WHERE id = ?",
+            [$finalStatus, $note, $paymentId]
+        );
+        Logger::activity($adminId, 'subscription_refund_admin_initiated', ['payment_id' => $paymentId]);
+
+        // Cancel the subscription.
+        if (!empty($payment['subscription_id'])) {
+            $config = $this->getAppConfig((string) ($payment['app_key'] ?? ''));
+            try {
+                if (($payment['app_key'] ?? '') === 'whatsapp') {
+                    $this->db->query(
+                        "UPDATE whatsapp_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = ?",
+                        [(int) $payment['subscription_id']]
+                    );
+                } elseif ($config !== null) {
+                    $cancelledColumn = $config['subscription_cancelled_column'] ?? null;
+                    $sql = "UPDATE {$config['subscription_table']}
+                            SET {$config['subscription_status_column']} = 'cancelled', updated_at = NOW()";
+                    if ($cancelledColumn) {
+                        $sql .= ", {$cancelledColumn} = NOW()";
+                    }
+                    $sql .= " WHERE id = ?";
+                    $this->db->query($sql, [(int) $payment['subscription_id']]);
+                }
+                $this->db->query(
+                    "UPDATE subscription_payments SET cancel_requested_at = NOW(), updated_at = NOW() WHERE id = ?",
+                    [$paymentId]
+                );
+            } catch (\Throwable $e) {
+                Logger::error('SubscriptionService::adminInitiateRefund cancel - ' . $e->getMessage());
+            }
+        }
+
+        // Notify the user.
+        try {
+            $userId    = (int) ($payment['user_id'] ?? $payment['user_id_val'] ?? 0);
+            $userEmail = (string) ($payment['user_email'] ?? '');
+            if ($userId > 0 && $userEmail !== '') {
+                $dashboardUrl = match ($payment['app_key'] ?? '') {
+                    'resumex'  => '/projects/resumex/plans',
+                    'qr'       => '/projects/qr/plans',
+                    'convertx' => '/projects/convertx/plans',
+                    'whatsapp' => '/projects/whatsapp/plans',
+                    default    => '/plans',
+                };
+                $this->ensureNotificationTemplates();
+                MailService::sendNotification(
+                    $userEmail,
+                    'refund-approved',
+                    [
+                        'user_name'     => $payment['user_name'] ?? 'User',
+                        'plan_name'     => $payment['plan_name'] ?? 'Subscription',
+                        'app_name'      => self::APP_CONFIG[$payment['app_key'] ?? '']['label'] ?? 'MMB Platform',
+                        'currency'      => $payment['currency'] ?? '',
+                        'amount'        => number_format((float) ($payment['amount'] ?? 0), 2, '.', ''),
+                        'reference'     => $payment['reference'] ?? $payment['invoice_no'] ?? '#' . $paymentId,
+                        'admin_note'    => $note ?: 'Admin has processed a refund for your payment.',
+                        'dashboard_url' => $this->absoluteUrl($dashboardUrl),
+                    ],
+                    false
+                );
+                Notification::send(
+                    $userId,
+                    'refund_approved',
+                    'A refund has been processed for ' . ($payment['plan_name'] ?? 'your subscription') . '. Your subscription has been cancelled.',
+                    ['payment_id' => $paymentId]
+                );
+            }
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionService::adminInitiateRefund notify - ' . $e->getMessage());
+        }
+
+        return true;
+    }
+
     public function getAdminPayments(?string $appKey = null): array
     {
+        $orderSql = $this->buildAdminPaymentStatusOrderSql('sp.status');
+
         if ($appKey !== null) {
             return $this->db->fetchAll(
                 "SELECT sp.*, u.name AS user_name, u.email AS user_email
-                 FROM subscription_payments sp
-                 JOIN users u ON u.id = sp.user_id
-                 WHERE sp.app_key = ?
-                 ORDER BY FIELD(sp.status,'verification_pending','pending','paid','failed','cancelled'), sp.id DESC",
+                  FROM subscription_payments sp
+                  LEFT JOIN users u ON u.id = sp.user_id
+                  WHERE sp.app_key = ?
+                  ORDER BY {$orderSql}, sp.id DESC",
                 [$appKey]
             );
         }
 
         return $this->db->fetchAll(
             "SELECT sp.*, u.name AS user_name, u.email AS user_email
-             FROM subscription_payments sp
-             JOIN users u ON u.id = sp.user_id
-             ORDER BY FIELD(sp.status,'verification_pending','pending','paid','failed','cancelled'), sp.id DESC"
+              FROM subscription_payments sp
+              LEFT JOIN users u ON u.id = sp.user_id
+              ORDER BY {$orderSql}, sp.id DESC"
         );
+    }
+
+    public function getAdminRefundPayments(): array
+    {
+        $orderSql = $this->buildAdminRefundStatusOrderSql('sp.refund_status');
+
+        return $this->db->fetchAll(
+            "SELECT sp.*, u.name AS user_name, u.email AS user_email
+              FROM subscription_payments sp
+              LEFT JOIN users u ON u.id = sp.user_id
+              WHERE sp.refund_status IN ('requested','approved','refunded','rejected')
+              ORDER BY {$orderSql}, sp.refund_requested_at DESC, sp.id DESC"
+        );
+    }
+
+    /**
+     * Return a list of users who currently hold at least one active paid
+     * (price > 0) subscription — either a platform plan or an app-level
+     * subscription_payment with status = 'paid'.
+     *
+     * @return array  Each row has: user_id, user_name, user_email, plan_sources (comma list)
+     */
+    public function getUsersWithActivePaidPlans(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT u.id AS user_id, u.name AS user_name, u.email AS user_email,
+                    GROUP_CONCAT(DISTINCT src.source ORDER BY src.source SEPARATOR ', ') AS plan_sources
+             FROM users u
+             JOIN (
+                 /* Platform subscriptions with a non-free plan */
+                 SELECT s.user_id, 'platform' AS source
+                 FROM platform_user_subscriptions s
+                 JOIN platform_plans p ON p.id = s.plan_id
+                 WHERE s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
+                   AND p.price > 0
+                 UNION
+                 /* App-specific and platform paid payments */
+                 SELECT sp.user_id,
+                        CASE WHEN sp.app_key = 'platform' THEN 'platform' ELSE sp.app_key END AS source
+                 FROM subscription_payments sp
+                 WHERE sp.status = 'paid'
+                   AND sp.amount > 0
+             ) AS src ON src.user_id = u.id
+             GROUP BY u.id, u.name, u.email
+             ORDER BY u.name ASC"
+        ) ?: [];
+    }
+
+    /**
+     * Return all active paid subscription_payments for a user, enriched with
+     * refund-eligibility information.
+     *
+     * @return array  Each row is a subscription_payments row plus:
+     *                app_label, refund_eligible (bool), refund_amount, refund_days_left
+     */
+    public function getUserActivePaidPayments(int $userId): array
+    {
+        $rows = $this->db->fetchAll(
+            "SELECT sp.*
+             FROM subscription_payments sp
+              WHERE sp.user_id = ?
+                AND sp.status = 'paid'
+                AND sp.amount > 0
+              ORDER BY sp.id DESC",
+            [$userId]
+        ) ?: [];
+
+        $result = [];
+        foreach ($rows as $row) {
+            $appKey = (string) ($row['app_key'] ?? '');
+            $row['app_label'] = self::APP_CONFIG[$appKey]['label'] ?? ucfirst($appKey);
+
+            $refundCheck = $this->canRequestRefund($row);
+            $row['refund_eligible'] = $refundCheck['allowed'];
+            $row['refund_amount']   = $refundCheck['allowed'] ? (float) ($row['amount'] ?? 0) : 0.0;
+            $row['refund_days_left'] = 0;
+            if ($refundCheck['allowed'] && !empty($refundCheck['deadline'])) {
+                $row['refund_days_left'] = max(0, (int) ceil(($refundCheck['deadline'] - time()) / 86400));
+            }
+            $result[] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Admin bulk-cancel a user's selected paid subscriptions and auto-assign
+     * the free platform plan.
+     *
+     * For each cancelled payment:
+     *  - Marks payment as 'cancelled'.
+     *  - If $issueRefund is true AND the payment is refund-eligible, auto-creates
+     *    a refund request (status = 'requested') so admin can approve it on the
+     *    refunds page. (The caller already confirmed via popup.)
+     *  - Optionally sends the cancellation notification email.
+     *
+     * After all cancellations the user is guaranteed to have the free plan.
+     *
+     * @param int   $userId      Target user.
+     * @param int[] $paymentIds  IDs of subscription_payments rows to cancel.
+     * @param bool  $issueRefund Whether to auto-create refund requests where eligible.
+     * @param bool  $notify      Whether to send cancellation email to the user.
+     * @param int   $adminId     Acting admin.
+     * @return array ['cancelled' => int, 'refunds_queued' => int]
+     */
+    public function adminBulkCancelUserPlans(
+        int $userId,
+        array $paymentIds,
+        bool $issueRefund,
+        bool $notify,
+        int $adminId
+    ): array {
+        $cancelled     = 0;
+        $refundsQueued = 0;
+
+        foreach ($paymentIds as $rawId) {
+            $paymentId = (int) $rawId;
+            if ($paymentId <= 0) {
+                continue;
+            }
+
+            $payment = $this->db->fetch(
+                "SELECT * FROM subscription_payments WHERE id = ? AND user_id = ? LIMIT 1",
+                [$paymentId, $userId]
+            );
+            if (!$payment || $payment['status'] !== 'paid') {
+                continue;
+            }
+
+            $config = $this->getAppConfig((string) $payment['app_key']);
+
+            try {
+                // Cancel the linked subscription row in the app table
+                if (!empty($payment['subscription_id'])) {
+                    if ($payment['app_key'] === 'whatsapp') {
+                        $this->cancelSubscriptionTableRows(
+                            'whatsapp_subscriptions',
+                            'status',
+                            null,
+                            'id = ?',
+                            [(int) $payment['subscription_id']]
+                        );
+                    } elseif ($config !== null) {
+                        $this->cancelSubscriptionTableRows(
+                            (string) $config['subscription_table'],
+                            (string) $config['subscription_status_column'],
+                            $config['subscription_cancelled_column'] ?? null,
+                            'id = ?',
+                            [(int) $payment['subscription_id']]
+                        );
+                    }
+                }
+
+                // Cancel the payment record
+                $this->db->query(
+                    "UPDATE subscription_payments
+                     SET status = 'cancelled', cancel_requested_at = NOW(), updated_at = NOW()
+                     WHERE id = ?",
+                    [$paymentId]
+                );
+                $cancelled++;
+
+                // Also directly cancel any active subscription rows for this user+plan in the app table
+                $appKey = (string) ($payment['app_key'] ?? '');
+                $appConfig = self::APP_CONFIG[$appKey] ?? null;
+                if ($appConfig !== null && !empty($payment['plan_id'])) {
+                    $subTable = (string) $appConfig['subscription_table'];
+                    $statusCol = (string) $appConfig['subscription_status_column'];
+                    $this->cancelSubscriptionTableRows(
+                        $subTable,
+                        $statusCol,
+                        $appConfig['subscription_cancelled_column'] ?? null,
+                        sprintf(
+                            '`%s` = ? AND `%s` = ? AND `%s` != \'cancelled\'',
+                            $appConfig['subscription_user_column'],
+                            $appConfig['subscription_plan_column'],
+                            $statusCol
+                        ),
+                        [(int) $userId, (int) $payment['plan_id']]
+                    );
+                }
+
+                // Auto-queue refund if eligible and requested
+                if ($issueRefund) {
+                    $refundCheck = $this->canRequestRefund($payment);
+                    if (
+                        $refundCheck['allowed']
+                        && ($payment['refund_status'] ?? 'none') === 'none'
+                        && (float) ($payment['amount'] ?? 0) > 0
+                    ) {
+                        $this->db->query(
+                            "UPDATE subscription_payments
+                             SET refund_status = 'requested', refund_requested_at = NOW(), updated_at = NOW()
+                             WHERE id = ?",
+                            [$paymentId]
+                        );
+                        $refundsQueued++;
+                    }
+                }
+
+                Logger::activity($adminId, 'admin_bulk_subscription_cancelled', [
+                    'payment_id' => $paymentId,
+                    'user_id'    => $userId,
+                    'refund'     => $issueRefund,
+                ]);
+
+                if ($notify) {
+                    $this->sendCancellationEmail($paymentId, $issueRefund && ($this->canRequestRefund($payment)['allowed'] ?? false));
+                }
+            } catch (\Throwable $e) {
+                Logger::error('SubscriptionService::adminBulkCancelUserPlans payment ' . $paymentId . ' - ' . $e->getMessage());
+            }
+        }
+
+        // Always ensure the user lands on the free platform plan
+        $this->ensureUserHasDefaultPlatformPlan($userId);
+
+        return ['cancelled' => $cancelled, 'refunds_queued' => $refundsQueued];
     }
 
     public function markUserPaymentSubmitted(int $paymentId, int $userId): bool
@@ -1270,11 +2078,13 @@ class SubscriptionService
             return false;
         }
 
+        $subscriptionExpiresAt = $this->resolveSubscriptionExpiryRaw((string) $payment['app_key'], $subscriptionId);
+
         $this->db->query(
             "UPDATE subscription_payments
-             SET status = 'paid', subscription_id = ?, paid_at = NOW(), updated_at = NOW()
+             SET status = 'paid', subscription_id = ?, paid_at = NOW(), expires_at = ?, updated_at = NOW()
              WHERE id = ?",
-            [$subscriptionId, $paymentId]
+            [$subscriptionId, $subscriptionExpiresAt, $paymentId]
         );
 
         $this->sendConfirmationEmail($paymentId);
@@ -1302,6 +2112,11 @@ class SubscriptionService
 
     public function createCashfreeOrder(array $payment, array $settings, array $customer, string $returnUrl): array
     {
+        $orderAmount = (float) ($payment['amount'] ?? 0);
+        if ($orderAmount <= 0) {
+            return ['success' => false, 'message' => 'Invalid payment amount. Please contact support if this issue persists.'];
+        }
+
         $validatedReturnUrl = $this->validateReturnUrl($returnUrl);
         if ($validatedReturnUrl === null) {
             return ['success' => false, 'message' => 'Invalid Cashfree return URL.'];
@@ -1338,7 +2153,7 @@ class SubscriptionService
 
         $payload = [
             'order_id' => $orderId,
-            'order_amount' => (float) $payment['amount'],
+            'order_amount' => $orderAmount,
             'order_currency' => (string) $payment['currency'],
             'order_expiry_time' => $expiryAt,
             'customer_details' => [
@@ -1522,21 +2337,29 @@ class SubscriptionService
         }
 
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE platform_user_subscriptions
-             SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('platform_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'assigned_by' => $adminId,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE platform_user_subscriptions
+                 SET status = 'cancelled', cancelled_at = NOW(), updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('platform_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'assigned_by' => $adminId,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activatePlatformSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
 
         Notification::send($userId, 'plan_subscribed', 'Your "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'platform_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
@@ -1551,20 +2374,28 @@ class SubscriptionService
         }
 
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE resumex_user_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status IN ('active','trial')",
-            [$userId]
-        );
-        $subId = $this->db->insert('resumex_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE resumex_user_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status IN ('active','trial')",
+                [$userId]
+            );
+            $subId = $this->db->insert('resumex_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateResumeXSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
 
         Notification::send($userId, 'plan_subscribed', 'Your ResumeX "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'resumex_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
@@ -1578,20 +2409,28 @@ class SubscriptionService
             return 0;
         }
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE qr_user_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('qr_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE qr_user_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('qr_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateQrSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
         Notification::send($userId, 'plan_subscribed', 'Your QR Generator "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'qr_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
         return $subId;
@@ -1604,21 +2443,29 @@ class SubscriptionService
             return 0;
         }
         $expiresAt = $this->calculateExpiry((string) ($plan['billing_cycle'] ?? 'monthly'));
-        $this->db->query(
-            "UPDATE convertx_user_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('convertx_user_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'status' => 'active',
-            'started_at' => date('Y-m-d H:i:s'),
-            'expires_at' => $expiresAt,
-            'assigned_by' => $adminId,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE convertx_user_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('convertx_user_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'status' => 'active',
+                'started_at' => date('Y-m-d H:i:s'),
+                'expires_at' => $expiresAt,
+                'assigned_by' => $adminId,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateConvertXSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
         Notification::send($userId, 'plan_subscribed', 'Your ConvertX "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'convertx_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
         return $subId;
@@ -1643,23 +2490,31 @@ class SubscriptionService
         } catch (\Throwable $e) {
         }
 
-        $this->db->query(
-            "UPDATE whatsapp_subscriptions
-             SET status = 'cancelled', updated_at = NOW()
-             WHERE user_id = ? AND status = 'active'",
-            [$userId]
-        );
-        $subId = $this->db->insert('whatsapp_subscriptions', [
-            'user_id' => $userId,
-            'plan_id' => $planId,
-            'plan_type' => $planType ?: 'free',
-            'status' => 'active',
-            'start_date' => $start,
-            'end_date' => $end,
-            'messages_limit' => (int) ($plan['messages_limit'] ?? 0),
-            'sessions_limit' => (int) ($plan['sessions_limit'] ?? 0),
-            'api_calls_limit' => (int) ($plan['api_calls_limit'] ?? 0),
-        ]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->query(
+                "UPDATE whatsapp_subscriptions
+                 SET status = 'cancelled', updated_at = NOW()
+                 WHERE user_id = ? AND status = 'active'",
+                [$userId]
+            );
+            $subId = $this->db->insert('whatsapp_subscriptions', [
+                'user_id' => $userId,
+                'plan_id' => $planId,
+                'plan_type' => $planType ?: 'free',
+                'status' => 'active',
+                'start_date' => $start,
+                'end_date' => $end,
+                'messages_limit' => (int) ($plan['messages_limit'] ?? 0),
+                'sessions_limit' => (int) ($plan['sessions_limit'] ?? 0),
+                'api_calls_limit' => (int) ($plan['api_calls_limit'] ?? 0),
+            ]);
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollback();
+            Logger::error('activateWhatsAppSubscription transaction failed: ' . $e->getMessage());
+            return 0;
+        }
         Notification::send($userId, 'plan_subscribed', 'Your WhatsApp API "' . $plan['name'] . '" subscription is now active.', ['plan_id' => $planId, 'plan_name' => $plan['name']]);
         Logger::activity($adminId, 'whatsapp_subscription_activated', ['user_id' => $userId, 'plan_id' => $planId, 'subscription_id' => $subId]);
         return $subId;
@@ -1945,6 +2800,84 @@ HTML;
         return null;
     }
 
+    private function resolveSubscriptionExpiryRaw(string $appKey, int $subscriptionId): ?string
+    {
+        try {
+            $config = $this->getAppConfig($appKey);
+            if ($config === null || empty($config['subscription_expires_column'])) {
+                return null;
+            }
+            $row = $this->db->fetch(
+                "SELECT {$config['subscription_expires_column']} AS expires_at FROM {$config['subscription_table']} WHERE id = ? LIMIT 1",
+                [$subscriptionId]
+            );
+            if (!empty($row['expires_at'])) {
+                return (string) $row['expires_at'];
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return null;
+    }
+
+    private function ensurePlatformPlanTables(): void
+    {
+        $this->db->query("
+            CREATE TABLE IF NOT EXISTS `platform_plans` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `name` VARCHAR(100) NOT NULL,
+                `slug` VARCHAR(100) UNIQUE NOT NULL,
+                `description` TEXT NULL,
+                `price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+                `billing_cycle` ENUM('monthly','yearly','lifetime') DEFAULT 'monthly',
+                `cancel_days` INT NOT NULL DEFAULT 0,
+                `refund_days` INT NOT NULL DEFAULT 0,
+                `color` VARCHAR(7) DEFAULT '#9945ff',
+                `included_apps` JSON NULL,
+                `app_features` JSON NULL,
+                `status` ENUM('active','inactive') DEFAULT 'active',
+                `sort_order` INT DEFAULT 0,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $this->db->query("
+            CREATE TABLE IF NOT EXISTS `platform_user_subscriptions` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT UNSIGNED NOT NULL,
+                `plan_id` INT UNSIGNED NOT NULL,
+                `status` ENUM('active','cancelled','expired','trial') DEFAULT 'active',
+                `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `expires_at` TIMESTAMP NULL,
+                `cancelled_at` TIMESTAMP NULL,
+                `assigned_by` INT UNSIGNED NULL,
+                `notes` VARCHAR(500) NULL,
+                `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (`plan_id`) REFERENCES `platform_plans`(`id`) ON DELETE CASCADE,
+                INDEX `idx_user_id` (`user_id`),
+                INDEX `idx_plan_id` (`plan_id`),
+                INDEX `idx_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        try {
+            $cols = array_column($this->db->fetchAll("SHOW COLUMNS FROM platform_plans"), 'Field');
+            if (!in_array('currency', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD' AFTER `price`");
+            }
+            if (!in_array('cancel_days', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `cancel_days` INT NOT NULL DEFAULT 0 AFTER `billing_cycle`");
+            }
+            if (!in_array('refund_days', $cols, true)) {
+                $this->db->query("ALTER TABLE platform_plans ADD COLUMN `refund_days` INT NOT NULL DEFAULT 0 AFTER `cancel_days`");
+            }
+        } catch (\Throwable $e) {
+        }
+    }
+
     private function calculateExpiry(string $billingCycle): ?string
     {
         return match ($billingCycle) {
@@ -2078,6 +3011,42 @@ HTML;
         }
     }
 
+    private function tableHasColumn(string $table, string $column): bool
+    {
+        if (!isset($this->tableColumnsCache[$table])) {
+            try {
+                $cols = $this->db->fetchAll("SHOW COLUMNS FROM `{$table}`");
+                $this->tableColumnsCache[$table] = array_map(
+                    static fn(array $row) => (string) ($row['Field'] ?? ''),
+                    $cols ?: []
+                );
+            } catch (\Throwable $e) {
+                $this->tableColumnsCache[$table] = [];
+            }
+        }
+        return in_array($column, $this->tableColumnsCache[$table], true);
+    }
+
+    private function cancelSubscriptionTableRows(
+        string $table,
+        string $statusColumn,
+        ?string $cancelledColumn,
+        string $whereClause,
+        array $params
+    ): void {
+        $setParts = ["`{$statusColumn}` = 'cancelled'"];
+        if ($cancelledColumn !== null && $cancelledColumn !== '' && $this->tableHasColumn($table, $cancelledColumn)) {
+            $setParts[] = "`{$cancelledColumn}` = NOW()";
+        }
+        if ($this->tableHasColumn($table, 'updated_at')) {
+            $setParts[] = "`updated_at` = NOW()";
+        }
+        $this->db->query(
+            "UPDATE `{$table}` SET " . implode(', ', $setParts) . " WHERE {$whereClause}",
+            $params
+        );
+    }
+
     private function getAppConfig(string $appKey): ?array
     {
         return self::APP_CONFIG[$appKey] ?? null;
@@ -2086,6 +3055,56 @@ HTML;
     private function getAppLabel(string $appKey): string
     {
         return htmlspecialchars((string) (self::APP_CONFIG[$appKey]['label'] ?? strtoupper($appKey)));
+    }
+
+    private function buildWhatsAppPlanStatusCondition(): string
+    {
+        try {
+            $columns = array_column($this->db->fetchAll("SHOW COLUMNS FROM whatsapp_subscription_plans"), 'Field');
+            if (in_array('is_active', $columns, true)) {
+                return "is_active = 1";
+            }
+            if (in_array('status', $columns, true)) {
+                return "status = 'active'";
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return "1=1";
+    }
+
+    private function getDefaultFreePlan(string $appKey): ?array
+    {
+        $config = $this->getAppConfig($appKey);
+        if ($config === null) {
+            return null;
+        }
+
+        try {
+            if ($appKey === 'whatsapp') {
+                $statusCondition = $this->buildWhatsAppPlanStatusCondition();
+                $plan = $this->db->fetch(
+                    "SELECT * FROM {$config['plan_table']}
+                     WHERE {$statusCondition}
+                       AND {$config['plan_price_column']} <= 0
+                     ORDER BY {$config['plan_price_column']} ASC, {$config['plan_id_column']} ASC
+                     LIMIT 1"
+                );
+            } else {
+                $plan = $this->db->fetch(
+                    "SELECT * FROM {$config['plan_table']}
+                     WHERE {$config['plan_status_column']} = ?
+                       AND {$config['plan_price_column']} <= 0
+                     ORDER BY {$config['plan_price_column']} ASC, {$config['plan_id_column']} ASC
+                     LIMIT 1",
+                    [$config['plan_active_value']]
+                );
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return is_array($plan) ? $this->normalizePlanRow($appKey, $plan) : null;
     }
 
     private function normalizePlanRow(string $appKey, array $row): array
@@ -2118,5 +3137,28 @@ HTML;
     {
         $value = strtoupper(trim((string) $currency));
         return $value !== '' ? $value : 'USD';
+    }
+
+    private function buildAdminPaymentStatusOrderSql(string $column): string
+    {
+        return "CASE {$column}
+            WHEN 'verification_pending' THEN 1
+            WHEN 'pending' THEN 2
+            WHEN 'paid' THEN 3
+            WHEN 'failed' THEN 4
+            WHEN 'cancelled' THEN 5
+            ELSE 6
+        END";
+    }
+
+    private function buildAdminRefundStatusOrderSql(string $column): string
+    {
+        return "CASE {$column}
+            WHEN 'requested' THEN 1
+            WHEN 'approved' THEN 2
+            WHEN 'refunded' THEN 3
+            WHEN 'rejected' THEN 4
+            ELSE 5
+        END";
     }
 }

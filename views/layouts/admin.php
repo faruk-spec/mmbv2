@@ -1341,36 +1341,7 @@ window.mmbSkeleton = (function(){
                 </div>
                 <?php endif; ?>
 
-                <!-- Platform Plans (Universal Multi-App) -->
-                <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('platform_plans')): ?>
-                <div class="menu-section">
-                    <div class="menu-section-title">Platform Billing</div>
-
-                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans') === 0 ? 'open' : '' ?>">
-                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans') === 0 ? 'active' : '' ?>">
-                            <div class="left">
-                                <i class="fas fa-layer-group"></i>
-                                <span>Platform Plans</span>
-                            </div>
-                            <i class="fas fa-chevron-down arrow"></i>
-                        </div>
-                        <div class="menu-dropdown-content">
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('platform_plans.list') || \Core\Auth::hasPermission('platform_plans')): ?>
-                            <a href="/admin/platform-plans" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/platform-plans' ? 'active' : '' ?>">
-                                <i class="fas fa-list"></i>
-                                <span>All Plans</span>
-                            </a>
-                            <?php endif; ?>
-                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('platform_plans.create')): ?>
-                            <a href="/admin/platform-plans/create" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/platform-plans/create') === 0 ? 'active' : '' ?>">
-                                <i class="fas fa-plus-circle"></i>
-                                <span>Create Plan</span>
-                            </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <!-- Platform Plans removed from navigation (deprecated) -->
 
                 <!-- Projects Management -->
                 <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermissionGroup('projects') || \Core\Auth::hasPermissionGroup('convertx') || \Core\Auth::hasPermissionGroup('codexpro') || \Core\Auth::hasPermissionGroup('proshare') || \Core\Auth::hasPermissionGroup('billx') || \Core\Auth::hasPermissionGroup('whatsapp') || \Core\Auth::hasPermissionGroup('qr') || \Core\Auth::hasPermissionGroup('resumex') || \Core\Auth::hasPermissionGroup('idcard') || \Core\Auth::hasPermissionGroup('formx') || \Core\Auth::hasPermissionGroup('linkshortner') || \Core\Auth::hasPermissionGroup('notex')): ?>
@@ -2477,6 +2448,18 @@ window.mmbSkeleton = (function(){
                             <a href="/admin/subscription-payments" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/subscription-payments') === 0 ? 'active' : '' ?>">
                                 <i class="fas fa-file-invoice-dollar"></i>
                                 <span>Subscription Payments</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/refunds" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/refunds') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-undo-alt"></i>
+                                <span>Refunds</span>
+                            </a>
+                            <?php endif; ?>
+                            <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings')): ?>
+                            <a href="/admin/paid-plan-users" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/paid-plan-users') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-user-times"></i>
+                                <span>Users with Paid Plans</span>
                             </a>
                             <?php endif; ?>
                             <?php if (\Core\Auth::isAdmin() || \Core\Auth::hasPermission('settings.session')): ?>

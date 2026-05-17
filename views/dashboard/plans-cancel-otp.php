@@ -9,6 +9,7 @@
 <?php if (\Core\Helpers::hasFlash('error')): ?>
 <div class="alert alert-error"><?= View::e(\Core\Helpers::getFlash('error')) ?></div>
 <?php endif; ?>
+<?php $policyWindowDays = (int) ($refundWindowDays ?? 0); ?>
 
 <div style="max-width:540px;margin:40px auto;">
     <a href="/plans/payment/<?= (int) $payment['id'] ?>" style="color:var(--text-secondary);font-size:.875rem;text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-bottom:20px;">
@@ -28,8 +29,12 @@
         <div style="padding:24px;">
             <div style="background:rgba(231,76,60,.07);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:16px;margin-bottom:24px;font-size:.88rem;color:var(--text-secondary);line-height:1.6;">
                 <strong style="color:var(--text-primary);">Cancellation Policy</strong><br>
-                &bull; Cancelled within <?= (int) $refundWindowDays ?> day<?= $refundWindowDays !== 1 ? 's' : '' ?> of activation: eligible for a full refund pending admin approval.<br>
-                &bull; Cancelled after <?= (int) $refundWindowDays ?> day<?= $refundWindowDays !== 1 ? 's' : '' ?>: no refund, but access continues until the end of the paid period.
+                <?php if ($policyWindowDays > 0): ?>
+                &bull; Cancelled within <?= $policyWindowDays ?> day<?= $policyWindowDays !== 1 ? 's' : '' ?> of activation: eligible for a full refund pending admin approval.<br>
+                &bull; Cancelled after <?= $policyWindowDays ?> day<?= $policyWindowDays !== 1 ? 's' : '' ?>: no refund, but access continues until the end of the paid period.
+                <?php else: ?>
+                &bull; This plan does not include a refund option. Cancellation will end your subscription without a refund.
+                <?php endif; ?>
             </div>
 
             <p style="font-size:.9rem;margin-bottom:20px;">

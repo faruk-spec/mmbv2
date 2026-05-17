@@ -410,6 +410,7 @@ HTML;
                  FROM resumex_user_subscriptions s
                  JOIN resumex_subscription_plans p ON p.id = s.plan_id
                  WHERE s.user_id = ? AND s.status = 'active'
+                   AND (s.expires_at IS NULL OR s.expires_at > NOW())
                  ORDER BY s.started_at DESC LIMIT 1",
                 [$this->userId]
             ) ?: null;

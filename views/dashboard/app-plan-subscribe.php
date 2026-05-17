@@ -4,8 +4,8 @@
 <?php View::section('styles'); ?>
 <style>
 /* ── Subscribe / Checkout redesign ─────────────────────────────────────── */
-.sub-wrap  { max-width: 960px; margin: 0 auto; }
-.sub-grid  { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
+.sub-wrap  { max-width: 60rem; margin: 0 auto; }
+.sub-grid  { display: grid; grid-template-columns: 1fr 20rem; gap: 1rem; align-items: start; }
 
 /* Progress bar */
 .chk-steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 36px; }
@@ -82,6 +82,10 @@
     width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
 }
+.pay-method-logo {
+    width: 2.4rem; height: 2.4rem; border-radius: .625rem; flex-shrink: 0;
+    object-fit: contain; border: 1px solid var(--border-color); background: #fff; padding: 4px;
+}
 .pay-method-icon.upi      { background: rgba(0,240,255,.12); color: var(--cyan); }
 .pay-method-icon.cashfree { background: rgba(153,69,255,.15); color: var(--purple); }
 .pay-method-icon.manual   { background: rgba(0,255,136,.1);  color: var(--green); }
@@ -121,9 +125,39 @@
     font-size: .74rem; color: var(--text-secondary);
 }
 .trust-bar i { color: var(--cyan); }
+.pay-methods-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+.pay-method-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: .72rem;
+    font-weight: 600;
+}
 
 @media (max-width: 740px) {
     .sub-grid { grid-template-columns: 1fr; }
+    .merchant-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .sub-wrap { padding: 0; }
+    .chk-steps { gap: 0; }
+    .chk-step-lbl { font-size: .65rem; }
+}
+@media (max-width: 480px) {
+    .chk-step-dot { width: 28px; height: 28px; font-size: .74rem; }
+    .sub-cb { padding: 16px; }
+    .sub-ch { padding: 14px 16px 12px; }
+    .chk-cta-btn { font-size: .88rem; padding: 12px; }
+    .pay-method-tile { padding: 12px 14px; }
+    .order-total { font-size: 1rem; }
 }
 </style>
 <?php View::endSection(); ?>
@@ -132,6 +166,21 @@
 <?php
 $invoiceLogoUrl = $invoiceSettings['invoice_logo_url'] ?? $invoiceSettings['invoice_logo'] ?? '';
 $appLogoUrl = $appMeta['logo_url'] ?? '';
+$resolveLogoUrl = static function (?string $url): string {
+    $logo = trim((string) $url);
+    if ($logo === '') {
+        return '';
+    }
+    if ($logo[0] === '/' || str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://') || str_starts_with($logo, '//')) {
+        return $logo;
+    }
+    return '/' . ltrim($logo, '/');
+};
+$appLogoUrl = $resolveLogoUrl($appLogoUrl);
+$invoiceLogoUrl = $resolveLogoUrl($invoiceLogoUrl);
+$upiGatewayLogo = $resolveLogoUrl($paymentSettings['payment_upi_logo'] ?? '');
+$cashfreeGatewayLogo = $resolveLogoUrl($paymentSettings['payment_cashfree_logo'] ?? '');
+$manualGatewayLogo = $resolveLogoUrl($paymentSettings['payment_manual_review_logo'] ?? '');
 if ($appLogoUrl === '') {
     $iconCandidate = (string) ($appMeta['icon'] ?? '');
     if (preg_match('#^(https?://|/)#', $iconCandidate) === 1) {
@@ -140,6 +189,12 @@ if ($appLogoUrl === '') {
 }
 ?>
 <div class="sub-wrap">
+    <?php if (\Core\Helpers::hasFlash('error')): ?>
+    <div class="alert alert-error" style="margin-bottom:14px;"><?= View::e(\Core\Helpers::getFlash('error')) ?></div>
+    <?php endif; ?>
+    <?php if (\Core\Helpers::hasFlash('success')): ?>
+    <div class="alert alert-success" style="margin-bottom:14px;"><?= View::e(\Core\Helpers::getFlash('success')) ?></div>
+    <?php endif; ?>
 
     <!-- Back link -->
     <a href="<?= View::e($appMeta['url'] ?? '/plans') ?>"
@@ -179,9 +234,9 @@ if ($appLogoUrl === '') {
                 <div style="font-weight:800;font-size:1.1rem;"><?= View::e($appMeta['name'] ?? ucfirst($app)) ?></div>
                 <div style="font-size:.78rem;color:var(--text-secondary);">Secure Checkout &mdash; <?= View::e($plan['name']) ?></div>
                 <div class="merchant-trust">
-                    <i class="fas fa-lock" style="color:var(--green);"></i> Protected Payment
+                    <i class="fas fa-lock" style="color:var(--green);"></i> HTTPS Secure
                     <span>·</span>
-                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> Verified Subscription
+                    <i class="fas fa-shield-alt" style="color:var(--cyan);"></i> PCI-DSS Compliant
                 </div>
             </div>
         </div>
@@ -205,6 +260,33 @@ if ($appLogoUrl === '') {
         </div>
     </div>
 
+    <!-- Downgrade warning banner -->
+    <?php if (!empty($isDowngrade)): ?>
+    <div style="background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);border-radius:12px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px;">
+        <div style="flex-shrink:0;width:38px;height:38px;border-radius:10px;background:rgba(255,170,0,.15);display:flex;align-items:center;justify-content:center;color:#ffaa00;font-size:1.1rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-weight:700;font-size:.95rem;color:#ffaa00;margin-bottom:4px;">Downgrade Not Recommended</div>
+            <div style="font-size:.82rem;color:var(--text-secondary);line-height:1.6;">
+                You currently have an active <strong style="color:var(--text-primary);"><?= View::e($existing['plan_name'] ?? 'higher-tier plan') ?></strong> which includes more features.
+                Switching to this lower-tier plan will reduce your limits and features.
+                To downgrade, you must first cancel your current plan.
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="/plans/payment/<?= htmlspecialchars((string) ($existing['payment_id'] ?? '')) ?>"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#06060a;font-weight:700;font-size:.82rem;text-decoration:none;">
+                    <i class="fas fa-shield-alt"></i> Keep Current Plan
+                </a>
+                <a href="/plans"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;border:1px solid var(--border-color);color:var(--text-secondary);font-size:.82rem;text-decoration:none;">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="sub-grid">
         <!-- Left: payment method -->
         <div>
@@ -226,13 +308,36 @@ if ($appLogoUrl === '') {
                             && !empty($paymentSettings['payment_cashfree_app_id'])
                             && !empty($paymentSettings['payment_cashfree_secret']);
                         $hasUpi = !empty($paymentSettings['payment_upi_id']);
+
+                        // Ensure the default pre-selection is one that is actually available.
+                        if ($defaultPaymentMethod === 'cashfree' && !$cashfreeEnabled) {
+                            $defaultPaymentMethod = $hasUpi ? 'upi' : 'request';
+                        }
+                        if ($defaultPaymentMethod === 'upi' && !$hasUpi) {
+                            $defaultPaymentMethod = $cashfreeEnabled ? 'cashfree' : 'request';
+                        }
+                        if ($defaultPaymentMethod === 'request' && !$canUseManualReview) {
+                            $defaultPaymentMethod = $hasUpi ? 'upi' : ($cashfreeEnabled ? 'cashfree' : '');
+                        }
+                        $anyMethodAvailable = $hasUpi || $cashfreeEnabled || $canUseManualReview;
                         ?>
+
+                        <?php if (!$anyMethodAvailable): ?>
+                        <div style="padding:18px;border-radius:10px;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);color:var(--red);font-size:.85rem;text-align:center;">
+                            <i class="fas fa-exclamation-circle" style="margin-right:6px;"></i>
+                            No payment methods are configured. Please contact the administrator to set up payments.
+                        </div>
+                        <?php endif; ?>
 
                         <?php if ($hasUpi): ?>
                         <label class="pay-method-tile">
                             <input type="radio" name="payment_method" value="upi" <?= $defaultPaymentMethod === 'upi' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
+                            <?php if ($upiGatewayLogo !== ''): ?>
+                            <img src="<?= View::e($upiGatewayLogo) ?>" alt="UPI logo" class="pay-method-logo">
+                            <?php else: ?>
                             <div class="pay-method-icon upi"><i class="fas fa-qrcode"></i></div>
+                            <?php endif; ?>
                             <div style="flex:1;">
                                 <div class="pay-method-label">UPI / QR Code</div>
                                 <div class="pay-method-desc">Scan QR or use UPI app to pay instantly</div>
@@ -245,9 +350,13 @@ if ($appLogoUrl === '') {
                         <label class="pay-method-tile">
                             <input type="radio" name="payment_method" value="cashfree" <?= $defaultPaymentMethod === 'cashfree' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
+                            <?php if ($cashfreeGatewayLogo !== ''): ?>
+                            <img src="<?= View::e($cashfreeGatewayLogo) ?>" alt="Cashfree logo" class="pay-method-logo">
+                            <?php else: ?>
                             <div class="pay-method-icon cashfree"><i class="fas fa-bolt"></i></div>
+                            <?php endif; ?>
                             <div style="flex:1;">
-                                <div class="pay-method-label">Cashfree</div>
+                                <div class="pay-method-label">Cashfree Payments</div>
                                 <div class="pay-method-desc">Cards, UPI, Netbanking via Cashfree</div>
                             </div>
                             <span class="pay-method-badge" style="background:rgba(153,69,255,.12);color:var(--purple);border:1px solid rgba(153,69,255,.2);">Popular</span>
@@ -256,9 +365,13 @@ if ($appLogoUrl === '') {
 
                         <?php if ($canUseManualReview): ?>
                         <label class="pay-method-tile">
-                            <input type="radio" name="payment_method" value="request" <?= (!$hasUpi && !$cashfreeEnabled) || $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
+                            <input type="radio" name="payment_method" value="request" <?= $defaultPaymentMethod === 'request' ? 'checked' : '' ?>>
                             <div class="pay-method-radio"></div>
+                            <?php if ($manualGatewayLogo !== ''): ?>
+                            <img src="<?= View::e($manualGatewayLogo) ?>" alt="Manual review logo" class="pay-method-logo">
+                            <?php else: ?>
                             <div class="pay-method-icon manual"><i class="fas fa-clipboard-check"></i></div>
+                            <?php endif; ?>
                             <div style="flex:1;">
                                 <div class="pay-method-label">Manual Review</div>
                                 <div class="pay-method-desc">Admin verifies and activates your plan</div>
@@ -267,16 +380,29 @@ if ($appLogoUrl === '') {
                         <?php endif; ?>
 
                         <div class="chk-cta">
+                            <?php if ($anyMethodAvailable): ?>
                             <button type="submit" class="chk-cta-btn">
                                 <i class="fas fa-lock"></i>
                                 Continue to Payment
                             </button>
+                            <?php else: ?>
+                            <button type="button" class="chk-cta-btn" disabled style="opacity:.5;cursor:not-allowed;">
+                                <i class="fas fa-ban"></i>
+                                Payment Unavailable
+                            </button>
+                            <?php endif; ?>
                             <div class="trust-bar">
-                                <i class="fas fa-shield-alt"></i> <span>256-bit SSL encrypted</span>
+                                <i class="fas fa-shield-alt"></i> <span>Secure payment powered by Cashfree Payments</span>
                                 <span style="margin:0 6px;">·</span>
-                                <i class="fas fa-user-shield"></i> <span>Your data is secure</span>
+                                <i class="fas fa-lock"></i> <span>HTTPS Secure</span>
                                 <span style="margin:0 6px;">·</span>
-                                <i class="fas fa-undo"></i> <span>Refund policy applies</span>
+                                <i class="fas fa-id-card"></i> <span>PCI-DSS compliant</span>
+                            </div>
+                            <div class="pay-methods-inline" aria-label="Accepted methods">
+                                <span class="pay-method-pill"><i class="fas fa-mobile-alt"></i> UPI</span>
+                                <span class="pay-method-pill"><i class="fas fa-credit-card"></i> Cards</span>
+                                <span class="pay-method-pill"><i class="fas fa-university"></i> Net Banking</span>
+                                <span class="pay-method-pill"><i class="fas fa-wallet"></i> Wallets</span>
                             </div>
                         </div>
                     </form>
@@ -321,9 +447,21 @@ if ($appLogoUrl === '') {
                         <span><?= (int) $plan['refund_days'] ?> day(s)</span>
                     </div>
                     <?php endif; ?>
+                    <div class="order-row">
+                        <span style="color:var(--text-secondary);">Subtotal</span>
+                        <span><?= View::e($plan['currency'] ?? 'USD') ?> <?= number_format((float) ($plan['price'] ?? 0), 2) ?></span>
+                    </div>
+                    <div class="order-row">
+                        <span style="color:var(--text-secondary);">Processing fee</span>
+                        <span><?= View::e($plan['currency'] ?? 'USD') ?> 0.00</span>
+                    </div>
                     <div class="order-total">
                         <span>Total Due</span>
                         <span style="color:var(--cyan);"><?= View::e($plan['currency'] ?? 'USD') ?> <?= number_format((float) ($plan['price'] ?? 0), 2) ?></span>
+                    </div>
+                    <div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(0,240,255,.05);border:1px solid rgba(0,240,255,.12);font-size:.76rem;color:var(--text-secondary);line-height:1.6;">
+                        <div><i class="fas fa-receipt" style="color:var(--cyan);margin-right:6px;"></i>No extra fees applied.</div>
+                        <div style="margin-top:4px;"><i class="fas fa-undo" style="color:var(--cyan);margin-right:6px;"></i>Refund and cancellation are handled according to your plan policy.</div>
                     </div>
 
                     <?php if (!empty($plan['features']) && is_array($plan['features'])): ?>

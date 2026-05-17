@@ -141,20 +141,6 @@
         margin-bottom: 30px;
     }
 
-    /* Mouse glow layer */
-    #hp-mouse-glow {
-        position: fixed;
-        width: 480px;
-        height: 480px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, rgba(0, 245, 255, 0.06) 40%, transparent 70%);
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        z-index: 0;
-        opacity: 0;
-        transition: opacity 0.4s ease;
-    }
-
     /* Particles canvas */
     #hp-particles {
         position: fixed;
@@ -208,10 +194,6 @@
         box-shadow: 0 8px 28px rgba(124, 58, 237, 0.18) !important;
     }
 
-    [data-theme="light"] #hp-mouse-glow {
-        background: radial-gradient(circle, rgba(124, 58, 237, 0.10) 0%, rgba(3, 105, 161, 0.04) 40%, transparent 70%);
-    }
-
     [data-theme="light"] .card:hover {
         border-color: rgba(124, 58, 237, 0.30) !important;
         box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
@@ -260,9 +242,8 @@
 <?php View::endSection(); ?>
 
 <?php View::section('content'); ?>
-<!-- Particles canvas & mouse glow for homepage -->
+<!-- Particles canvas for homepage -->
 <canvas id="hp-particles"></canvas>
-<div id="hp-mouse-glow"></div>
 <?php 
 // Get hero content from database with error handling
 $db = Database::getInstance();
@@ -1255,17 +1236,6 @@ $timelineItems = $db->fetchAll("SELECT * FROM home_timeline WHERE is_active = 1 
     var isDark = function() {
         return document.documentElement.getAttribute('data-theme') !== 'light';
     };
-
-    /* ---- Mouse Glow ---- */
-    var glow = document.getElementById('hp-mouse-glow');
-    if (glow) {
-        document.addEventListener('mousemove', function(e) {
-            glow.style.left = e.clientX + 'px';
-            glow.style.top  = e.clientY + 'px';
-            glow.style.opacity = isDark() ? '1' : '0.5';
-        });
-        document.addEventListener('mouseleave', function() { glow.style.opacity = '0'; });
-    }
 
     /* ---- AI Network ---- */
     var canvas = document.getElementById('hp-particles');

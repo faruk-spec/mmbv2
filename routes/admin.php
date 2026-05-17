@@ -516,3 +516,10 @@ $router->post('/admin/subscription-payments/{id}/approve', 'Admin\\SubscriptionP
 $router->post('/admin/subscription-payments/{id}/reject', 'Admin\\SubscriptionPaymentsController@reject', ['auth', 'admin']);
 $router->post('/admin/subscription-payments/{id}/refund', 'Admin\\SubscriptionPaymentsController@refund', ['auth', 'admin']);
 $router->post('/admin/subscription-payments/{id}/cancel-plan', 'Admin\\SubscriptionPaymentsController@cancelPlan', ['auth', 'admin']);
+$router->post('/admin/subscription-payments/{id}/manual-refund', 'Admin\\SubscriptionPaymentsController@manualRefund', ['auth', 'admin']);
+$router->get('/admin/refunds', 'Admin\\SubscriptionPaymentsController@refunds', ['auth', 'admin']);
+
+// Users with Paid Plans — admin bulk-cancel tool
+$router->get('/admin/paid-plan-users', 'Admin\\AdminPaidUsersController@index', ['auth', 'admin']);
+$router->get('/admin/paid-plan-users/user-plans', 'Admin\\AdminPaidUsersController@getUserPlans', ['auth', 'admin']);
+$router->post('/admin/paid-plan-users/cancel', 'Admin\\AdminPaidUsersController@cancel', ['auth', 'admin']);

@@ -3,6 +3,10 @@ use Core\Auth;
 use Core\Database;
 
 $user = Auth::user();
+// When included from auth.php the nonce is already in scope; when included
+// from main.php (which uses unsafe-inline CSP) no nonce is needed, so we
+// fall back to an empty string so the attribute is harmless.
+$_navNonce = isset($nonce) ? htmlspecialchars((string) $nonce, ENT_QUOTES, 'UTF-8') : '';
 $isLoggedIn = $user !== null;
 
 /**
@@ -57,6 +61,9 @@ if (!$navbarSettings) {
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
         'navbar_text_color' => null,
+        'logo_text_gradient_enabled' => 0,
+        'logo_text_gradient_start' => '#00f0ff',
+        'logo_text_gradient_end' => '#ff2ec4',
         'navbar_border_color' => null,
         'custom_css' => null,
         'custom_links' => null
@@ -82,6 +89,9 @@ if (!$navbarSettings) {
         'default_theme' => 'dark',
         'navbar_bg_color' => null,
         'navbar_text_color' => null,
+        'logo_text_gradient_enabled' => 0,
+        'logo_text_gradient_start' => '#00f0ff',
+        'logo_text_gradient_end' => '#ff2ec4',
         'navbar_border_color' => null,
         'custom_css' => null,
         'custom_links' => null
@@ -115,702 +125,9 @@ $headerStyleAttr = !empty($headerStyles) ? ' style="' . implode('; ', $headerSty
 ?>
 <?php if (!empty($navbarSettings['custom_css'])): ?>
 <!-- Custom CSS from admin settings (admin-controlled, sanitized on save) -->
-<style><?= $navbarSettings['custom_css'] ?></style>
+<style<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>><?= $navbarSettings['custom_css'] ?></style>
 <?php endif; ?>
-<header class="universal-header"<?= $headerStyleAttr ?>>
-    <div class="container header-content">
-        <?php if ($navbarSettings['logo_type'] === 'image' && !empty($navbarSettings['logo_image_url'])): ?>
-            <a href="/" class="logo">
-                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
-                     alt="Logo"
-                     style="max-height: 40px;"
-                     onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend',<?= json_encode($navbarSettings['logo_text'] ?? APP_NAME) ?>);">
-            </a>
-        <?php elseif ($navbarSettings['logo_type'] === 'both' && !empty($navbarSettings['logo_image_url'])): ?>
-            <a href="/" class="logo" style="display:flex;align-items:center;gap:8px;<?php if ($navbarSettings['navbar_text_color']): ?>color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;<?php endif; ?>">
-                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
-                     alt="Logo"
-                     style="max-height: 36px;"
-                     onerror="this.style.display='none';">
-                <span><?= htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME) ?></span>
-            </a>
-        <?php else: ?>
-            <a href="/" class="logo" <?php if ($navbarSettings['navbar_text_color']): ?>style="color: <?= htmlspecialchars($navbarSettings['navbar_text_color']) ?>;"<?php endif; ?>><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
-        <?php endif; ?>
-        
-        <nav class="universal-nav" id="mainNav">
-            <?php if ($navbarSettings['show_home_link']): ?>
-            <a href="/" class="nav-link">Home</a>
-            <?php endif; ?>
-            
-            <!-- Custom Links (moved after Home) -->
-            <?php if (!empty($customLinks)): ?>
-                <?php 
-                // Sort custom links by position
-                usort($customLinks, function($a, $b) {
-                    return ($a['position'] ?? 0) - ($b['position'] ?? 0);
-                });
-                foreach ($customLinks as $link): 
-                    // Check if this is a dropdown link (has is_dropdown flag)
-                    $isDropdown = !empty($link['is_dropdown']) && !empty($link['dropdown_items']);
-                ?>
-                    <?php if ($isDropdown): ?>
-                        <!-- Dropdown Custom Link -->
-                        <div class="dropdown nav-item">
-                            <button class="nav-link dropdown-toggle">
-                                <?php if (!empty($link['logo_url'])): ?>
-                                    <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
-                                <?php elseif (!empty($link['icon'])): ?>
-                                    <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
-                                <?php endif; ?>
-                                <?= htmlspecialchars($link['title']) ?>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M6 9l6 6 6-6"/>
-                                </svg>
-                            </button>
-                            <div class="dropdown-menu">
-                                <?php foreach ($link['dropdown_items'] as $subLink): ?>
-                                    <?php
-                                        $diStyle = '';
-                                        // Validate hex color before inserting into style attribute to prevent CSS injection
-                                        $rawColor = $subLink['text_color'] ?? '';
-                                        if (preg_match('/^#[0-9A-Fa-f]{6}$/', $rawColor)) {
-                                            $diStyle .= 'color:' . $rawColor . ';';
-                                        }
-                                        if (!empty($subLink['font_bold'])) $diStyle .= 'font-weight:bold;';
-                                        $rawSize = (int)($subLink['font_size'] ?? 14);
-                                        $rawSize = min(max($rawSize, 10), 32);
-                                        $diStyle .= 'font-size:' . $rawSize . 'px;';
-                                        $isSubDropdown = !empty($subLink['is_sub_dropdown']) && !empty($subLink['sub_items']);
-                                    ?>
-                                    <?php if ($isSubDropdown): ?>
-                                        <!-- Sub-sub dropdown item -->
-                                        <div class="dropdown-item has-submenu" style="<?= $diStyle ?>">
-                                            <?php if (!empty($subLink['logo_url'])): ?>
-                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
-                                            <?php elseif (!empty($subLink['icon'])): ?>
-                                                <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
-                                            <?php endif; ?>
-                                            <span style="display:inline-flex;flex-direction:column;vertical-align:middle;flex:1;">
-                                                <span><?= htmlspecialchars($subLink['title']) ?></span>
-                                                <?php if (!empty($subLink['description'])): ?>
-                                                    <small style="opacity:0.65;font-weight:normal;font-size:0.78em;"><?= htmlspecialchars($subLink['description']) ?></small>
-                                                <?php endif; ?>
-                                            </span>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.6;"><path d="M9 6l6 6-6 6"/></svg>
-                                            <div class="submenu">
-                                                <?php foreach ($subLink['sub_items'] as $subSubLink): ?>
-                                                    <a href="<?= htmlspecialchars($subSubLink['url']) ?>" class="dropdown-item">
-                                                        <?php if (!empty($subSubLink['logo_url'])): ?>
-                                                            <img src="<?= htmlspecialchars(navbarAbsUrl($subSubLink['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
-                                                        <?php elseif (!empty($subSubLink['icon'])): ?>
-                                                            <i class="<?= htmlspecialchars($subSubLink['icon']) ?>"></i>
-                                                        <?php endif; ?>
-                                                        <?= htmlspecialchars($subSubLink['title']) ?>
-                                                    </a>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-                                    <?php else: ?>
-                                        <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
-                                            <?php if (!empty($subLink['logo_url'])): ?>
-                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;flex-shrink:0;">
-                                            <?php elseif (!empty($subLink['icon'])): ?>
-                                                <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
-                                            <?php endif; ?>
-                                            <span style="display:inline-flex;flex-direction:column;vertical-align:middle;">
-                                                <span><?= htmlspecialchars($subLink['title']) ?></span>
-                                                <?php if (!empty($subLink['description'])): ?>
-                                                    <small style="opacity:0.65;font-weight:normal;font-size:0.78em;"><?= htmlspecialchars($subLink['description']) ?></small>
-                                                <?php endif; ?>
-                                            </span>
-                                        </a>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php else: ?>
-                        <!-- Regular Custom Link -->
-                        <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
-                            <?php if (!empty($link['logo_url'])): ?>
-                                <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:4px;">
-                            <?php elseif (!empty($link['icon'])): ?>
-                                <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
-                            <?php endif; ?>
-                            <?= htmlspecialchars($link['title']) ?>
-                        </a>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            <?php endif; ?>
-            
-            <?php if ($isLoggedIn): ?>
-                <!-- Projects Dropdown -->
-                <?php
-                $showProjectsForThisUser = $navbarSettings['show_projects_dropdown'] && (Auth::isAdmin() || !empty($navbarSettings['show_projects_dropdown_to_user']));
-                if ($showProjectsForThisUser):
-                ?>
-                <div class="dropdown nav-item" id="projectsDropdown">
-                    <button class="nav-link dropdown-toggle">
-                        Projects
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6"/>
-                        </svg>
-                    </button>
-                    <div class="dropdown-menu">
-                        <?php 
-                        // Define BASE_PATH if not defined
-                        if (!defined('BASE_PATH')) {
-                            define('BASE_PATH', dirname(dirname(__DIR__)));
-                        }
-                        
-                        try {
-                            // Query DB for enabled projects; fall back to config for projects
-                            // that have no DB row yet (e.g. before a migration is run).
-                            $db = \Core\Database::getInstance();
-                            $allDbRows = $db->fetchAll(
-                                "SELECT * FROM home_projects ORDER BY sort_order ASC"
-                            );
-                            $_navDbKeys = [];
-                            $_navProjects = [];
-                            foreach ($allDbRows as $_row) {
-                                $_navDbKeys[] = $_row['project_key'];
-                                if ((int) $_row['is_enabled'] === 1) {
-                                    $_navProjects[] = [
-                                        'name'  => $_row['name'],
-                                        'url'   => $_row['url'] ?? '/projects/' . $_row['project_key'],
-                                        'color' => $_row['color'] ?? '#00f0ff',
-                                    ];
-                                }
-                            }
-                            // Merge config-only projects not yet in DB
-                            $_configProjects = require BASE_PATH . '/config/projects.php';
-                            foreach ($_configProjects as $_key => $_cfg) {
-                                if (!empty($_cfg['enabled']) && !in_array($_key, $_navDbKeys, true)) {
-                                    $_navProjects[] = [
-                                        'name'  => $_cfg['name'],
-                                        'url'   => $_cfg['url'] ?? '/projects/' . $_key,
-                                        'color' => $_cfg['color'] ?? '#00f0ff',
-                                    ];
-                                }
-                            }
-                        } catch (\Exception $e) {
-                            // DB unavailable — fall back to config (show all config-enabled projects)
-                            $_navProjects = [];
-                            try {
-                                $_configProjects = require BASE_PATH . '/config/projects.php';
-                                foreach ($_configProjects as $_key => $_cfg) {
-                                    if (!empty($_cfg['enabled'])) {
-                                        $_navProjects[] = [
-                                            'name'  => $_cfg['name'],
-                                            'url'   => $_cfg['url'] ?? '/projects/' . $_key,
-                                            'color' => $_cfg['color'] ?? '#00f0ff',
-                                        ];
-                                    }
-                                }
-                            } catch (\Exception $e2) {
-                                // config also unavailable
-                            }
-                        }
-                        foreach ($_navProjects as $_p):
-                        ?>
-                            <a href="<?= htmlspecialchars($_p['url']) ?>" class="dropdown-item">
-                                <div class="project-icon" style="background: <?= htmlspecialchars($_p['color']) ?>20; color: <?= htmlspecialchars($_p['color']) ?>">
-                                    <?= htmlspecialchars(strtoupper(substr($_p['name'], 0, 1))) ?>
-                                </div>
-                                <?= htmlspecialchars($_p['name']) ?>
-                            </a>
-                        <?php 
-                        endforeach;
-                        if (empty($_navProjects)):
-                            echo '<div class="dropdown-item" style="color: var(--text-secondary); font-size: 13px;">No projects available</div>';
-                        endif;
-                        ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <?php if ($navbarSettings['show_dashboard_link']): ?>
-                <a href="/dashboard" class="nav-link">Dashboard</a>
-                <?php endif; ?>
-                
-                <?php if ($navbarSettings['show_admin_link'] && Auth::isAdmin()): ?>
-                    <a href="/admin" class="nav-link">Admin</a>
-                <?php endif; ?>
-
-            <?php else: ?>
-                <a href="/login" class="nav-link">Login</a>
-                <a href="/register" class="nav-link">Register</a>
-            <?php endif; ?>
-        </nav>
-
-        <!-- Always-visible header actions: theme icon, notification, profile, hamburger -->
-        <div class="header-end-actions">
-            <!-- Theme Toggle (icon only) — visible to all users -->
-            <?php if ($navbarSettings['show_theme_toggle']): ?>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-            </button>
-            <?php endif; ?>
-
-            <?php if ($isLoggedIn):
-                try {
-                    $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
-                } catch (\Exception $e) {
-                    $notifUnreadCount = 0;
-                }
-            ?>
-            <!-- Notification Bell -->
-            <div class="notif-bell-wrap" id="notifDropdown">
-                <button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
-                    <svg class="notif-bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                    </svg>
-                    <span class="notif-badge<?= $notifUnreadCount > 0 ? ' has-unread' : '' ?>" id="notifBadge"
-                          style="<?= $notifUnreadCount > 0 ? '' : 'display:none' ?>">
-                        <?= min($notifUnreadCount, 99) ?>
-                    </span>
-                </button>
-                <div class="dropdown-menu notif-panel" id="notifPanel">
-                    <div class="notif-panel-header">
-                        <div class="notif-panel-title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                            </svg>
-                            <strong>Notifications</strong>
-                        </div>
-                        <button class="notif-mark-all-btn" id="notifMarkAll" title="Mark all as read">Mark all read</button>
-                    </div>
-                    <div class="notif-panel-list" id="notifPanelList">
-                        <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
-                    </div>
-                    <div class="notif-panel-footer">
-                        <a href="/notifications" class="notif-view-all">
-                            View All Notifications
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Dropdown — always shown for logged-in users -->
-            <div class="dropdown" id="profileDropdown">
-                <button class="nav-link dropdown-toggle" style="display:flex;align-items:center;gap:6px;">
-                    <?php
-                    $navbarAvatarPath = $user['avatar'] ?? '';
-                    if (!empty($navbarAvatarPath)):
-                        $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/uploads/avatars/' . $navbarAvatarPath;
-                    ?>
-                        <span class="profile-avatar-wrap">
-                            <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);display:block;">
-                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
-                        </span>
-                    <?php else: ?>
-                        <span class="profile-avatar-wrap">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="border-radius:50%;background:var(--bg-secondary);padding:5px;border:1px solid var(--border-color);">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
-                        </span>
-                    <?php endif; ?>
-                    <?php
-                    // Show full name: first word only, max 10 characters
-                    $displayName = $user['name'] ?? $user['username'] ?? 'User';
-                    $nameParts = explode(' ', trim($displayName));
-                    $firstName = $nameParts[0] !== '' ? $nameParts[0] : ($user['username'] ?? 'User');
-                    if (strlen($firstName) > 10) {
-                        $firstName = substr($firstName, 0, 10) . '…';
-                    }
-                    ?>
-                    <span class="profile-username"><?= htmlspecialchars($firstName) ?></span>
-                    <svg class="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 9l6 6 6-6"/>
-                    </svg>
-                </button>
-                <div class="dropdown-menu">
-                    <a href="/profile" class="dropdown-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        Profile
-                    </a>
-                    <a href="/security#change-password" class="dropdown-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                        Change Password
-                    </a>
-                    <a href="/settings" class="dropdown-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
-                        </svg>
-                        Settings
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a href="#" class="dropdown-item" id="navbarLogoutBtn" onclick="openLogoutModal(event)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <polyline points="16 17 21 12 16 7"/>
-                            <line x1="21" y1="12" x2="9" y2="12"/>
-                        </svg>
-                        Logout
-                    </a>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <!-- Hamburger (mobile only) -->
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-    </div>
-</header>
-<!-- Navbar overlay: prevents click-through to page content when a popup is open -->
-<div id="nav-overlay" aria-hidden="true"></div>
-<script>
-// Universal Navbar JavaScript
-(function() {
-    // Debug: Log navbar load
-    console.log('Universal navbar loaded');
-    
-    // Theme Toggle
-    const themeToggle = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    const themeText = document.getElementById('themeText');
-    const html = document.documentElement;
-    
-    // Load saved theme or use default from settings
-    const defaultTheme = '<?= $navbarSettings['default_theme'] ?? 'dark' ?>';
-    const savedTheme = localStorage.getItem('theme') || defaultTheme;
-    html.setAttribute('data-theme', savedTheme);
-    updateThemeUI(savedTheme);
-    updateNavbarColors(savedTheme);
-    
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeUI(newTheme);
-            updateNavbarColors(newTheme);
-            
-            // Dispatch custom event for other components that need to react to theme changes
-            document.dispatchEvent(new CustomEvent('themeChanged', { 
-                detail: { theme: newTheme } 
-            }));
-        });
-    }
-    
-    function updateThemeUI(theme) {
-        if (!themeIcon) return;
-        if (theme === 'light') {
-            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-            if (themeText) themeText.textContent = 'Dark';
-        } else {
-            themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-            if (themeText) themeText.textContent = 'Light';
-        }
-    }
-    
-    function updateNavbarColors(theme) {
-        // Force browser to recalculate CSS variables by triggering a reflow
-        const navbar = document.querySelector('.universal-header');
-        if (navbar) {
-            // Trigger reflow to ensure CSS variables are updated
-            void navbar.offsetHeight;
-        }
-    }
-    
-    // Mobile menu elements (declared early so dropdown handlers can reference them)
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mainNav = document.getElementById('mainNav');
-    const navOverlay = document.getElementById('nav-overlay');
-
-    // Show/hide the nav overlay to intercept clicks on page content behind open popups
-    function showOverlay() {
-        if (navOverlay) navOverlay.style.display = 'block';
-    }
-    function hideOverlay() {
-        if (navOverlay) navOverlay.style.display = 'none';
-    }
-    function isAnyPanelOpen() {
-        return (mainNav && mainNav.classList.contains('active'))
-            || document.querySelector('.dropdown.active') !== null
-            || document.querySelector('.notif-bell-wrap.active') !== null;
-    }
-
-    // Dropdown functionality
-    const dropdowns = document.querySelectorAll('.dropdown');
-    dropdowns.forEach(dropdown => {
-        const toggle = dropdown.querySelector('.dropdown-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Close other dropdowns, notification bell, and mobile menu
-                dropdowns.forEach(d => {
-                    if (d !== dropdown) d.classList.remove('active');
-                });
-                document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
-                // Only close the mobile menu when the toggle is NOT inside it
-                // (avoids closing the menu when expanding a sub-dropdown within it)
-                if (mainNav && mainNav.classList.contains('active') && !mainNav.contains(toggle)) {
-                    mainNav.classList.remove('active');
-                    document.body.classList.remove('mobile-menu-open');
-                }
-                dropdown.classList.toggle('active');
-                if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
-            });
-        }
-    });
-    
-    // Sub-sub (flyout) dropdown — click support for touch / no-hover devices
-    document.querySelectorAll('.has-submenu').forEach(item => {
-        item.addEventListener('click', (e) => {
-            // If the user clicked an actual link inside the submenu, let it navigate
-            if (e.target.closest('a.dropdown-item')) return;
-            e.stopPropagation();
-
-            const submenu = item.querySelector(':scope > .submenu');
-            if (!submenu) return;
-
-            const isOpen = item.classList.contains('active');
-
-            // Close all other open submenus in the same dropdown-menu
-            const parentMenu = item.closest('.dropdown-menu');
-            if (parentMenu) {
-                parentMenu.querySelectorAll('.has-submenu.active').forEach(s => {
-                    if (s !== item) s.classList.remove('active');
-                });
-            }
-            item.classList.toggle('active', !isOpen);
-
-            // Flip submenu to the left if it would overflow the viewport
-            if (!isOpen) {
-                const rect = submenu.getBoundingClientRect();
-                submenu.classList.toggle('flip-left', rect.right > window.innerWidth);
-            }
-        });
-    });
-
-    // Close sub-sub dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
-        // Check if we clicked inside a dropdown menu
-        const clickedInsideDropdown = e.target.closest('.dropdown-menu');
-        
-        // If clicked inside dropdown menu, allow navigation but close after brief delay
-        if (clickedInsideDropdown) {
-            // Only close if it's a link click
-            if (e.target.closest('a.dropdown-item')) {
-                // Let the link navigate, then close dropdown
-                setTimeout(() => {
-                    dropdowns.forEach(d => d.classList.remove('active'));
-                    document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
-                    hideOverlay();
-                }, 100);
-            }
-        } else {
-            // Clicked outside, close all dropdowns and submenus
-            dropdowns.forEach(d => d.classList.remove('active'));
-            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
-            if (!isAnyPanelOpen()) hideOverlay();
-        }
-    });
-    
-    // Mobile menu toggle
-    if (mobileMenuBtn && mainNav) {
-        // Toggle menu on button click — close all other panels first
-        mobileMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const opening = !mainNav.classList.contains('active');
-            if (opening) {
-                // Close all dropdowns and notification bell before opening the menu
-                dropdowns.forEach(d => d.classList.remove('active'));
-                document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
-            }
-            mainNav.classList.toggle('active');
-            document.body.classList.toggle('mobile-menu-open');
-            if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
-        });
-
-        // Close menu when clicking on nav links (for better UX on navigation)
-        mainNav.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
-            link.addEventListener('click', () => {
-                mainNav.classList.remove('active');
-                document.body.classList.remove('mobile-menu-open');
-                hideOverlay();
-            });
-        });
-    }
-
-    // Overlay click: close all open panels without letting the click reach page content
-    if (navOverlay) {
-        navOverlay.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdowns.forEach(d => d.classList.remove('active'));
-            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
-            if (mainNav) {
-                mainNav.classList.remove('active');
-                document.body.classList.remove('mobile-menu-open');
-            }
-            hideOverlay();
-        });
-    }
-})();
-</script>
-<script>
-// Notification Bell Widget
-(function() {
-    const bell   = document.getElementById('notifBellBtn');
-    const panel  = document.getElementById('notifPanel');
-    const list   = document.getElementById('notifPanelList');
-    const badge  = document.getElementById('notifBadge');
-    const markAllBtn = document.getElementById('notifMarkAll');
-    if (!bell) return;
-
-    let loaded = false;
-    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    const csrf = csrfMeta ? csrfMeta.content : '';
-
-    function formatTimeAgo(dateStr) {
-        const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-        if (diff < 60) return 'just now';
-        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
-        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
-        return Math.floor(diff/86400) + 'd ago';
-    }
-
-    function renderNotifications(items) {
-        if (!items || items.length === 0) {
-            list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
-            return;
-        }
-        list.innerHTML = items.map(n => `
-            <div class="notif-item ${n.is_read === 1 ? 'read' : 'unread'}" data-id="${n.id}">
-                <div class="notif-item-dot"></div>
-                <div class="notif-item-body">
-                    <div class="notif-item-msg">${n.message}</div>
-                    <div class="notif-item-time">${formatTimeAgo(n.created_at)}</div>
-                </div>
-            </div>`).join('');
-        // Mark as read on click
-        list.querySelectorAll('.notif-item.unread').forEach(el => {
-            el.addEventListener('click', function() {
-                const id = this.dataset.id;
-                fetch('/api/notifications/mark-read', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: '_csrf_token=' + encodeURIComponent(csrf) + '&id=' + id
-                }).then(r => r.json()).then(data => {
-                    this.classList.replace('unread', 'read');
-                    updateBadge(data.unread_count);
-                }).catch(() => {});
-            });
-        });
-    }
-
-    function updateBadge(count) {
-        if (badge) {
-            badge.textContent = Math.min(count, 99);
-            badge.style.display = count > 0 ? '' : 'none';
-        }
-    }
-
-    function loadNotifications() {
-        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary,#888);font-size:13px;">Loading…</div>';
-        fetch('/api/notifications')
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    renderNotifications(data.notifications);
-                    updateBadge(data.unread_count);
-                }
-            }).catch(() => {
-                list.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
-            });
-    }
-
-    // Toggle panel on bell click
-    bell.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const drop = bell.closest('.dropdown, .notif-bell-wrap');
-        const isOpen = drop && drop.classList.contains('active');
-        // Close other dropdowns and mobile menu
-        document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
-        const mobileNav = document.getElementById('mainNav');
-        if (mobileNav && mobileNav.classList.contains('active')) {
-            mobileNav.classList.remove('active');
-            document.body.classList.remove('mobile-menu-open');
-        }
-        if (!isOpen) {
-            drop && drop.classList.add('active');
-            if (!loaded) { loadNotifications(); loaded = true; }
-            // Show overlay to prevent click-through on underlying page elements
-            const overlay = document.getElementById('nav-overlay');
-            if (overlay) overlay.style.display = 'block';
-        } else {
-            const overlay = document.getElementById('nav-overlay');
-            if (overlay) overlay.style.display = 'none';
-        }
-    });
-
-    // Mark all read
-    if (markAllBtn) {
-        markAllBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            fetch('/api/notifications/mark-all-read', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: '_csrf_token=' + encodeURIComponent(csrf)
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    updateBadge(0);
-                    list.querySelectorAll('.notif-item.unread').forEach(el => el.classList.replace('unread','read'));
-                }
-            }).catch(() => {});
-        });
-    }
-
-    // Close notification panel when clicking outside — handled by the nav-overlay
-    // Also keep the legacy document-click handler as a fallback for desktop
-    document.addEventListener('click', function(e) {
-        const drop = bell.closest('.notif-bell-wrap');
-        if (drop && drop.classList.contains('active') && !drop.contains(e.target)) {
-            drop.classList.remove('active');
-            const overlay = document.getElementById('nav-overlay');
-            const anyOpen = document.querySelector('.dropdown.active') || document.querySelector('.notif-bell-wrap.active');
-            if (overlay && !anyOpen) overlay.style.display = 'none';
-        }
-    });
-
-    // Reload every 60s when tab is visible
-    setInterval(function() {
-        if (!document.hidden) {
-            fetch('/api/notifications')
-                .then(r => r.json())
-                .then(data => { if (data.success) updateBadge(data.unread_count); })
-                .catch(() => {});
-        }
-    }, 60000);
-})();
-</script>
-
-<style>
+<style<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
 /* Universal Navbar Styles */
 html {
     scroll-behavior: smooth;
@@ -872,22 +189,50 @@ body {
 .universal-header .logo {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--cyan); /* fallback if gradient-clip is unsupported */
-    background: linear-gradient(135deg, var(--cyan), var(--magenta));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #00f0ff;
+    -webkit-text-fill-color: #00f0ff;
+    background: none;
     text-decoration: none;
+    text-shadow: 0 0 8px rgba(0,240,255,.65), 0 0 20px rgba(0,240,255,.35);
 }
 
-/* Reset gradient-text clip for image logos so the <img> is always visible */
+.universal-header .logo.logo-both {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .universal-header .logo img {
     display: block;
     max-height: 40px;
-    -webkit-background-clip: initial;
-    background-clip: initial;
-    -webkit-text-fill-color: initial;
+    max-width: 120px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
 }
+
+.universal-header .logo.logo-both img {
+    max-height: 36px;
+}
+
+<?php
+$logoGradientEnabled = !empty($navbarSettings['logo_text_gradient_enabled']);
+$logoGradientStart = (string) ($navbarSettings['logo_text_gradient_start'] ?? '#00f0ff');
+$logoGradientEnd = (string) ($navbarSettings['logo_text_gradient_end'] ?? '#ff2ec4');
+$logoGradientStart = preg_match('/^#[0-9A-Fa-f]{6}$/', $logoGradientStart) ? $logoGradientStart : '#00f0ff';
+$logoGradientEnd = preg_match('/^#[0-9A-Fa-f]{6}$/', $logoGradientEnd) ? $logoGradientEnd : '#ff2ec4';
+?>
+<?php if ($logoGradientEnabled): ?>
+.universal-header .logo.logo-text,
+.universal-header .logo.logo-both .logo-text-part {
+    background: linear-gradient(135deg, <?= htmlspecialchars($logoGradientStart) ?>, <?= htmlspecialchars($logoGradientEnd) ?>);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    text-shadow: none;
+}
+<?php endif; ?>
 
 .universal-nav {
     display: flex;
@@ -898,6 +243,47 @@ body {
 
 .nav-item {
     position: relative;
+}
+
+/* Nav custom-link logo images (replaces inline styles for CSP compatibility) */
+.nav-link-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    vertical-align: middle;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+.nav-item-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.nav-subitem-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.nav-item-label {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+}
+.nav-item-label.nav-item-label-flex {
+    flex: 1;
+}
+.nav-item-desc {
+    opacity: 0.65;
+    font-weight: normal;
+    font-size: 0.78em;
+}
+.nav-submenu-arrow {
+    flex-shrink: 0;
+    opacity: 0.6;
 }
 
 /* Always-visible header end actions (notif + profile + theme + hamburger) */
@@ -1147,6 +533,7 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     box-shadow: 0 2px 5px rgba(229,62,62,0.45);
     transition: transform 0.2s ease;
 }
+.notif-badge.is-hidden { display: none; }
 .notif-badge.has-unread { animation: notif-badge-pop 0.4s cubic-bezier(0.34,1.56,0.64,1), notif-badge-pulse 2.5s 0.4s ease-in-out infinite; }
 @keyframes notif-badge-pop  { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes notif-badge-pulse {
@@ -1297,6 +684,9 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
     background: transparent;
     cursor: default;
 }
+#nav-overlay.is-visible {
+    display: block;
+}
 
 .mobile-menu-btn {
     display: none;
@@ -1327,6 +717,11 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
 }
 
 @media (max-width: 768px) {
+    .universal-header .logo img {
+        max-height: 34px;
+        max-width: 92px;
+    }
+
     .universal-nav {
         display: none;
         position: absolute;
@@ -1481,70 +876,812 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         display: none;
     }
 }
-</style>
 
+.logout-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+}
+.logout-modal.is-open { display: flex; }
+.logout-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(6,6,10,0.75);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.logout-card {
+    position: relative;
+    z-index: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 40px 36px 32px;
+    max-width: 400px;
+    width: calc(100% - 40px);
+    text-align: center;
+    transform: translateY(24px) scale(0.96);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.logout-icon-wrap {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(255,107,107,0.12);
+    border: 1px solid rgba(255,107,107,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+}
+.logout-title { font-size:1.25rem; font-weight:700; color:var(--text-primary); margin:0 0 8px; }
+.logout-text { font-size:0.9rem; color:var(--text-secondary); margin:0 0 28px; line-height:1.55; }
+.logout-actions { display:flex; gap:12px; justify-content:center; }
+.logout-btn-cancel,
+.logout-btn-confirm {
+    flex:1; max-width:140px; padding:11px 20px; border-radius:10px;
+    font-size:0.9rem; font-weight:600; cursor:pointer; text-decoration:none;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.logout-btn-cancel {
+    border:1px solid var(--border-color);
+    background:var(--bg-secondary);
+    color:var(--text-primary);
+}
+.logout-btn-confirm {
+    border:none;
+    background:linear-gradient(135deg,#ff6b6b,#ff2ec4);
+    color:#fff;
+}
+.logout-modal.is-open .logout-backdrop { opacity: 1; }
+.logout-modal.is-open .logout-card { transform: translateY(0) scale(1); opacity: 1; }
+</style>
+<header class="universal-header"<?= $headerStyleAttr ?>>
+    <div class="container header-content">
+        <?php if ($navbarSettings['logo_type'] === 'image' && !empty($navbarSettings['logo_image_url'])): ?>
+            <a href="/" class="logo logo-image">
+                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
+                     alt="Logo">
+            </a>
+        <?php elseif ($navbarSettings['logo_type'] === 'both' && !empty($navbarSettings['logo_image_url'])): ?>
+            <a href="/" class="logo logo-both">
+                <img src="<?= htmlspecialchars(navbarAbsUrl($navbarSettings['logo_image_url'])) ?>"
+                     alt="Logo">
+                <span class="logo-text-part"><?= htmlspecialchars($navbarSettings['logo_text'] ?? APP_NAME) ?></span>
+            </a>
+        <?php else: ?>
+            <a href="/" class="logo logo-text"><?= htmlspecialchars($navbarSettings['logo_text']) ?></a>
+        <?php endif; ?>
+        
+        <nav class="universal-nav" id="mainNav">
+            <?php if ($navbarSettings['show_home_link']): ?>
+            <a href="/" class="nav-link">Home</a>
+            <?php endif; ?>
+            
+            <!-- Custom Links (moved after Home) -->
+            <?php if (!empty($customLinks)): ?>
+                <?php 
+                // Sort custom links by position
+                usort($customLinks, function($a, $b) {
+                    return ($a['position'] ?? 0) - ($b['position'] ?? 0);
+                });
+                foreach ($customLinks as $link): 
+                    // Check if this is a dropdown link (has is_dropdown flag)
+                    $isDropdown = !empty($link['is_dropdown']) && !empty($link['dropdown_items']);
+                ?>
+                    <?php if ($isDropdown): ?>
+                        <!-- Dropdown Custom Link -->
+                        <div class="dropdown nav-item">
+                            <button class="nav-link dropdown-toggle">
+                                <?php if (!empty($link['logo_url'])): ?>
+                                    <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" class="nav-link-logo">
+                                <?php elseif (!empty($link['icon'])): ?>
+                                    <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
+                                <?php endif; ?>
+                                <?= htmlspecialchars($link['title']) ?>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <?php foreach ($link['dropdown_items'] as $subLink): ?>
+                                    <?php
+                                        $diStyle = '';
+                                        // Validate hex color before inserting into style attribute to prevent CSS injection
+                                        $rawColor = $subLink['text_color'] ?? '';
+                                        if (preg_match('/^#[0-9A-Fa-f]{6}$/', $rawColor)) {
+                                            $diStyle .= 'color:' . $rawColor . ';';
+                                        }
+                                        if (!empty($subLink['font_bold'])) $diStyle .= 'font-weight:bold;';
+                                        $rawSize = (int)($subLink['font_size'] ?? 14);
+                                        $rawSize = min(max($rawSize, 10), 32);
+                                        $diStyle .= 'font-size:' . $rawSize . 'px;';
+                                        $isSubDropdown = !empty($subLink['is_sub_dropdown']) && !empty($subLink['sub_items']);
+                                    ?>
+                                    <?php if ($isSubDropdown): ?>
+                                        <!-- Sub-sub dropdown item -->
+                                        <div class="dropdown-item has-submenu" style="<?= $diStyle ?>">
+                                            <?php if (!empty($subLink['logo_url'])): ?>
+                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" class="nav-item-logo">
+                                            <?php elseif (!empty($subLink['icon'])): ?>
+                                                <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
+                                            <?php endif; ?>
+                                            <span class="nav-item-label nav-item-label-flex">
+                                                <span><?= htmlspecialchars($subLink['title']) ?></span>
+                                                <?php if (!empty($subLink['description'])): ?>
+                                                    <small class="nav-item-desc"><?= htmlspecialchars($subLink['description']) ?></small>
+                                                <?php endif; ?>
+                                            </span>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-submenu-arrow"><path d="M9 6l6 6-6 6"/></svg>
+                                            <div class="submenu">
+                                                <?php foreach ($subLink['sub_items'] as $subSubLink): ?>
+                                                    <a href="<?= htmlspecialchars($subSubLink['url']) ?>" class="dropdown-item">
+                                                        <?php if (!empty($subSubLink['logo_url'])): ?>
+                                                            <img src="<?= htmlspecialchars(navbarAbsUrl($subSubLink['logo_url'])) ?>" alt="" class="nav-subitem-logo">
+                                                        <?php elseif (!empty($subSubLink['icon'])): ?>
+                                                            <i class="<?= htmlspecialchars($subSubLink['icon']) ?>"></i>
+                                                        <?php endif; ?>
+                                                        <?= htmlspecialchars($subSubLink['title']) ?>
+                                                    </a>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <a href="<?= htmlspecialchars($subLink['url']) ?>" class="dropdown-item" style="<?= $diStyle ?>">
+                                            <?php if (!empty($subLink['logo_url'])): ?>
+                                                <img src="<?= htmlspecialchars(navbarAbsUrl($subLink['logo_url'])) ?>" alt="" class="nav-item-logo">
+                                            <?php elseif (!empty($subLink['icon'])): ?>
+                                                <i class="<?= htmlspecialchars($subLink['icon']) ?>"></i>
+                                            <?php endif; ?>
+                                            <span class="nav-item-label">
+                                                <span><?= htmlspecialchars($subLink['title']) ?></span>
+                                                <?php if (!empty($subLink['description'])): ?>
+                                                    <small class="nav-item-desc"><?= htmlspecialchars($subLink['description']) ?></small>
+                                                <?php endif; ?>
+                                            </span>
+                                        </a>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Regular Custom Link -->
+                        <a href="<?= htmlspecialchars($link['url']) ?>" class="nav-link">
+                            <?php if (!empty($link['logo_url'])): ?>
+                                <img src="<?= htmlspecialchars(navbarAbsUrl($link['logo_url'])) ?>" alt="" class="nav-link-logo">
+                            <?php elseif (!empty($link['icon'])): ?>
+                                <i class="<?= htmlspecialchars($link['icon']) ?>"></i>
+                            <?php endif; ?>
+                            <?= htmlspecialchars($link['title']) ?>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            
+            <?php if ($isLoggedIn): ?>
+                <!-- Projects Dropdown -->
+                <?php
+                $showProjectsForThisUser = $navbarSettings['show_projects_dropdown'] && (Auth::isAdmin() || !empty($navbarSettings['show_projects_dropdown_to_user']));
+                if ($showProjectsForThisUser):
+                ?>
+                <div class="dropdown nav-item" id="projectsDropdown">
+                    <button class="nav-link dropdown-toggle">
+                        Projects
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                    </button>
+                    <div class="dropdown-menu">
+                        <?php 
+                        // Define BASE_PATH if not defined
+                        if (!defined('BASE_PATH')) {
+                            define('BASE_PATH', dirname(dirname(__DIR__)));
+                        }
+                        
+                        try {
+                            // Query DB for enabled projects; fall back to config for projects
+                            // that have no DB row yet (e.g. before a migration is run).
+                            $db = \Core\Database::getInstance();
+                            $allDbRows = $db->fetchAll(
+                                "SELECT * FROM home_projects ORDER BY sort_order ASC"
+                            );
+                            $_navDbKeys = [];
+                            $_navProjects = [];
+                            foreach ($allDbRows as $_row) {
+                                $_navDbKeys[] = $_row['project_key'];
+                                if ((int) $_row['is_enabled'] === 1) {
+                                    $_navProjects[] = [
+                                        'name'  => $_row['name'],
+                                        'url'   => $_row['url'] ?? '/projects/' . $_row['project_key'],
+                                        'color' => $_row['color'] ?? '#00f0ff',
+                                    ];
+                                }
+                            }
+                            // Merge config-only projects not yet in DB
+                            $_configProjects = require BASE_PATH . '/config/projects.php';
+                            foreach ($_configProjects as $_key => $_cfg) {
+                                if (!empty($_cfg['enabled']) && !in_array($_key, $_navDbKeys, true)) {
+                                    $_navProjects[] = [
+                                        'name'  => $_cfg['name'],
+                                        'url'   => $_cfg['url'] ?? '/projects/' . $_key,
+                                        'color' => $_cfg['color'] ?? '#00f0ff',
+                                    ];
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            // DB unavailable — fall back to config (show all config-enabled projects)
+                            $_navProjects = [];
+                            try {
+                                $_configProjects = require BASE_PATH . '/config/projects.php';
+                                foreach ($_configProjects as $_key => $_cfg) {
+                                    if (!empty($_cfg['enabled'])) {
+                                        $_navProjects[] = [
+                                            'name'  => $_cfg['name'],
+                                            'url'   => $_cfg['url'] ?? '/projects/' . $_key,
+                                            'color' => $_cfg['color'] ?? '#00f0ff',
+                                        ];
+                                    }
+                                }
+                            } catch (\Exception $e2) {
+                                // config also unavailable
+                            }
+                        }
+                        foreach ($_navProjects as $_p):
+                        ?>
+                            <a href="<?= htmlspecialchars($_p['url']) ?>" class="dropdown-item">
+                                <div class="project-icon" style="background: <?= htmlspecialchars($_p['color']) ?>20; color: <?= htmlspecialchars($_p['color']) ?>">
+                                    <?= htmlspecialchars(strtoupper(substr($_p['name'], 0, 1))) ?>
+                                </div>
+                                <?= htmlspecialchars($_p['name']) ?>
+                            </a>
+                        <?php 
+                        endforeach;
+                        if (empty($_navProjects)):
+                            echo '<div class="dropdown-item" style="color: var(--text-secondary); font-size: 13px;">No projects available</div>';
+                        endif;
+                        ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if ($navbarSettings['show_dashboard_link']): ?>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <?php endif; ?>
+                
+                <?php if ($navbarSettings['show_admin_link'] && Auth::isAdmin()): ?>
+                    <a href="/admin" class="nav-link">Admin</a>
+                <?php endif; ?>
+
+            <?php else: ?>
+                <a href="/login" class="nav-link">Login</a>
+                <a href="/register" class="nav-link">Register</a>
+            <?php endif; ?>
+        </nav>
+
+        <!-- Always-visible header actions: theme icon, notification, profile, hamburger -->
+        <div class="header-end-actions">
+            <!-- Theme Toggle (icon only) — visible to all users -->
+            <?php if ($navbarSettings['show_theme_toggle']): ?>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+            <?php endif; ?>
+
+            <?php if ($isLoggedIn):
+                try {
+                    $notifUnreadCount = \Core\Notification::getUnreadCount($user['id']);
+                } catch (\Exception $e) {
+                    $notifUnreadCount = 0;
+                }
+            ?>
+            <!-- Notification Bell -->
+            <div class="notif-bell-wrap" id="notifDropdown">
+                <button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications" title="Notifications">
+                    <svg class="notif-bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notif-badge<?= $notifUnreadCount > 0 ? ' has-unread' : '' ?><?= $notifUnreadCount > 0 ? '' : ' is-hidden' ?>" id="notifBadge">
+                        <?= min($notifUnreadCount, 99) ?>
+                    </span>
+                </button>
+                <div class="dropdown-menu notif-panel" id="notifPanel">
+                    <div class="notif-panel-header">
+                        <div class="notif-panel-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            <strong>Notifications</strong>
+                        </div>
+                        <button class="notif-mark-all-btn" id="notifMarkAll" title="Mark all as read">Mark all read</button>
+                    </div>
+                    <div class="notif-panel-list" id="notifPanelList">
+                        <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading…</div>
+                    </div>
+                    <div class="notif-panel-footer">
+                        <a href="/notifications" class="notif-view-all">
+                            View All Notifications
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Dropdown — always shown for logged-in users -->
+            <div class="dropdown" id="profileDropdown">
+                <button class="nav-link dropdown-toggle" style="display:flex;align-items:center;gap:6px;">
+                    <?php
+                    $navbarAvatarPath = $user['avatar'] ?? '';
+                    if (!empty($navbarAvatarPath)):
+                        $navbarAvatarSrc = str_starts_with($navbarAvatarPath, '/') ? $navbarAvatarPath : '/uploads/avatars/' . $navbarAvatarPath;
+                    ?>
+                        <span class="profile-avatar-wrap">
+                            <img src="<?= htmlspecialchars($navbarAvatarSrc) ?>" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border-color);display:block;">
+                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+                        </span>
+                    <?php else: ?>
+                        <span class="profile-avatar-wrap">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="border-radius:50%;background:var(--bg-secondary);padding:5px;border:1px solid var(--border-color);">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            <svg class="profile-chevron-badge" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+                        </span>
+                    <?php endif; ?>
+                    <?php
+                    // Show full name: first word only, max 10 characters
+                    $displayName = $user['name'] ?? $user['username'] ?? 'User';
+                    $nameParts = explode(' ', trim($displayName));
+                    $firstName = $nameParts[0] !== '' ? $nameParts[0] : ($user['username'] ?? 'User');
+                    if (strlen($firstName) > 10) {
+                        $firstName = substr($firstName, 0, 10) . '…';
+                    }
+                    ?>
+                    <span class="profile-username"><?= htmlspecialchars($firstName) ?></span>
+                    <svg class="profile-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="/profile" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Profile
+                    </a>
+                    <a href="/security#change-password" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Change Password
+                    </a>
+                    <a href="/settings" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+                        </svg>
+                        Settings
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item" id="navbarLogoutBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        Logout
+                    </a>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Hamburger (mobile only) -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+</header>
+<!-- Navbar overlay: prevents click-through to page content when a popup is open -->
+<div id="nav-overlay" aria-hidden="true"></div>
+<script<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
+// Universal Navbar JavaScript
+(function() {
+    // Debug: Log navbar load
+    console.log('Universal navbar loaded');
+    
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+    const html = document.documentElement;
+    
+    // Load saved theme or use default from settings
+    const defaultTheme = '<?= $navbarSettings['default_theme'] ?? 'dark' ?>';
+    const savedTheme = localStorage.getItem('theme') || defaultTheme;
+    html.setAttribute('data-theme', savedTheme);
+    updateThemeUI(savedTheme);
+    updateNavbarColors(savedTheme);
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeUI(newTheme);
+            updateNavbarColors(newTheme);
+            
+            // Dispatch custom event for other components that need to react to theme changes
+            document.dispatchEvent(new CustomEvent('themeChanged', { 
+                detail: { theme: newTheme } 
+            }));
+        });
+    }
+    
+    function updateThemeUI(theme) {
+        if (!themeIcon) return;
+        if (theme === 'light') {
+            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+            if (themeText) themeText.textContent = 'Dark';
+        } else {
+            themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+            if (themeText) themeText.textContent = 'Light';
+        }
+    }
+    
+    function updateNavbarColors(theme) {
+        // Force browser to recalculate CSS variables by triggering a reflow
+        const navbar = document.querySelector('.universal-header');
+        if (navbar) {
+            // Trigger reflow to ensure CSS variables are updated
+            void navbar.offsetHeight;
+        }
+    }
+    
+    // Mobile menu elements (declared early so dropdown handlers can reference them)
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mainNav = document.getElementById('mainNav');
+    const navOverlay = document.getElementById('nav-overlay');
+
+    // Show/hide the nav overlay to intercept clicks on page content behind open popups
+    function showOverlay() {
+        if (navOverlay) navOverlay.classList.add('is-visible');
+    }
+    function hideOverlay() {
+        if (navOverlay) navOverlay.classList.remove('is-visible');
+    }
+    function isAnyPanelOpen() {
+        return (mainNav && mainNav.classList.contains('active'))
+            || document.querySelector('.dropdown.active') !== null
+            || document.querySelector('.notif-bell-wrap.active') !== null;
+    }
+
+    // Dropdown functionality
+    const dropdowns = document.querySelectorAll('.dropdown');
+    dropdowns.forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Close other dropdowns, notification bell, and mobile menu
+                dropdowns.forEach(d => {
+                    if (d !== dropdown) d.classList.remove('active');
+                });
+                document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+                // Only close the mobile menu when the toggle is NOT inside it
+                // (avoids closing the menu when expanding a sub-dropdown within it)
+                if (mainNav && mainNav.classList.contains('active') && !mainNav.contains(toggle)) {
+                    mainNav.classList.remove('active');
+                    document.body.classList.remove('mobile-menu-open');
+                }
+                dropdown.classList.toggle('active');
+                if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
+            });
+        }
+    });
+    
+    // Sub-sub (flyout) dropdown — click support for touch / no-hover devices
+    document.querySelectorAll('.has-submenu').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // If the user clicked an actual link inside the submenu, let it navigate
+            if (e.target.closest('a.dropdown-item')) return;
+            e.stopPropagation();
+
+            const submenu = item.querySelector(':scope > .submenu');
+            if (!submenu) return;
+
+            const isOpen = item.classList.contains('active');
+
+            // Close all other open submenus in the same dropdown-menu
+            const parentMenu = item.closest('.dropdown-menu');
+            if (parentMenu) {
+                parentMenu.querySelectorAll('.has-submenu.active').forEach(s => {
+                    if (s !== item) s.classList.remove('active');
+                });
+            }
+            item.classList.toggle('active', !isOpen);
+
+            // Flip submenu to the left if it would overflow the viewport
+            if (!isOpen) {
+                const rect = submenu.getBoundingClientRect();
+                submenu.classList.toggle('flip-left', rect.right > window.innerWidth);
+            }
+        });
+    });
+
+    // Close sub-sub dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        // Check if we clicked inside a dropdown menu
+        const clickedInsideDropdown = e.target.closest('.dropdown-menu');
+        
+        // If clicked inside dropdown menu, allow navigation but close after brief delay
+        if (clickedInsideDropdown) {
+            // Only close if it's a link click
+            if (e.target.closest('a.dropdown-item')) {
+                // Let the link navigate, then close dropdown
+                setTimeout(() => {
+                    dropdowns.forEach(d => d.classList.remove('active'));
+                    document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+                    hideOverlay();
+                }, 100);
+            }
+        } else {
+            // Clicked outside, close all dropdowns and submenus
+            dropdowns.forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+            if (!isAnyPanelOpen()) hideOverlay();
+        }
+    });
+    
+    // Mobile menu toggle
+    if (mobileMenuBtn && mainNav) {
+        // Toggle menu on button click — close all other panels first
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const opening = !mainNav.classList.contains('active');
+            if (opening) {
+                // Close all dropdowns and notification bell before opening the menu
+                dropdowns.forEach(d => d.classList.remove('active'));
+                document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+            }
+            mainNav.classList.toggle('active');
+            document.body.classList.toggle('mobile-menu-open');
+            if (isAnyPanelOpen()) showOverlay(); else hideOverlay();
+        });
+
+        // Close menu when clicking on nav links (for better UX on navigation)
+        mainNav.querySelectorAll('.nav-link:not(.dropdown-toggle)').forEach(link => {
+            link.addEventListener('click', () => {
+                mainNav.classList.remove('active');
+                document.body.classList.remove('mobile-menu-open');
+                hideOverlay();
+            });
+        });
+    }
+
+    // Overlay click: close all open panels without letting the click reach page content
+    if (navOverlay) {
+        navOverlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdowns.forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.has-submenu.active').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.notif-bell-wrap.active').forEach(w => w.classList.remove('active'));
+            if (mainNav) {
+                mainNav.classList.remove('active');
+                document.body.classList.remove('mobile-menu-open');
+            }
+            hideOverlay();
+        });
+    }
+})();
+</script>
+<script<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
+// Notification Bell Widget
+(function() {
+    const bell   = document.getElementById('notifBellBtn');
+    const panel  = document.getElementById('notifPanel');
+    const list   = document.getElementById('notifPanelList');
+    const badge  = document.getElementById('notifBadge');
+    const markAllBtn = document.getElementById('notifMarkAll');
+    if (!bell) return;
+
+    let loaded = false;
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrf = csrfMeta ? csrfMeta.content : '';
+
+    function formatTimeAgo(dateStr) {
+        const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return Math.floor(diff/86400) + 'd ago';
+    }
+
+    function renderNotifications(items) {
+        if (!items || items.length === 0) {
+            list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+            return;
+        }
+        list.innerHTML = items.map(n => `
+            <div class="notif-item ${n.is_read === 1 ? 'read' : 'unread'}" data-id="${n.id}">
+                <div class="notif-item-dot"></div>
+                <div class="notif-item-body">
+                    <div class="notif-item-msg">${n.message}</div>
+                    <div class="notif-item-time">${formatTimeAgo(n.created_at)}</div>
+                </div>
+            </div>`).join('');
+        // Mark as read on click
+        list.querySelectorAll('.notif-item.unread').forEach(el => {
+            el.addEventListener('click', function() {
+                const id = this.dataset.id;
+                fetch('/api/notifications/mark-read', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: '_csrf_token=' + encodeURIComponent(csrf) + '&id=' + id
+                }).then(r => r.json()).then(data => {
+                    this.classList.replace('unread', 'read');
+                    updateBadge(data.unread_count);
+                }).catch(() => {});
+            });
+        });
+    }
+
+    function updateBadge(count) {
+        if (badge) {
+            badge.textContent = Math.min(count, 99);
+            badge.classList.toggle('is-hidden', count <= 0);
+            badge.classList.toggle('has-unread', count > 0);
+        }
+    }
+
+    function loadNotifications() {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-secondary,#888);font-size:13px;">Loading…</div>';
+        fetch('/api/notifications')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    renderNotifications(data.notifications);
+                    updateBadge(data.unread_count);
+                }
+            }).catch(() => {
+                list.innerHTML = '<div class="notif-empty">Could not load notifications.</div>';
+            });
+    }
+
+    // Toggle panel on bell click
+    bell.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const drop = bell.closest('.dropdown, .notif-bell-wrap');
+        const isOpen = drop && drop.classList.contains('active');
+        // Close other dropdowns and mobile menu
+        document.querySelectorAll('.dropdown.active').forEach(d => d.classList.remove('active'));
+        const mobileNav = document.getElementById('mainNav');
+        if (mobileNav && mobileNav.classList.contains('active')) {
+            mobileNav.classList.remove('active');
+            document.body.classList.remove('mobile-menu-open');
+        }
+        if (!isOpen) {
+            drop && drop.classList.add('active');
+            if (!loaded) { loadNotifications(); loaded = true; }
+            // Show overlay to prevent click-through on underlying page elements
+            const overlay = document.getElementById('nav-overlay');
+            if (overlay) overlay.classList.add('is-visible');
+        } else {
+            const overlay = document.getElementById('nav-overlay');
+            if (overlay) overlay.classList.remove('is-visible');
+        }
+    });
+
+    // Mark all read
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: '_csrf_token=' + encodeURIComponent(csrf)
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    updateBadge(0);
+                    list.querySelectorAll('.notif-item.unread').forEach(el => el.classList.replace('unread','read'));
+                }
+            }).catch(() => {});
+        });
+    }
+
+    // Close notification panel when clicking outside — handled by the nav-overlay
+    // Also keep the legacy document-click handler as a fallback for desktop
+    document.addEventListener('click', function(e) {
+        const drop = bell.closest('.notif-bell-wrap');
+        if (drop && drop.classList.contains('active') && !drop.contains(e.target)) {
+            drop.classList.remove('active');
+            const overlay = document.getElementById('nav-overlay');
+            const anyOpen = document.querySelector('.dropdown.active') || document.querySelector('.notif-bell-wrap.active');
+            if (overlay && !anyOpen) overlay.classList.remove('is-visible');
+        }
+    });
+
+    // Reload every 60s when tab is visible
+    setInterval(function() {
+        if (!document.hidden) {
+            fetch('/api/notifications')
+                .then(r => r.json())
+                .then(data => { if (data.success) updateBadge(data.unread_count); })
+                .catch(() => {});
+        }
+    }, 60000);
+})();
+</script>
+
+
+<?php if ($isLoggedIn): ?>
 <!-- ── Logout Confirmation Modal ───────────────────────────────────────────── -->
-<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
-    <!-- Backdrop -->
-    <div id="logoutBackdrop" onclick="closeLogoutModal()"
-         style="position:absolute;inset:0;background:rgba(6,6,10,0.75);backdrop-filter:blur(6px);opacity:0;transition:opacity 0.3s ease;"></div>
-    <!-- Card -->
-    <div id="logoutCard"
-         style="position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border-color);border-radius:20px;padding:40px 36px 32px;max-width:400px;width:calc(100% - 40px);text-align:center;transform:translateY(24px) scale(0.96);opacity:0;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1),opacity 0.3s ease;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
-        <!-- Icon -->
-        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,107,0.12);border:1px solid rgba(255,107,107,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+<div id="logoutModal" class="logout-modal" aria-hidden="true">
+    <div id="logoutBackdrop" class="logout-backdrop"></div>
+    <div id="logoutCard" class="logout-card">
+        <div class="logout-icon-wrap">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
         </div>
-        <h3 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0 0 8px;">Sign Out?</h3>
-        <p style="font-size:0.9rem;color:var(--text-secondary);margin:0 0 28px;line-height:1.55;">You're about to sign out of your account. You can always log back in at any time.</p>
-        <div style="display:flex;gap:12px;justify-content:center;">
-            <button onclick="closeLogoutModal()"
-                    style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.2s;">
+        <h3 class="logout-title">Sign Out?</h3>
+        <p class="logout-text">You're about to sign out of your account. You can always log back in at any time.</p>
+        <div class="logout-actions">
+            <button data-close-logout class="logout-btn-cancel">
                 Cancel
             </button>
-            <a href="/logout" id="logoutConfirmBtn"
-               style="flex:1;max-width:140px;padding:11px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#ff6b6b,#ff2ec4);color:#fff;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity 0.2s;">
+            <a href="/logout" id="logoutConfirmBtn" class="logout-btn-confirm">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Sign Out
             </a>
         </div>
     </div>
 </div>
-<script>
+<script<?= $_navNonce !== '' ? ' nonce="' . $_navNonce . '"' : '' ?>>
 (function () {
     function openLogoutModal(e) {
         e && e.preventDefault();
-        var modal   = document.getElementById('logoutModal');
-        var backdrop = document.getElementById('logoutBackdrop');
-        var card    = document.getElementById('logoutCard');
-        modal.style.display = 'flex';
-        // Force reflow then animate in
-        requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-                backdrop.style.opacity = '1';
-                card.style.transform  = 'translateY(0) scale(1)';
-                card.style.opacity    = '1';
-            });
-        });
+        var modal = document.getElementById('logoutModal');
+        if (!modal) return;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
     }
     function closeLogoutModal() {
-        var modal   = document.getElementById('logoutModal');
-        var backdrop = document.getElementById('logoutBackdrop');
-        var card    = document.getElementById('logoutCard');
-        backdrop.style.opacity = '0';
-        card.style.transform   = 'translateY(24px) scale(0.96)';
-        card.style.opacity     = '0';
-        setTimeout(function () { modal.style.display = 'none'; }, 320);
+        var modal = document.getElementById('logoutModal');
+        if (!modal) return;
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
     }
     // ESC key closes modal
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeLogoutModal();
     });
+    // Wire up inline-handler replacements via event listeners (avoids script-src-attr CSP violation)
+    var logoutBtn = document.getElementById('navbarLogoutBtn');
+    if (logoutBtn) logoutBtn.addEventListener('click', openLogoutModal);
+    var logoutBackdrop = document.getElementById('logoutBackdrop');
+    if (logoutBackdrop) logoutBackdrop.addEventListener('click', closeLogoutModal);
+    document.querySelectorAll('[data-close-logout]').forEach(function(el) {
+        el.addEventListener('click', closeLogoutModal);
+    });
     window.openLogoutModal  = openLogoutModal;
     window.closeLogoutModal = closeLogoutModal;
 })();
 </script>
+<?php endif; // $isLoggedIn ?>

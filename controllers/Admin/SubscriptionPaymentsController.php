@@ -18,18 +18,30 @@ class SubscriptionPaymentsController extends BaseController
         $this->requireAuth();
         $this->requireAdmin();
         $this->subscriptionService = new SubscriptionService(Database::getInstance());
-        $this->subscriptionService->ensureInfrastructure();
-        $this->subscriptionService->ensureNotificationTemplates();
+        try {
+            $this->subscriptionService->ensureInfrastructure();
+            $this->subscriptionService->ensureNotificationTemplates();
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionPaymentsController::__construct - ' . $e->getMessage());
+        }
     }
 
     public function index(): void
     {
         $appKey = trim((string) ($_GET['app'] ?? ''));
-        $appKey = in_array($appKey, ['platform', 'resumex'], true) ? $appKey : null;
+        $appKey = in_array($appKey, ['resumex', 'qr', 'convertx', 'whatsapp'], true) ? $appKey : null;
+        $payments = [];
+
+        try {
+            $payments = $this->subscriptionService->getAdminPayments($appKey);
+        } catch (\Throwable $e) {
+            Logger::error('SubscriptionPaymentsController::index - ' . $e->getMessage());
+            $this->flash('error', 'Could not load subscription payments right now.');
+        }
 
         $this->view('admin/subscription-payments/index', [
             'title' => 'Subscription Payments',
-            'payments' => $this->subscriptionService->getAdminPayments($appKey),
+            'payments' => $payments,
             'activeApp' => $appKey,
         ]);
     }
@@ -96,6 +108,32 @@ class SubscriptionPaymentsController extends BaseController
         $this->redirect('/admin/subscription-payments');
     }
 
+    public function manualRefund(string $id): void
+    {
+        if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
+            $this->flash('error', 'Invalid request token.');
+            $this->redirect('/admin/subscription-payments');
+            return;
+        }
+
+        $note = trim((string) ($_POST['reason'] ?? ''));
+        if ($this->subscriptionService->adminInitiateRefund((int) $id, Auth::id(), $note)) {
+            $this->flash('success', 'Refund has been processed and subscription cancelled.');
+        } else {
+            $this->flash('error', 'Unable to process refund. Payment may not be eligible (already refunded, not paid, etc.).');
+        }
+
+        $this->redirect('/admin/subscription-payments');
+    }
+
+    public function refunds(): void
+    {
+        $this->view('admin/subscription-payments/refunds', [
+            'title' => 'Refund Requests',
+            'payments' => $this->subscriptionService->getAdminRefundPayments(),
+        ]);
+    }
+
     public function refund(string $id): void
     {
         if (!Security::validateCsrfToken($_POST['_csrf_token'] ?? '')) {
@@ -108,7 +146,9 @@ class SubscriptionPaymentsController extends BaseController
             ? (string) $_POST['decision']
             : 'rejected';
 
-        if ($this->subscriptionService->reviewRefundRequest((int) $id, $decision, Auth::id(), trim((string) ($_POST['reason'] ?? '')))) {
+        $cancelSubscription = !empty($_POST['cancel_subscription']) && $_POST['cancel_subscription'] === '1';
+
+        if ($this->subscriptionService->reviewRefundRequest((int) $id, $decision, Auth::id(), trim((string) ($_POST['reason'] ?? '')), $cancelSubscription)) {
             $this->flash('success', 'Refund request updated.');
         } else {
             $this->flash('error', 'Unable to update refund request.');

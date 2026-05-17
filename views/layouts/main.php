@@ -974,14 +974,6 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
         }
         
         /* Footer */
-        .footer {
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border-color);
-            padding: 20px 0;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 13px;
-        }
         .footer-inner {
             display: flex;
             flex-direction: column;
@@ -990,20 +982,21 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
             justify-content: center;
             padding: 0 16px;
         }
-        .footer-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px 18px;
-            align-items: center;
-            justify-content: center;
+        .site-footer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 32px;
+            padding-bottom: 32px;
         }
-        .footer-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: color .2s ease;
+        @media (max-width: 1024px) {
+            .site-footer-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
-        .footer-links a:hover {
-            color: var(--cyan);
+        @media (max-width: 640px) {
+            .site-footer-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
         /* Grid */
@@ -1196,6 +1189,11 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
             transition: width 0.3s ease, left 0.3s ease;
             min-width: 0;
         }
+
+        .left-sidebar.left-sidebar-unlimited {
+            height: auto;
+            max-height: none;
+        }
         
         .dashboard-main-content {
             padding: 20px;
@@ -1205,7 +1203,7 @@ $_effectivePageTitle = $title ?? ($_isHomeHeadPath && $_homePageTitle !== '' ? $
         
         .dashboard-sidebar {
             background: var(--bg-primary);
-            height: calc(100vh - 60px);
+            min-height: calc(100vh - 60px);
             overflow-y: auto;
             overflow-x: hidden;
             padding: 20px;
@@ -1652,7 +1650,7 @@ window.mmbSkeleton = (function(){
             <!-- Dashboard Layout with Left and Right Sidebars -->
             <div class="full-dashboard-layout">
                 <!-- Left Navigation Sidebar -->
-                <aside class="left-sidebar" id="leftSidebar">
+                <aside class="left-sidebar<?= (($title ?? '') === 'My Plans') ? ' left-sidebar-unlimited' : '' ?>" id="leftSidebar">
                     <!-- Toggle Button -->
                     <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
                         <span class="sidebar-title" style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">Navigation</span>
@@ -2552,11 +2550,12 @@ window.mmbSkeleton = (function(){
     }, $hpCol3Safe) ?? $hpCol3Safe;
     ?>
     <?php if ($showFooter): ?>
+    <div class="site-footer-wrap<?= ($isHomePage || $isPagesPage) ? ' footer-always-show' : '' ?>">
     <?php if ($showThreeColFooter): ?>
     <!-- Homepage 3-column footer -->
     <footer style="background:var(--bg-secondary);border-top:1px solid var(--border-color);margin-top:40px;padding:40px 0 0;">
         <div class="container" style="max-width:1200px;margin:0 auto;padding:0 24px;">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;padding-bottom:32px;">
+            <div class="site-footer-grid">
                 <!-- Column 1 -->
                 <div>
                     <div style="font-weight:800;font-size:.95rem;color:var(--text-primary);margin-bottom:12px;letter-spacing:.02em;">
@@ -2631,62 +2630,8 @@ window.mmbSkeleton = (function(){
             </div>
         </div>
     </footer>
-    <?php else: ?>
-    <footer class="footer">
-        <div class="container footer-inner" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-            <?php if ($footerTagline): ?>
-            <p style="color:var(--text-secondary);font-size:.85rem;"><?= htmlspecialchars($footerTagline) ?></p>
-            <?php endif; ?>
-            <?php if (!empty($defaultFooterLinks) || !empty($footerPages)): ?>
-                <nav class="footer-links" aria-label="Footer links">
-                    <?php if (!empty($defaultFooterLinks)): ?>
-                        <?php foreach ($defaultFooterLinks as $fl): ?>
-                            <a href="<?= htmlspecialchars($fl['url']) ?>"><?= htmlspecialchars($fl['label']) ?></a>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <?php foreach ($footerPages as $footerPage): ?>
-                            <a href="/pages/<?= htmlspecialchars($footerPage['slug']) ?>"><?= htmlspecialchars($footerPage['title']) ?></a>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </nav>
-            <?php endif; ?>
-            <?php if ($footerShowSocial === '1' && !empty($footerSocialLinks)): ?>
-            <div style="display:flex;gap:16px;align-items:center;">
-                <?php if (!empty($footerSocialLinks['footer_social_twitter'])): ?>
-                <a href="<?= htmlspecialchars($footerSocialLinks['footer_social_twitter']) ?>" target="_blank" rel="noopener" aria-label="Twitter" style="color:var(--text-secondary);transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.261 5.638L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
-                </a>
-                <?php endif; ?>
-                <?php if (!empty($footerSocialLinks['footer_social_github'])): ?>
-                <a href="<?= htmlspecialchars($footerSocialLinks['footer_social_github']) ?>" target="_blank" rel="noopener" aria-label="GitHub" style="color:var(--text-secondary);transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-                </a>
-                <?php endif; ?>
-                <?php if (!empty($footerSocialLinks['footer_social_linkedin'])): ?>
-                <a href="<?= htmlspecialchars($footerSocialLinks['footer_social_linkedin']) ?>" target="_blank" rel="noopener" aria-label="LinkedIn" style="color:var(--text-secondary);transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                </a>
-                <?php endif; ?>
-                <?php if (!empty($footerSocialLinks['footer_social_youtube'])): ?>
-                <a href="<?= htmlspecialchars($footerSocialLinks['footer_social_youtube']) ?>" target="_blank" rel="noopener" aria-label="YouTube" style="color:var(--text-secondary);transition:color .2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                </a>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-            <p style="font-size:.8rem;color:var(--text-secondary);">
-                <?php
-                if (!empty($footerCopyright)) {
-                    echo htmlspecialchars($footerCopyright);
-                } else {
-                    $appName = defined('APP_NAME') ? APP_NAME : 'Platform';
-                    echo '&copy; ' . date('Y') . ' ' . htmlspecialchars($appName) . '. All rights reserved.';
-                }
-                ?>
-            </p>
-        </div>
-    </footer>
     <?php endif; ?>
+    </div><!-- /.site-footer-wrap -->
     <?php endif; // $showFooter ?>
     
     <button class="scroll-top" id="scrollTop" aria-label="Scroll to top">

@@ -26,6 +26,7 @@ class NavbarController extends BaseController
     {
         // Ensure the logo_type ENUM supports 'both'
         $this->ensureLogoTypeBoth();
+        $this->ensureLogoGradientColumns();
 
         // Get current navbar settings
         $settings = $this->db->fetch("SELECT * FROM navbar_settings WHERE id = 1");
@@ -66,6 +67,7 @@ class NavbarController extends BaseController
 
             // Ensure ENUM supports 'both' before writing
             $this->ensureLogoTypeBoth();
+            $this->ensureLogoGradientColumns();
 
             // Get form data
             $logoType = $_POST['logo_type'] ?? 'text';
@@ -87,6 +89,9 @@ class NavbarController extends BaseController
             $navbarBgColor = $_POST['navbar_bg_color'] ?? '#06060a';
             $navbarTextColor = $_POST['navbar_text_color'] ?? '#e8eefc';
             $navbarBorderColor = $_POST['navbar_border_color'] ?? '#1a1a2e';
+            $logoTextGradientEnabled = isset($_POST['logo_text_gradient_enabled']) ? 1 : 0;
+            $logoTextGradientStart = $this->sanitizeHexColor($_POST['logo_text_gradient_start'] ?? '#00f0ff', '#00f0ff');
+            $logoTextGradientEnd = $this->sanitizeHexColor($_POST['logo_text_gradient_end'] ?? '#ff2ec4', '#ff2ec4');
             $customCss = $_POST['custom_css'] ?? '';
 
             // Handle main logo image upload
@@ -288,6 +293,21 @@ class NavbarController extends BaseController
                 $updateFields[] = "navbar_border_color = ?";
                 $updateValues[] = $navbarBorderColor;
             }
+
+            if (in_array('logo_text_gradient_enabled', $columnNames)) {
+                $updateFields[] = "logo_text_gradient_enabled = ?";
+                $updateValues[] = $logoTextGradientEnabled;
+            }
+
+            if (in_array('logo_text_gradient_start', $columnNames)) {
+                $updateFields[] = "logo_text_gradient_start = ?";
+                $updateValues[] = $logoTextGradientStart;
+            }
+
+            if (in_array('logo_text_gradient_end', $columnNames)) {
+                $updateFields[] = "logo_text_gradient_end = ?";
+                $updateValues[] = $logoTextGradientEnd;
+            }
             
             if (in_array('custom_css', $columnNames)) {
                 $updateFields[] = "custom_css = ?";
@@ -332,6 +352,8 @@ class NavbarController extends BaseController
                 return $this->redirect('/admin/navbar');
             }
 
+            $this->ensureLogoGradientColumns();
+
             $this->db->query("
                 UPDATE navbar_settings SET
                     logo_type = 'text',
@@ -347,6 +369,9 @@ class NavbarController extends BaseController
                     navbar_bg_color = '#06060a',
                     navbar_text_color = '#e8eefc',
                     navbar_border_color = '#1a1a2e',
+                    logo_text_gradient_enabled = 0,
+                    logo_text_gradient_start = '#00f0ff',
+                    logo_text_gradient_end = '#ff2ec4',
                     custom_css = NULL,
                     custom_links = NULL,
                     updated_at = NOW()
@@ -438,5 +463,32 @@ class NavbarController extends BaseController
         } catch (\Throwable $e) {
             Logger::error('NavbarController: ensureLogoTypeBoth failed — ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Ensure gradient settings columns exist in navbar_settings.
+     */
+    private function ensureLogoGradientColumns(): void
+    {
+        try {
+            $columns = array_column($this->db->fetchAll("SHOW COLUMNS FROM navbar_settings"), 'Field');
+
+            if (!in_array('logo_text_gradient_enabled', $columns, true)) {
+                $this->db->query("ALTER TABLE navbar_settings ADD COLUMN `logo_text_gradient_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `navbar_text_color`");
+            }
+            if (!in_array('logo_text_gradient_start', $columns, true)) {
+                $this->db->query("ALTER TABLE navbar_settings ADD COLUMN `logo_text_gradient_start` VARCHAR(20) NOT NULL DEFAULT '#00f0ff' AFTER `logo_text_gradient_enabled`");
+            }
+            if (!in_array('logo_text_gradient_end', $columns, true)) {
+                $this->db->query("ALTER TABLE navbar_settings ADD COLUMN `logo_text_gradient_end` VARCHAR(20) NOT NULL DEFAULT '#ff2ec4' AFTER `logo_text_gradient_start`");
+            }
+        } catch (\Throwable $e) {
+            Logger::error('NavbarController: ensureLogoGradientColumns failed — ' . $e->getMessage());
+        }
+    }
+
+    private function sanitizeHexColor(string $value, string $fallback): string
+    {
+        return preg_match('/^#[0-9A-Fa-f]{6}$/', $value) ? $value : $fallback;
     }
 }
