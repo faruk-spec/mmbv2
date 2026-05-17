@@ -723,7 +723,6 @@ a.project-card:hover {
     overflow: hidden;
     border-radius: 14px;
     aspect-ratio: 4 / 3;
-    min-height: 340px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255,255,255,0.08);
 }
@@ -797,7 +796,6 @@ a.project-card:hover {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    min-height: 100%;
 }
 
 /* Top-center: logo + title */
@@ -862,9 +860,8 @@ a.project-card:hover {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: auto;
+    margin-top: 12px;
     flex-wrap: wrap;
-    align-items: flex-end;
 }
 
 .project-card__btn {
@@ -896,22 +893,10 @@ a.project-card:hover {
     color: #fff !important;
 }
 
-@media (max-width: 1024px) {
-    .project-card {
-        min-height: 300px;
-    }
-
-    .project-card__logo {
-        width: 96px;
-        height: 96px;
-        border-radius: 16px;
-    }
-}
-
 @media (max-width: 768px) {
     .project-card {
         aspect-ratio: auto;
-        min-height: 280px;
+        min-height: 320px;
     }
 
     .project-card__body {
@@ -930,7 +915,7 @@ a.project-card:hover {
 
     .project-card__features {
         margin-top: 8px;
-        flex: 1 1 auto;
+        flex: 0 0 auto;
     }
 
     .project-card__features li {
@@ -943,7 +928,6 @@ a.project-card:hover {
         margin-top: 10px;
         gap: 6px;
         flex-wrap: nowrap;
-        align-items: stretch;
     }
 
     .project-card__btn {
@@ -951,20 +935,6 @@ a.project-card:hover {
         font-size: 11px;
         justify-content: center;
         flex: 1;
-    }
-}
-
-@media (max-width: 640px) {
-    .project-card {
-        min-height: 240px;
-    }
-
-    .project-card__features {
-        display: none;
-    }
-
-    .project-card__header {
-        margin-bottom: 8px;
     }
 }
 </style>
