@@ -952,22 +952,30 @@ a.project-card:hover {
 /* ── 1-column layout (≤480px) ── */
 @media (max-width: 480px) {
     .project-card__thumb-wrap {
-        height: 115px;
+        height: 170px;
     }
 
     .project-card__logo {
-        --pc-logo-size: 64px;
-        border-radius: 16px;
+        --pc-logo-size: 80px;
+        border-radius: 18px;
     }
 
     .project-card__body {
-        padding: 0 14px 14px;
+        padding: 0 20px 20px;
+    }
+
+    .project-card__title {
+        font-size: 1rem;
+    }
+
+    .project-card__features li {
+        font-size: 12px;
     }
 
     .project-card__btn {
         flex: 1;
-        padding: 6px 12px;
-        font-size: 11px;
+        padding: 8px 14px;
+        font-size: 12px;
     }
 }
 </style>
