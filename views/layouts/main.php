@@ -3000,7 +3000,7 @@ window.mmbSkeleton = (function(){
 
     window.startSupportChat = function() {
         if (!chatActive) {
-            var stored = chatKey || sessionStorage.getItem('support_chat_key');
+            var stored = sessionStorage.getItem('support_chat_key') || chatKey;
             if (stored) {
                 chatKey = stored;
                 resumeChat();
