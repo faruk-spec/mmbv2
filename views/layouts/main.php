@@ -2233,6 +2233,13 @@ window.mmbSkeleton = (function(){
                         transform: scale(1.1);
                         box-shadow: 0 6px 25px rgba(0, 240, 255, 0.6);
                     }
+
+                    .mobile-sidebar-toggle.is-open,
+                    .left-sidebar.mobile-open ~ .mobile-sidebar-toggle {
+                        opacity: 0;
+                        pointer-events: none;
+                        transform: translateX(-12px);
+                    }
                     
                     .mobile-sidebar-toggle svg {
                         color: var(--bg-primary);
@@ -2392,21 +2399,27 @@ window.mmbSkeleton = (function(){
                         mobileSidebarToggle.addEventListener('click', function() {
                             sidebar.classList.toggle('mobile-open');
                             sidebarBackdrop.classList.toggle('active');
+                            mobileSidebarToggle.classList.toggle('is-open');
+                            mobileSidebarToggle.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open') ? 'true' : 'false');
                         });
                         
                         // Close sidebar when clicking backdrop
                         sidebarBackdrop.addEventListener('click', function() {
                             sidebar.classList.remove('mobile-open');
                             sidebarBackdrop.classList.remove('active');
+                            mobileSidebarToggle.classList.remove('is-open');
+                            mobileSidebarToggle.setAttribute('aria-expanded', 'false');
                         });
                         
                         // Close sidebar when clicking a link on mobile
                         const sidebarLinks = sidebar.querySelectorAll('a');
                         sidebarLinks.forEach(link => {
                             link.addEventListener('click', function() {
-                                if (window.innerWidth <= 768) {
+                                if (window.innerWidth <= 1024) {
                                     sidebar.classList.remove('mobile-open');
                                     sidebarBackdrop.classList.remove('active');
+                                    mobileSidebarToggle.classList.remove('is-open');
+                                    mobileSidebarToggle.setAttribute('aria-expanded', 'false');
                                 }
                             });
                         });
@@ -2934,6 +2947,16 @@ window.mmbSkeleton = (function(){
         <div id="chat-start-form" style="padding:20px;">
             <p style="color:var(--text-secondary,#8892a6);font-size:.85rem;margin-bottom:16px;">Chat with our support team or AI assistant.</p>
             <div id="chat-start-error" style="display:none;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:#f87171;font-size:.8rem;margin-bottom:10px;"></div>
+            <?php if (\Core\Auth::check()): ?>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <a href="/support/live" style="display:flex;align-items:center;justify-content:center;padding:10px;border-radius:8px;border:1px solid var(--border-color,rgba(255,255,255,.1));background:rgba(0,240,255,.08);color:var(--text-primary,#e8eefc);font-size:.82rem;font-weight:600;text-decoration:none;">
+                    Live Support
+                </a>
+                <a href="/support" style="display:flex;align-items:center;justify-content:center;padding:10px;border-radius:8px;border:1px solid var(--border-color,rgba(255,255,255,.1));background:rgba(255,46,196,.08);color:var(--text-primary,#e8eefc);font-size:.82rem;font-weight:600;text-decoration:none;">
+                    Help Center
+                </a>
+            </div>
+            <?php endif; ?>
             <?php if (!\Core\Auth::check()): ?>
             <input type="text" id="chat-guest-name" placeholder="Your name" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
             <input type="email" id="chat-guest-email" placeholder="Your email" style="width:100%;padding:10px;border:1px solid var(--border-color,rgba(255,255,255,.1));border-radius:8px;background:var(--bg-secondary,#0c0c12);color:var(--text-primary,#e8eefc);margin-bottom:10px;font-size:.85rem;box-sizing:border-box;">
