@@ -170,7 +170,7 @@
                         <?php if ($payment['status'] === 'paid' && !in_array($refundStatus, ['approved', 'refunded'], true)): ?>
                         <button type="button" class="sp-btn sp-btn-refund"
                             data-payment-id="<?= (int) $payment['id'] ?>"
-                            data-csrf="<?= View::e(\Core\Security::csrfToken()) ?>"
+                            data-csrf="<?= View::e(\Core\Security::generateCsrfToken()) ?>"
                             onclick="openManualRefundModal(this)">
                             <i class="fas fa-hand-holding-usd"></i> Refund
                         </button>
