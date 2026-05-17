@@ -199,8 +199,15 @@
         box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
     }
 
+    /* 481–768 px: 2 columns for project grid (smooth transition, no jarring 3→1 jump) */
+    @media (min-width: 481px) and (max-width: 768px) {
+        .grid-3 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
     @media (max-width: 768px) {
-        .grid-3, .grid-4 {
+        .grid-4 {
             grid-template-columns: 1fr;
         }
 
@@ -803,11 +810,11 @@ a.project-card:hover {
     text-align: center;
 }
 
-/* Large logo – overlaps the thumbnail via negative margin.
+/* ── Large logo – overlaps the thumbnail via negative margin.
    --pc-logo-size controls width/height and its negative-margin overlap
    (margin-top = calc(-1 * var(--pc-logo-size) / 2)). */
 .project-card__logo {
-    --pc-logo-size: 76px;
+    --pc-logo-size: 84px;
     width: var(--pc-logo-size);
     height: var(--pc-logo-size);
     min-width: var(--pc-logo-size);
@@ -910,13 +917,14 @@ a.project-card:hover {
     color: #fff !important;
 }
 
-@media (max-width: 768px) {
+/* ── 2-column layout (481–768px) ── */
+@media (min-width: 481px) and (max-width: 768px) {
     .project-card__thumb-wrap {
-        height: 120px;
+        height: 130px;
     }
 
     .project-card__logo {
-        --pc-logo-size: 68px;
+        --pc-logo-size: 72px;
         border-radius: 18px;
     }
 
@@ -938,18 +946,25 @@ a.project-card:hover {
     }
 }
 
+/* ── 1-column layout (≤480px) ── */
 @media (max-width: 480px) {
     .project-card__thumb-wrap {
-        height: 105px;
+        height: 115px;
     }
 
     .project-card__logo {
-        --pc-logo-size: 60px;
-        border-radius: 15px;
+        --pc-logo-size: 64px;
+        border-radius: 16px;
+    }
+
+    .project-card__body {
+        padding: 0 14px 14px;
     }
 
     .project-card__btn {
         flex: 1;
+        padding: 6px 12px;
+        font-size: 11px;
     }
 }
 </style>
