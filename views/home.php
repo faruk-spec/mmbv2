@@ -624,34 +624,34 @@ if ($showStats):
         ?>
         <a href="<?= $cardLink ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="text-decoration:none;">
 
-            <!-- Thumbnail banner at top of card -->
-            <div class="project-card__thumb-wrap">
+            <!-- Thumbnail banner -->
+            <div class="project-card__thumb-wrap" style="background: linear-gradient(135deg, <?= $projectColor ?>28, <?= $projectColor ?>0a);">
                 <?php if (!empty($project['image_url'])): ?>
                     <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
-                <?php else: ?>
-                    <div class="project-card__thumb project-card__thumb--placeholder" style="background: linear-gradient(135deg, <?= $projectColor ?>33, <?= $projectColor ?>11);"></div>
                 <?php endif; ?>
-                <!-- Tier badge – inside thumbnail, top-right -->
+                <!-- bottom gradient fades thumbnail into card body -->
+                <div class="project-card__thumb-fade"></div>
+                <!-- Tier badge -->
                 <span class="project-card__tier" style="<?= $badgeStyle ?>">
                     <?= htmlspecialchars($projectTier === 'enterprise' ? 'Enterprise' : ucfirst($projectTier)) ?>
                 </span>
             </div>
 
-            <!-- Card body – flows naturally below thumbnail -->
+            <!-- Card body – centered, logo overlaps thumbnail -->
             <div class="project-card__body">
-                <!-- Logo + title row -->
-                <div class="project-card__header">
-                    <div class="project-card__logo" style="background: <?= $projectColor ?>22; border-color: <?= $projectColor ?>60;">
-                        <?php if (!empty($project['logo_url'])): ?>
-                            <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">
-                        <?php else: ?>
-                            <span style="font-size: 1.15rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if ($showTitle): ?>
-                    <h3 class="project-card__title"><?= htmlspecialchars($projectName) ?></h3>
+
+                <!-- Large logo – pulled up to overlap thumbnail edge -->
+                <div class="project-card__logo" style="background: <?= $projectColor ?>20; border-color: <?= $projectColor ?>70; box-shadow: 0 4px 20px <?= $projectColor ?>40;">
+                    <?php if (!empty($project['logo_url'])): ?>
+                        <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+                    <?php else: ?>
+                        <span style="font-size: 1.75rem; font-weight: 800; color: <?= $projectColor ?>; line-height:1;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($showTitle): ?>
+                <h3 class="project-card__title"><?= htmlspecialchars($projectName) ?></h3>
+                <?php endif; ?>
 
                 <!-- Key Features list -->
                 <?php if (!empty($projectFeatures)): ?>
@@ -719,39 +719,42 @@ a.project-card:hover {
 .project-card {
     display: flex;
     flex-direction: column;
-    border-radius: 14px;
+    border-radius: 18px;
     overflow: hidden;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.22);
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
 }
 
 .project-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0, 240, 255, 0.18);
-    border-color: rgba(0, 240, 255, 0.45);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 36px rgba(0, 240, 255, 0.20), 0 2px 8px rgba(0,0,0,0.3);
+    border-color: rgba(0, 240, 255, 0.50);
 }
 
 [data-theme="light"] .project-card {
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.09);
+}
+
+[data-theme="light"] .project-card:hover {
+    box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(0,0,0,0.1);
+    border-color: rgba(124, 58, 237, 0.40);
 }
 
 .project-card.filtered-out {
     display: none !important;
 }
 
-/* ── Thumbnail banner area ── */
+/* ── Thumbnail banner ── */
 .project-card__thumb-wrap {
     position: relative;
     width: 100%;
-    height: 150px;
+    height: 140px;
     flex-shrink: 0;
     overflow: hidden;
-    background: var(--bg-card);
 }
 
-/* Thumbnail image fills banner */
 .project-card__thumb {
     position: absolute;
     inset: 0;
@@ -760,80 +763,95 @@ a.project-card:hover {
     object-fit: cover;
 }
 
-.project-card__thumb--placeholder {
+/* Bottom-to-top gradient that blends thumbnail into card body.
+   Uses the same var(--bg-secondary) as .project-card background so the
+   fade matches exactly. Keep these two in sync if the card bg ever changes. */
+.project-card__thumb-fade {
     position: absolute;
-    inset: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 75px;
+    background: linear-gradient(to bottom, transparent 0%, var(--bg-secondary) 100%);
+    z-index: 1;
+    pointer-events: none;
 }
 
-/* Tier badge – inside thumbnail, top-right */
+/* Tier badge */
 .project-card__tier {
     position: absolute;
     top: 10px;
     right: 10px;
-    z-index: 2;
+    z-index: 3;
     padding: 3px 10px;
     border-radius: 10px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
+    backdrop-filter: blur(4px);
 }
 
-/* ── Card body – flowing flex column ── */
+/* ── Card body ── */
 .project-card__body {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    padding: 16px;
-    gap: 10px;
-}
-
-/* Logo + title row */
-.project-card__header {
-    display: flex;
     align-items: center;
-    gap: 12px;
+    flex: 1;
+    padding: 0 18px 18px;
+    gap: 0;
+    text-align: center;
 }
 
-/* Logo */
+/* Large logo – overlaps the thumbnail via negative margin.
+   --pc-logo-size controls width/height and its negative-margin overlap
+   (margin-top = calc(-1 * var(--pc-logo-size) / 2)). */
 .project-card__logo {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    border-radius: 12px;
-    border: 2px solid;
+    --pc-logo-size: 76px;
+    width: var(--pc-logo-size);
+    height: var(--pc-logo-size);
+    min-width: var(--pc-logo-size);
+    border-radius: 20px;
+    border: 3px solid;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    margin-top: calc(-1 * var(--pc-logo-size) / 2);
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 4;
+    background: var(--bg-secondary);
 }
 
 .project-card__title {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
-    margin: 0;
+    margin: 0 0 10px;
     color: var(--text-primary);
     letter-spacing: 0.2px;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+    width: 100%;
 }
 
 /* Key Features list */
 .project-card__features {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 0 12px;
     flex: 1;
+    width: 100%;
+    text-align: left;
 }
 .project-card__features li {
     color: var(--text-secondary);
     font-size: 12px;
-    line-height: 1.55;
-    padding: 2px 0 2px 15px;
+    line-height: 1.6;
+    padding: 2px 0 2px 16px;
     position: relative;
     overflow: hidden;
     white-space: nowrap;
@@ -845,24 +863,25 @@ a.project-card:hover {
     left: 0;
     font-size: 8px;
     top: 5px;
-    opacity: 0.55;
+    opacity: 0.5;
 }
 
 /* Action buttons */
 .project-card__actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
     margin-top: auto;
-    padding-top: 4px;
+    width: 100%;
 }
 
 .project-card__btn {
     display: inline-flex;
     align-items: center;
-    padding: 6px 14px;
-    border-radius: 20px;
+    justify-content: center;
+    padding: 7px 18px;
+    border-radius: 22px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -870,6 +889,7 @@ a.project-card:hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     white-space: nowrap;
     border: 1.5px solid transparent;
+    flex: 1;
 }
 
 .project-card__btn:hover {
@@ -883,7 +903,7 @@ a.project-card:hover {
 }
 
 [data-theme="light"] .project-card__btn--outline {
-    background: rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .project-card__btn--primary {
@@ -892,51 +912,44 @@ a.project-card:hover {
 
 @media (max-width: 768px) {
     .project-card__thumb-wrap {
-        height: 130px;
-    }
-
-    .project-card__body {
-        padding: 14px;
-        gap: 8px;
+        height: 120px;
     }
 
     .project-card__logo {
-        width: 42px;
-        height: 42px;
-        min-width: 42px;
-        border-radius: 10px;
+        --pc-logo-size: 68px;
+        border-radius: 18px;
+    }
+
+    .project-card__body {
+        padding: 0 14px 14px;
     }
 
     .project-card__title {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
 
     .project-card__features li {
         font-size: 11px;
     }
 
-    .project-card__actions {
-        gap: 6px;
-    }
-
     .project-card__btn {
-        padding: 5px 10px;
+        padding: 6px 12px;
         font-size: 11px;
     }
 }
 
 @media (max-width: 480px) {
     .project-card__thumb-wrap {
-        height: 110px;
+        height: 105px;
     }
 
-    .project-card__actions {
-        flex-wrap: nowrap;
+    .project-card__logo {
+        --pc-logo-size: 60px;
+        border-radius: 15px;
     }
 
     .project-card__btn {
         flex: 1;
-        justify-content: center;
     }
 }
 </style>
