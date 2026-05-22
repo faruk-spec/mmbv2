@@ -199,10 +199,20 @@
         box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 0 0 1px rgba(124, 58, 237, 0.08) !important;
     }
 
-    @media (max-width: 768px) {
+    /* 481–768 px: 2 columns for project grid (smooth transition, no jarring jump) */
+    @media (min-width: 481px) and (max-width: 768px) {
         .grid-3, .grid-4 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .grid-4 {
             grid-template-columns: 1fr;
         }
+    }
+
+    @media (max-width: 768px) {
 
         .hero-grid {
             grid-template-columns: 1fr !important;
@@ -549,7 +559,7 @@ if ($showStats):
         </button>
     </div>
     
-    <div class="grid grid-3" id="projectsGrid">
+    <div class="grid grid-4" id="projectsGrid">
         <?php 
         // Show enabled DB rows; merge config projects that have NO DB row at all.
         // Projects in DB with is_enabled=0 must not be re-added from config.
@@ -614,45 +624,44 @@ if ($showStats):
             // Card link: authenticated → project URL, else → login redirect
             $cardLink = Auth::check() ? htmlspecialchars($projectUrl) : '/login?redirect=' . urlencode($projectUrl);
         ?>
-        <a href="<?= $cardLink ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="text-decoration:none;display:block;">
-            <!-- Thumbnail image covers full card -->
-            <?php if (!empty($project['image_url'])): ?>
-                <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
-            <?php else: ?>
-                <div class="project-card__thumb project-card__thumb--placeholder" style="background: linear-gradient(135deg, <?= $projectColor ?>33, <?= $projectColor ?>11);"></div>
-            <?php endif; ?>
-
-            <!-- Gradient overlay for readability -->
-            <div class="project-card__overlay"></div>
-
-            <!-- Tier badge – absolute top-right -->
-            <?php
+        <?php
             $badgeStyles = [
                 'free'       => 'background:rgba(0,255,136,0.28);color:#00ff88;border:1px solid rgba(0,255,136,0.55);',
                 'freemium'   => 'background:rgba(255,170,0,0.28);color:#ffaa00;border:1px solid rgba(255,170,0,0.55);',
                 'enterprise' => 'background:rgba(153,69,255,0.28);color:#bb88ff;border:1px solid rgba(153,69,255,0.55);',
             ];
             $badgeStyle = $badgeStyles[$projectTier] ?? $badgeStyles['free'];
-            ?>
-            <span class="project-card__tier" style="<?= $badgeStyle ?>">
-                <?= htmlspecialchars($projectTier === 'enterprise' ? 'Enterprise' : ucfirst($projectTier)) ?>
-            </span>
+        ?>
+        <a href="<?= $cardLink ?>" class="project-card" data-tier="<?= htmlspecialchars($projectTier) ?>" style="text-decoration:none;">
 
-            <!-- Inner content above overlay -->
+            <!-- Thumbnail banner -->
+            <div class="project-card__thumb-wrap" style="background: linear-gradient(135deg, <?= $projectColor ?>28, <?= $projectColor ?>0a);">
+                <?php if (!empty($project['image_url'])): ?>
+                    <img class="project-card__thumb" src="<?= htmlspecialchars($project['image_url']) ?>" alt="" style="opacity:<?= round($thumbIntensity / 100, 2) ?>;">
+                <?php endif; ?>
+                <!-- bottom gradient fades thumbnail into card body -->
+                <div class="project-card__thumb-fade"></div>
+                <!-- Tier badge -->
+                <span class="project-card__tier" style="<?= $badgeStyle ?>">
+                    <?= htmlspecialchars($projectTier === 'enterprise' ? 'Enterprise' : ucfirst($projectTier)) ?>
+                </span>
+            </div>
+
+            <!-- Card body – centered, logo overlaps thumbnail -->
             <div class="project-card__body">
-                <!-- Top-center: logo + title -->
-                <div class="project-card__header">
-                    <div class="project-card__logo" style="background: <?= $projectColor ?>40; border-color: <?= $projectColor ?>80;">
-                        <?php if (!empty($project['logo_url'])): ?>
-                            <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">
-                        <?php else: ?>
-                            <span style="font-size: 1.3rem; font-weight: 700; color: <?= $projectColor ?>;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if ($showTitle): ?>
-                    <h3 class="project-card__title" style="color: #fff; text-shadow: 0 0 12px <?= $projectColor ?>, 0 2px 6px rgba(0,0,0,0.8);"><?= htmlspecialchars($projectName) ?></h3>
+
+                <!-- Large logo – pulled up to overlap thumbnail edge -->
+                <div class="project-card__logo" style="background: <?= $projectColor ?>20; border-color: <?= $projectColor ?>70; box-shadow: 0 4px 20px <?= $projectColor ?>40;">
+                    <?php if (!empty($project['logo_url'])): ?>
+                        <img src="<?= htmlspecialchars($project['logo_url']) ?>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+                    <?php else: ?>
+                        <span style="font-size: 1.75rem; font-weight: 800; color: <?= $projectColor ?>; line-height:1;"><?= strtoupper(substr($projectName, 0, 2)) ?></span>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($showTitle): ?>
+                <h3 class="project-card__title"><?= htmlspecialchars($projectName) ?></h3>
+                <?php endif; ?>
 
                 <!-- Key Features list -->
                 <?php if (!empty($projectFeatures)): ?>
@@ -663,7 +672,7 @@ if ($showStats):
                 </ul>
                 <?php endif; ?>
 
-                <!-- Buttons: bottom-right -->
+                <!-- Action buttons -->
                 <div class="project-card__actions">
                     <?php if (!empty($showFeaturesUrl)): ?>
                         <span class="project-card__btn project-card__btn--outline" style="border-color:<?= $projectColor ?>80;color:<?= $projectColor ?>;" onclick="event.stopPropagation();event.preventDefault();window.location.href='<?= htmlspecialchars($showFeaturesUrl) ?>';">
@@ -709,7 +718,6 @@ if ($showStats):
 }
 
 /* ── Project Card ── */
-/* Clickable card — <a> wrapper keeps block layout */
 a.project-card {
     color: inherit;
     cursor: pointer;
@@ -719,66 +727,71 @@ a.project-card:hover {
 }
 
 .project-card {
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 18px;
     overflow: hidden;
-    border-radius: 14px;
-    aspect-ratio: 4 / 3;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.22);
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.project-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 36px rgba(0, 240, 255, 0.20), 0 2px 8px rgba(0,0,0,0.3);
+    border-color: rgba(0, 240, 255, 0.50);
 }
 
 [data-theme="light"] .project-card {
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
-    border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.09);
+}
+
+[data-theme="light"] .project-card:hover {
+    box-shadow: 0 12px 36px rgba(124, 58, 237, 0.18), 0 2px 8px rgba(0,0,0,0.1);
+    border-color: rgba(124, 58, 237, 0.40);
 }
 
 .project-card.filtered-out {
     display: none !important;
 }
 
-/* Thumbnail fills card */
+/* ── Thumbnail banner ── */
+.project-card__thumb-wrap {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
 .project-card__thumb {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 0;
 }
 
-.project-card__thumb--placeholder {
+/* Bottom-to-top gradient that blends thumbnail into card body.
+   Uses the same var(--bg-secondary) as .project-card background so the
+   fade matches exactly. Keep these two in sync if the card bg ever changes. */
+.project-card__thumb-fade {
     position: absolute;
-    inset: 0;
-    z-index: 0;
-}
-
-/* Stronger gradient overlay for legibility */
-.project-card__overlay {
-    position: absolute;
-    inset: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 75px;
+    background: linear-gradient(to bottom, transparent 0%, var(--bg-secondary) 100%);
     z-index: 1;
-    background: linear-gradient(
-        to bottom,
-        rgba(6, 8, 18, 0.80) 0%,
-        rgba(6, 8, 18, 0.40) 40%,
-        rgba(6, 8, 18, 0.88) 100%
-    );
+    pointer-events: none;
 }
 
-[data-theme="light"] .project-card__overlay {
-    background: linear-gradient(
-        to bottom,
-        rgba(10, 10, 28, 0.75) 0%,
-        rgba(10, 10, 28, 0.38) 40%,
-        rgba(10, 10, 28, 0.82) 100%
-    );
-}
-
-/* Tier badge – absolute top-right corner */
+/* Tier badge */
 .project-card__tier {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     z-index: 3;
     padding: 3px 10px;
     border-radius: 10px;
@@ -786,62 +799,71 @@ a.project-card:hover {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
+    backdrop-filter: blur(4px);
 }
 
-/* Content sits above overlay */
+/* ── Card body ── */
 .project-card__body {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-}
-
-/* Top-center: logo + title */
-.project-card__header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    flex: 1;
+    padding: 0 18px 18px;
+    gap: 0;
     text-align: center;
 }
 
-/* Logo */
+/* ── Large logo – overlaps the thumbnail via negative margin.
+   --pc-logo-size controls width/height and its negative-margin overlap
+   (margin-top = calc(-1 * var(--pc-logo-size) / 2)). */
 .project-card__logo {
-    width: 128px;
-    height: 128px;
+    --pc-logo-size: 84px;
+    --pc-logo-overlap: calc(var(--pc-logo-size) / 2);
+    width: var(--pc-logo-size);
+    height: var(--pc-logo-size);
+    min-width: var(--pc-logo-size);
     border-radius: 20px;
-    border: 2px solid;
+    border: 3px solid;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
     flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    margin-top: calc(-1 * var(--pc-logo-overlap));
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 4;
+    background: var(--bg-secondary);
 }
 
 .project-card__title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
-    margin: 0;
+    margin: 0 0 10px;
+    color: var(--text-primary);
     letter-spacing: 0.2px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    width: 100%;
 }
 
 /* Key Features list */
 .project-card__features {
-    flex: 1;
     list-style: none;
     padding: 0;
-    margin: 10px 0 0;
+    margin: 0 0 12px;
+    flex: 1;
+    width: 100%;
+    text-align: left;
 }
 .project-card__features li {
-    color: rgba(255,255,255,0.88);
-    font-size: 11px;
-    line-height: 1.5;
-    padding: 2px 0 2px 14px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 2px 0 2px 16px;
     position: relative;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -851,24 +873,26 @@ a.project-card:hover {
     position: absolute;
     left: 0;
     font-size: 8px;
-    top: 4px;
-    opacity: 0.7;
+    top: 5px;
+    opacity: 0.5;
 }
 
-/* Action buttons – bottom-right */
+/* Action buttons */
 .project-card__actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
-    margin-top: 12px;
     flex-wrap: wrap;
+    margin-top: auto;
+    width: 100%;
 }
 
 .project-card__btn {
     display: inline-flex;
     align-items: center;
-    padding: 6px 14px;
-    border-radius: 20px;
+    justify-content: center;
+    padding: 7px 18px;
+    border-radius: 22px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -876,65 +900,85 @@ a.project-card:hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     white-space: nowrap;
     border: 1.5px solid transparent;
+    flex: 1;
 }
 
 .project-card__btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
     opacity: 0.92;
 }
 
 .project-card__btn--outline {
-    background: rgba(0,0,0,0.35);
-    backdrop-filter: blur(6px);
+    background: var(--bg-card);
+}
+
+[data-theme="light"] .project-card__btn--outline {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .project-card__btn--primary {
     color: #fff !important;
 }
 
-@media (max-width: 768px) {
-    .project-card {
-        aspect-ratio: auto;
-        min-height: 320px;
-    }
-
-    .project-card__body {
-        padding: 12px;
+/* ── 2-column layout (481–768px) ── */
+@media (min-width: 481px) and (max-width: 768px) {
+    .project-card__thumb-wrap {
+        height: 130px;
     }
 
     .project-card__logo {
-        width: 72px;
-        height: 72px;
-        border-radius: 14px;
+        --pc-logo-size: 72px;
+        border-radius: 18px;
+    }
+
+    .project-card__body {
+        padding: 0 14px 14px;
     }
 
     .project-card__title {
         font-size: 0.95rem;
     }
 
-    .project-card__features {
-        margin-top: 8px;
-        flex: 0 0 auto;
-    }
-
     .project-card__features li {
-        font-size: 10px;
-        line-height: 1.35;
-        white-space: normal;
-    }
-
-    .project-card__actions {
-        margin-top: 10px;
-        gap: 6px;
-        flex-wrap: nowrap;
+        font-size: 11px;
     }
 
     .project-card__btn {
-        padding: 6px 10px;
+        padding: 6px 12px;
         font-size: 11px;
-        justify-content: center;
+    }
+}
+
+/* ── 1-column layout (≤480px) ── */
+@media (max-width: 480px) {
+    .project-card__thumb-wrap {
+        height: 170px;
+    }
+
+    .project-card__logo {
+        --pc-logo-size: 96px;
+        /* ~62% overlap keeps the larger logo visually anchored to the banner on full-width cards. */
+        --pc-logo-overlap: calc(var(--pc-logo-size) * 0.62);
+        border-radius: 20px;
+    }
+
+    .project-card__body {
+        padding: 0 20px 20px;
+    }
+
+    .project-card__title {
+        font-size: 1rem;
+    }
+
+    .project-card__features li {
+        font-size: 12px;
+    }
+
+    .project-card__btn {
         flex: 1;
+        padding: 8px 14px;
+        font-size: 12px;
     }
 }
 </style>
