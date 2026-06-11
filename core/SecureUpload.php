@@ -57,7 +57,12 @@ class SecureUpload
         }
 
         $head = @file_get_contents($file['tmp_name'], false, null, 0, 16384);
-        if ($head !== false && !$trusted && preg_match(self::BLOCKED_CONTENT_PATTERN, $head)) {
+        if (
+            $head !== false
+            && !$trusted
+            && self::shouldInspectForExecutableContent($mime)
+            && preg_match(self::BLOCKED_CONTENT_PATTERN, $head)
+        ) {
             return self::fail('upload_rejected_validation', 'Potentially executable or script content detected.', $file, $userId, $source, true, $mime);
         }
 
@@ -240,5 +245,27 @@ class SecureUpload
         ];
 
         return $map[strtolower($mime)] ?? 'bin';
+    }
+
+    private static function shouldInspectForExecutableContent(string $mime): bool
+    {
+        $mime = strtolower(trim($mime));
+        if ($mime === '') {
+            return true;
+        }
+
+        if (str_starts_with($mime, 'text/')) {
+            return true;
+        }
+
+        return in_array($mime, [
+            'application/javascript',
+            'application/x-javascript',
+            'application/json',
+            'application/xml',
+            'text/xml',
+            'application/xhtml+xml',
+            'image/svg+xml',
+        ], true);
     }
 }
