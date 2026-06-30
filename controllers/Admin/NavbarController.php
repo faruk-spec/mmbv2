@@ -116,12 +116,19 @@ class NavbarController extends BaseController
                 $isDropdownArr = $_POST['custom_link_is_dropdown'] ?? [];
 
                 foreach ($titles as $i => $title) {
-                    if (empty($title) || empty($urls[$i])) {
+                    // The data-index for this link (used to name dropdown-item fields)
+                    $idx = isset($dataIndices[$i]) ? (string)$dataIndices[$i] : (string)$i;
+                    $isDropdown = in_array($idx, $isDropdownArr, true);
+                    $linkUrl = trim((string)($urls[$i] ?? ''));
+
+                    if (empty($title)) {
                         continue;
                     }
 
-                    // The data-index for this link (used to name dropdown-item fields)
-                    $idx = isset($dataIndices[$i]) ? (string)$dataIndices[$i] : (string)$i;
+                    // For regular links URL is required; dropdown parent links may omit URL.
+                    if (!$isDropdown && $linkUrl === '') {
+                        continue;
+                    }
 
                     // Per-link logo file upload (custom_link_logo[])
                     $linkLogoUrl = $logoUrls[$i] ?? '';
@@ -138,11 +145,11 @@ class NavbarController extends BaseController
 
                     $linkData = [
                         'title'          => $title,
-                        'url'            => $urls[$i],
+                        'url'            => $linkUrl,
                         'icon'           => $icons[$i] ?? '',
                         'logo_url'       => $this->normalizeUrl($linkLogoUrl),
                         'position'       => (int)($positions[$i] ?? 0),
-                        'is_dropdown'    => in_array($idx, $isDropdownArr),
+                        'is_dropdown'    => $isDropdown,
                         'dropdown_items' => []
                     ];
 

@@ -533,7 +533,7 @@ $settings['logo_text_gradient_end'] = $settings['logo_text_gradient_end'] ?? '#f
                             
                             <div class="form-row">
                                 <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title" value="<?= View::e($link['title']) ?>">
-                                <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://..." value="<?= View::e($link['url']) ?>">
+                                <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://... (optional for dropdown)" value="<?= View::e($link['url']) ?>">
                                 <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon (optional)" value="<?= View::e($link['icon'] ?? '') ?>">
                                 <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="<?= $link['position'] ?? 0 ?>" min="0">
                             </div>
@@ -853,7 +853,7 @@ function addCustomLink(preset = {}) {
         <input type="hidden" name="custom_link_idx[]" value="${idx}">
         <div class="form-row">
             <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title" value="${title}">
-            <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://..." value="${url}">
+            <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://... (optional for dropdown)" value="${url}">
             <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon (optional)" value="${icon}">
             <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="0" min="0">
         </div>
