@@ -567,6 +567,19 @@ $settings['logo_text_gradient_end'] = $settings['logo_text_gradient_end'] ?? '#f
                             <!-- Dropdown Items Container -->
                             <div class="dropdown-items-container" style="<?= empty($link['is_dropdown']) ? 'display: none;' : '' ?> margin-top: 15px; padding-left: 20px; border-left: 3px solid var(--cyan);">
                                 <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; font-weight:600;">Dropdown Menu Items <small style="font-weight:400;">(Logo + Title + Description visible in navbar)</small></p>
+                                <?php if (isset($projectShortcuts) && !empty($projectShortcuts)): ?>
+                                    <div class="form-row" style="grid-template-columns: 1fr auto; margin-bottom: 10px;">
+                                        <select class="form-control dropdown-shortcut-select">
+                                            <option value="">Select project/application shortcut...</option>
+                                            <?php foreach ($projectShortcuts as $project): ?>
+                                                <option value="<?= View::e($project['key']) ?>"><?= View::e($project['name']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="button" class="btn-secondary" onclick="addSelectedProjectShortcutToDropdown(this)">
+                                            <i class="fas fa-bolt"></i> Add Selected as Dropdown Item
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="dropdown-items-list">
                                     <?php if (!empty($link['dropdown_items'])): ?>
                                         <?php foreach ($link['dropdown_items'] as $subIndex => $subLink): ?>
@@ -838,6 +851,10 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+const projectShortcutOptionsHtml = projectShortcuts
+    .map(project => `<option value="${escapeHtml(project.key || '')}">${escapeHtml(project.name || project.key || 'Shortcut')}</option>`)
+    .join('');
+
 function addCustomLink(preset = {}) {
     const container = document.getElementById('custom-links-container');
     const idx       = linkCounter;
@@ -878,6 +895,17 @@ function addCustomLink(preset = {}) {
         </div>
         <div class="dropdown-items-container" style="display: none; margin-top: 15px; padding-left: 20px; border-left: 3px solid var(--cyan);">
             <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 10px; font-weight:600;">Dropdown Menu Items <small style="font-weight:400;">(Logo + Title + Description visible in navbar)</small></p>
+            ${projectShortcuts.length ? `
+                <div class="form-row" style="grid-template-columns: 1fr auto; margin-bottom: 10px;">
+                    <select class="form-control dropdown-shortcut-select">
+                        <option value="">Select project/application shortcut...</option>
+                        ${projectShortcutOptionsHtml}
+                    </select>
+                    <button type="button" class="btn-secondary" onclick="addSelectedProjectShortcutToDropdown(this)">
+                        <i class="fas fa-bolt"></i> Add Selected as Dropdown Item
+                    </button>
+                </div>
+            ` : ''}
             <div class="dropdown-items-list"></div>
             <button type="button" class="btn-add-dropdown-item" onclick="addDropdownItem(this)" style="padding: 6px 12px; background: var(--cyan); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 8px;">
                 <i class="fas fa-plus"></i> Add Dropdown Item
@@ -894,10 +922,38 @@ function toggleDropdownItems(checkbox) {
     dropdownContainer.style.display = checkbox.checked ? 'block' : 'none';
 }
 
-function addDropdownItem(button) {
+function addSelectedProjectShortcutToDropdown(button) {
+    const container = button.closest('.dropdown-items-container');
+    const select = container ? container.querySelector('.dropdown-shortcut-select') : null;
+
+    if (!select || !select.value) {
+        alert('Please select a project/application shortcut first.');
+        return;
+    }
+
+    const selected = projectShortcuts.find(project => project.key === select.value);
+    if (!selected) {
+        alert('The selected project/application shortcut data is unavailable. Please refresh the page and try again.');
+        return;
+    }
+
+    addDropdownItem(button, {
+        title: selected.name || '',
+        url: selected.url || '',
+        icon: selected.icon || '',
+        logo_url: selected.logo_url || ''
+    });
+}
+
+function addDropdownItem(button, preset = {}) {
     const linkItem  = button.closest('.custom-link-item');
     const linkIdx   = linkItem.getAttribute('data-index');
     const diList    = linkItem.querySelector('.dropdown-items-list');
+    const title     = escapeHtml(preset.title || '');
+    const url       = escapeHtml(preset.url || '');
+    const description = escapeHtml(preset.description || '');
+    const logoUrl   = escapeHtml(preset.logo_url || '');
+    const icon      = escapeHtml(preset.icon || '');
 
     // Assign a unique sub-index by counting existing cards
     const subIdx = diList.querySelectorAll('.dropdown-item-card').length;
@@ -910,21 +966,21 @@ function addDropdownItem(button) {
         <div class="di-grid">
             <div>
                 <label style="font-size:12px;color:var(--text-secondary);">Title *</label>
-                <input type="text" name="dropdown_item_title_${linkIdx}[]" class="form-control" placeholder="Item Title">
+                <input type="text" name="dropdown_item_title_${linkIdx}[]" class="form-control" placeholder="Item Title" value="${title}">
             </div>
             <div>
                 <label style="font-size:12px;color:var(--text-secondary);">URL *</label>
-                <input type="text" name="dropdown_item_url_${linkIdx}[]" class="form-control" placeholder="/path">
+                <input type="text" name="dropdown_item_url_${linkIdx}[]" class="form-control" placeholder="/path" value="${url}">
             </div>
         </div>
         <div class="di-grid">
             <div>
                 <label style="font-size:12px;color:var(--text-secondary);">Description</label>
-                <input type="text" name="dropdown_item_description_${linkIdx}[]" class="form-control" placeholder="Short description">
+                <input type="text" name="dropdown_item_description_${linkIdx}[]" class="form-control" placeholder="Short description" value="${description}">
             </div>
             <div>
                 <label style="font-size:12px;color:var(--text-secondary);">Logo URL (image/SVG)</label>
-                <input type="text" name="dropdown_item_logo_url_${linkIdx}[]" class="form-control" placeholder="/uploads/navbar/icon.svg">
+                <input type="text" name="dropdown_item_logo_url_${linkIdx}[]" class="form-control" placeholder="/uploads/navbar/icon.svg" value="${logoUrl}">
             </div>
         </div>
         <div class="di-row">
@@ -945,7 +1001,7 @@ function addDropdownItem(button) {
             </div>
             <div style="display:flex;flex-direction:column;gap:2px;flex:1;">
                 <label style="font-size:11px;color:var(--text-secondary);">FA Icon (optional)</label>
-                <input type="text" name="dropdown_item_icon_${linkIdx}[]" class="form-control" placeholder="fas fa-star">
+                <input type="text" name="dropdown_item_icon_${linkIdx}[]" class="form-control" placeholder="fas fa-star" value="${icon}">
             </div>
             <button type="button" onclick="this.closest('.dropdown-item-card').remove()" style="padding: 8px 12px; background: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; margin-top:14px;">
                 <i class="fas fa-times"></i>
