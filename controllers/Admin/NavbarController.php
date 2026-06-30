@@ -523,7 +523,7 @@ class NavbarController extends BaseController
                 ];
             }
         } catch (\Throwable $e) {
-            // Fall back to config only.
+            Logger::error('NavbarController: getProjectShortcutOptions DB fallback — ' . $e->getMessage());
         }
 
         try {
@@ -543,7 +543,7 @@ class NavbarController extends BaseController
                 ];
             }
         } catch (\Throwable $e) {
-            // Ignore config errors and return what we have.
+            Logger::error('NavbarController: getProjectShortcutOptions config fallback — ' . $e->getMessage());
         }
 
         return array_values($shortcuts);

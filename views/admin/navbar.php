@@ -292,7 +292,6 @@
 $settings['logo_text_gradient_enabled'] = (int) ($settings['logo_text_gradient_enabled'] ?? 0);
 $settings['logo_text_gradient_start'] = $settings['logo_text_gradient_start'] ?? '#00f0ff';
 $settings['logo_text_gradient_end'] = $settings['logo_text_gradient_end'] ?? '#ff2ec4';
-$projectShortcuts = is_array($projectShortcuts ?? null) ? $projectShortcuts : [];
 ?>
 
 <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 24px;">
@@ -503,7 +502,7 @@ $projectShortcuts = is_array($projectShortcuts ?? null) ? $projectShortcuts : []
             <h3><i class="fas fa-link"></i> Custom Links</h3>
             <p style="color: var(--text-secondary); margin-bottom: 16px;">Add custom menu links to your navbar. You can make any link a dropdown with rich sub-items (logo, title, description, styling).</p>
 
-            <?php if (!empty($projectShortcuts)): ?>
+            <?php if (isset($projectShortcuts) && !empty($projectShortcuts)): ?>
                 <div class="form-row" style="grid-template-columns: 1fr auto; margin-bottom: 16px;">
                     <select id="projectShortcutSelect" class="form-control">
                         <option value="">Select project/application shortcut...</option>
@@ -794,7 +793,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 let linkCounter = <?= !empty($settings['custom_links']) ? count($settings['custom_links']) : 0 ?>;
-const projectShortcuts = <?= json_encode($projectShortcuts, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const projectShortcuts = <?= json_encode($projectShortcuts ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 function previewLinkLogo(input) {
     const row = input.closest('.upload-row');
@@ -812,12 +811,13 @@ function previewLinkLogo(input) {
 function addSelectedProjectShortcut() {
     const select = document.getElementById('projectShortcutSelect');
     if (!select || !select.value) {
-        alert('Please select a project/application first.');
+        alert('Please select a project/application shortcut first.');
         return;
     }
 
     const selected = projectShortcuts.find(project => project.key === select.value);
     if (!selected) {
+        alert('The selected project/application shortcut data is unavailable. Please refresh the page and try again.');
         return;
     }
 
@@ -845,7 +845,7 @@ function addCustomLink(preset = {}) {
     const url       = escapeHtml(preset.url || '');
     const icon      = escapeHtml(preset.icon || '');
     const logoUrl   = escapeHtml(preset.logo_url || '');
-    const logoStyle = logoUrl ? '' : 'display:none;';
+    const logoStyle = logoUrl && logoUrl.trim() ? 'display:block;' : 'display:none;';
     const linkItem  = document.createElement('div');
     linkItem.className = 'custom-link-item';
     linkItem.setAttribute('data-index', idx);
