@@ -482,20 +482,34 @@
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .rxc-wrap { padding: 24px 16px 80px; }
-    .rxc-name-row { padding: 18px 16px; }
+    .rxc-name-row { padding: 18px 16px; margin-bottom: 20px; }
+    .rxc-name-input { font-size: 0.9rem; padding: 11px 14px 11px 40px; }
     .rxc-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .rxc-submit-row {
         flex-wrap: wrap;
         gap: 10px;
         padding: 16px;
+        flex-direction: column;
     }
     .rxc-selected-preview { width: 100%; }
-    .rxc-btn-cancel, .rxc-btn-create { flex: 1; justify-content: center; }
+    .rxc-btn-cancel, .rxc-btn-create { 
+        flex: 1; 
+        justify-content: center; 
+        width: 100%;
+        min-width: 0;
+        padding: 12px 16px;
+    }
     .rxc-count { display: none; }
+    .rxc-header h1 { font-size: 1.4rem; }
+    .rxc-header p { font-size: 0.85rem; }
+    .rxc-filters { gap: 6px; flex-wrap: wrap; }
+    .rxc-filter-btn { padding: 6px 12px; font-size: 0.75rem; }
 }
 @media (max-width: 380px) {
     .rxc-grid { grid-template-columns: 1fr 1fr; }
     .rxc-preview { height: 120px; }
+    .rxc-name-row { padding: 14px 12px; }
+    .rxc-btn-cancel, .rxc-btn-create { font-size: 0.8rem; padding: 10px 12px; }
 }
 </style>
 

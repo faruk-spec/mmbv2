@@ -322,7 +322,7 @@ if ($userId) {
                             </td>
                             <td style="padding: 0.75rem;">
                                 <div style="background: white; padding: 0.25rem; border-radius: 0.25rem; display: inline-block; min-width: 70px; min-height: 70px;">
-                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px;"></div>
+                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
                                 </div>
                             </td>
                             <td style="padding: 0.75rem; max-width: 15rem; overflow: hidden; text-overflow: ellipsis;" 
@@ -478,10 +478,19 @@ if ($userId) {
         const qr = qrcode(0, 'H');
         qr.addData(<?= json_encode($qr['content']) ?>);
         qr.make();
-        // Use cellSize of 2 for better visibility (60px container / 30 cells = 2px per cell)
-        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(2, 0);
+        var container = document.getElementById('qr-<?= $qr['id'] ?>');
+        container.innerHTML = qr.createImgTag(2, 0);
+        // Ensure img fits container
+        var img = container.querySelector('img');
+        if (img) {
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '100%';
+            img.style.display = 'block';
+        }
     } catch (e) {
         console.error('Failed to generate QR preview:', e);
+        var container = document.getElementById('qr-<?= $qr['id'] ?>');
+        if (container) container.innerHTML = '<span style="font-size:10px;color:#999;">Error</span>';
     }
 })();
 <?php endforeach; ?>

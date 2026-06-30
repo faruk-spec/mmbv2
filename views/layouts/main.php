@@ -1599,7 +1599,7 @@ window.mmbSkeleton = (function(){
     <div id="new-login-alert-banner" style="position:fixed;top:<?= !empty($_SESSION['_concurrent_session_warning']) ? '56px' : '0' ?>;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;font-size:14px;">
         <div style="display:flex;align-items:center;gap:10px;">
             <i class="fas fa-sign-in-alt"></i>
-            <span>⚠️ New login detected on your account from IP <strong><?= htmlspecialchars($nlAlert['ip'] ?? 'unknown', ENT_QUOTES) ?></strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span>
+            <span>⚠️ New login detected on your account from <?php if (!empty($nlAlert['device'])): ?><strong><?= htmlspecialchars($nlAlert['device'], ENT_QUOTES) ?></strong> (<?php endif; ?>IP <strong><?= htmlspecialchars($nlAlert['ip'] ?? 'unknown', ENT_QUOTES) ?></strong><?php if (!empty($nlAlert['device'])): ?>)<?php endif; ?>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span>
         </div>
         <button onclick="this.parentElement.style.display='none'" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">✕</button>
     </div>
@@ -1608,13 +1608,15 @@ window.mmbSkeleton = (function(){
     <script>
     // Live session-alert poller — checks every 30 s for new-login notifications
     (function () {
-        function showNewLoginBanner(ip) {
+        function showNewLoginBanner(ip, device) {
             var existing = document.getElementById('new-login-alert-banner');
             if (existing) return; // already visible
             var banner = document.createElement('div');
             banner.id = 'new-login-alert-banner';
             banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:linear-gradient(135deg,#9945ff,#0099cc);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,0.4);font-family:\'Poppins\',sans-serif;font-size:14px;';
-            banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><i class="fas fa-sign-in-alt"></i><span>⚠️ New login detected on your account from IP <strong>' + (ip || 'unknown') + '</strong>. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span></div>'
+            var deviceInfo = device ? '<strong>' + device + '</strong> (' : '';
+            var deviceClose = device ? ')' : '';
+            banner.innerHTML = '<div style="display:flex;align-items:center;gap:10px;"><i class="fas fa-sign-in-alt"></i><span>⚠️ New login detected on your account from ' + deviceInfo + 'IP <strong>' + (ip || 'unknown') + '</strong>' + deviceClose + '. Not you? <a href="/security" style="color:#fff;text-decoration:underline;">Review sessions</a></span></div>'
                 + '<button onclick="this.parentElement.style.display=\'none\'" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;">✕</button>';
             document.body.insertBefore(banner, document.body.firstChild);
         }
@@ -1623,7 +1625,7 @@ window.mmbSkeleton = (function(){
             if (document.visibilityState && document.visibilityState === 'hidden') return;
             fetch('/api/session-alerts', { credentials: 'same-origin' })
                 .then(function(r) { return r.json(); })
-                .then(function(d) { if (d && d.alert) showNewLoginBanner(d.alert.ip); })
+                .then(function(d) { if (d && d.alert) showNewLoginBanner(d.alert.ip, d.alert.device); })
                 .catch(function() {});
         }
         // Poll after 5 s (catches logins that just happened), then every 30 s

@@ -70,9 +70,15 @@
 .badge-trial   { background: rgba(245,158,11,.15); color: #f59e0b; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .badge-pending { background: rgba(0,240,255,.15); color: var(--cyan); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .rx-sidebar-toggle {
-    position:fixed; right:18px; bottom:18px; z-index:1100; width:54px; height:54px; border:none; border-radius:999px;
-    background:linear-gradient(135deg, var(--cyan), var(--purple)); color:#06060a; box-shadow:0 12px 30px rgba(0,240,255,.25);
+    position:fixed; right:18px; bottom:18px; z-index:1100; width:48px; height:48px; border:none; border-radius:12px;
+    background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); 
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
     display:none; align-items:center; justify-content:center; cursor:pointer;
+    transition: all 0.2s ease;
+}
+.rx-sidebar-toggle:hover {
+    background:linear-gradient(135deg, var(--cyan), var(--purple)); color:#06060a;
+    box-shadow:0 6px 20px rgba(0,240,255,.2);
 }
 .rx-sidebar-overlay {
     position:fixed; inset:0; background:rgba(6,6,10,.68); backdrop-filter:blur(2px); z-index:1090;

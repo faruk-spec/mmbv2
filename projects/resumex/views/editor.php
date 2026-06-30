@@ -2739,6 +2739,7 @@ function renderColourPalette() {
 window.selectTheme = function (key) {
     if (!allThemes[key]) return;
     themeSettings = JSON.parse(JSON.stringify(allThemes[key]));
+    renderColourPalette();
     renderThemeGrid();
     markDirty();
 };

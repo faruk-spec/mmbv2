@@ -253,6 +253,10 @@
         .ps-grid-4,
         .ps-grid-2 { grid-template-columns: 1fr; }
         .stat-value { font-size: 1.6rem; }
+        /* Fix recent files/texts overflow on mobile */
+        .card { overflow: hidden; }
+        .card-header { flex-wrap: wrap; gap: 8px; }
+        .card-header .card-title { font-size: 0.9rem; }
     }
 </style>
 <?php View::endSection(); ?>
