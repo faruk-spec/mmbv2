@@ -10,6 +10,7 @@ namespace Core;
 class Version
 {
     private static ?array $cached = null;
+    private static array $assetCache = [];
 
     public static function app(): string
     {
@@ -29,6 +30,21 @@ class Version
     public static function asset(): string
     {
         return self::revision() ?? self::app();
+    }
+
+    public static function assetFor(?string $absolutePath = null): string
+    {
+        if (isset(self::$assetCache[$absolutePath ?? ''])) {
+            return self::$assetCache[$absolutePath ?? ''];
+        }
+
+        $version = self::asset();
+        if (is_string($absolutePath) && $absolutePath !== '' && is_file($absolutePath)) {
+            $version .= '-' . filemtime($absolutePath);
+        }
+
+        self::$assetCache[$absolutePath ?? ''] = $version;
+        return $version;
     }
 
     public static function metadata(): array
@@ -51,8 +67,11 @@ class Version
 
     private static function detectRevision(): ?string
     {
+        // Deployment-provided commit metadata (recommended in production):
+        // - APP_GIT_SHA: explicit application git SHA
+        // - GITHUB_SHA: default GitHub Actions commit SHA
         $envRevision = getenv('APP_GIT_SHA') ?: getenv('GITHUB_SHA');
-        if (is_string($envRevision) && preg_match('/^[a-f0-9]{7,40}$/i', $envRevision)) {
+        if (is_string($envRevision) && preg_match('/^[a-f0-9]{40}$/i', $envRevision)) {
             return strtolower(substr($envRevision, 0, 7));
         }
 
@@ -63,7 +82,11 @@ class Version
             return null;
         }
 
-        $head = trim((string) file_get_contents($headPath));
+        $headContent = @file_get_contents($headPath);
+        if ($headContent === false) {
+            return null;
+        }
+        $head = trim($headContent);
 
         if ($head === '') {
             return null;
@@ -74,7 +97,11 @@ class Version
             $refPath = $gitDir . '/' . $ref;
 
             if (is_file($refPath) && is_readable($refPath)) {
-                $sha = trim((string) file_get_contents($refPath));
+                $shaContent = @file_get_contents($refPath);
+                if ($shaContent === false) {
+                    return null;
+                }
+                $sha = trim($shaContent);
                 if (preg_match('/^[a-f0-9]{40}$/i', $sha)) {
                     return strtolower(substr($sha, 0, 7));
                 }
@@ -82,7 +109,10 @@ class Version
 
             $packedRefs = $gitDir . '/packed-refs';
             if (is_file($packedRefs) && is_readable($packedRefs)) {
-                $content = (string) file_get_contents($packedRefs);
+                $content = @file_get_contents($packedRefs);
+                if ($content === false) {
+                    return null;
+                }
                 if (preg_match('/^([a-f0-9]{40})\s+' . preg_quote($ref, '/') . '$/mi', $content, $matches)) {
                     return strtolower(substr($matches[1], 0, 7));
                 }

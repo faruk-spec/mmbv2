@@ -35,6 +35,7 @@ try {
         .page-navbar .nav-inner{display:flex;align-items:center;justify-content:space-between;}
         .page-navbar .brand{font-size:1.2rem;font-weight:600;color:var(--text-primary);}
         .page-footer{background:var(--bg-secondary);border-top:1px solid var(--border-color);padding:30px 0;text-align:center;color:var(--text-secondary);margin-top:auto;}
+        .page-footer .footer-version{margin-top:6px;font-size:12px;}
     </style>
     <?php include __DIR__ . '/../partials/universal-theme-override.php'; ?>
 </head>
@@ -68,7 +69,7 @@ try {
 <footer class="page-footer">
     <div class="container">
         <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?>. All rights reserved.</p>
-        <p style="margin-top:6px;font-size:12px;">Code Version: <?= htmlspecialchars($codeVersion, ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="footer-version">Code Version: <?= htmlspecialchars($codeVersion, ENT_QUOTES, 'UTF-8') ?></p>
     </div>
 </footer>
 <?php endif; ?>

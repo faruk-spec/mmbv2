@@ -1,4 +1,5 @@
 <?php use Core\View; use Core\Auth; ?>
+<?php $adminCssVersion = \Core\Version::assetFor(defined('BASE_PATH') ? BASE_PATH . '/public/css/admin-responsive.css' : null); ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -20,7 +21,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
     
     <!-- Admin Panel Responsive CSS - Optimized for all devices -->
-    <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= rawurlencode(\Core\Version::asset()) ?>">
+    <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= rawurlencode($adminCssVersion) ?>">
     
     <style>
         /* Dark Theme (Default) */
