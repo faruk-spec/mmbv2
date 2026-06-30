@@ -195,6 +195,11 @@ class CodeFormatter
     public static function validateHTML($html)
     {
         $errors = [];
+        $trimmed = trim((string) $html);
+
+        if ($trimmed !== '' && !preg_match('/<[^>]+>/', $trimmed)) {
+            $errors[] = 'No HTML elements found';
+        }
         
         // Check for unclosed tags
         preg_match_all('/<([a-z]+)[^>]*>/i', $html, $openTags);
@@ -225,27 +230,49 @@ class CodeFormatter
     public static function validateCSS($css)
     {
         $errors = [];
-        
+        $css = (string) $css;
+
+        // Strip CSS block comments for structural analysis
+        $stripped = preg_replace('!/\*.*?\*/!s', '', $css);
+        $stripped = trim($stripped);
+
+        // Empty CSS is valid
+        if ($stripped === '') {
+            return ['valid' => true, 'errors' => []];
+        }
+
         // Check for unmatched braces
         $open = substr_count($css, '{');
         $close = substr_count($css, '}');
-        
+
         if ($open !== $close) {
             $errors[] = "Unmatched braces: {$open} opening, {$close} closing";
         }
-        
-        // Check for missing semicolons (basic check)
-        preg_match_all('/\{([^}]+)\}/', $css, $blocks);
+
+        // If there is content but no rule blocks at all, it likely has missing selectors/braces
+        if ($open === 0) {
+            // Allow standalone at-rules that don't require blocks (e.g. @import, @charset, @namespace)
+            $withoutAtRules = preg_replace('/@(import|charset|namespace)\s+[^;]+;/i', '', $stripped);
+            if (trim($withoutAtRules) !== '') {
+                $errors[] = 'CSS declarations found outside of rule blocks (missing selector or braces)';
+            }
+        }
+
+        // Check declarations inside rule blocks for missing colons
+        preg_match_all('/\{([^{}]*)\}/s', $css, $blocks);
         foreach ($blocks[1] as $block) {
             $declarations = explode(';', trim($block));
             foreach ($declarations as $decl) {
                 $decl = trim($decl);
-                if (!empty($decl) && strpos($decl, ':') === false) {
-                    $errors[] = "Invalid declaration: {$decl}";
+                if ($decl === '') continue;
+                // Skip nested at-rules (e.g. @media, @keyframes contents)
+                if ($decl[0] === '@') continue;
+                if (strpos($decl, ':') === false) {
+                    $errors[] = "Invalid declaration (missing colon): {$decl}";
                 }
             }
         }
-        
+
         return [
             'valid' => empty($errors),
             'errors' => $errors
@@ -258,23 +285,70 @@ class CodeFormatter
     public static function validateJavaScript($js)
     {
         $errors = [];
-        
+        $js = (string) $js;
+
+        // Empty JS is valid
+        if (trim($js) === '') {
+            return ['valid' => true, 'errors' => []];
+        }
+
         // Check for unmatched braces, brackets, parentheses
         $checks = [
             ['{', '}', 'braces'],
             ['[', ']', 'brackets'],
             ['(', ')', 'parentheses']
         ];
-        
+
         foreach ($checks as $check) {
             $open = substr_count($js, $check[0]);
             $close = substr_count($js, $check[1]);
-            
+
             if ($open !== $close) {
                 $errors[] = "Unmatched {$check[2]}: {$open} opening, {$close} closing";
             }
         }
-        
+
+        // Check for unclosed string literals line by line
+        $lines = explode("\n", $js);
+        $inMultiLineComment = false;
+        foreach ($lines as $lineNum => $line) {
+            // Track multi-line block comments
+            if ($inMultiLineComment) {
+                if (strpos($line, '*/') !== false) {
+                    $inMultiLineComment = false;
+                }
+                continue;
+            }
+            if (strpos($line, '/*') !== false) {
+                $openPos  = (int) strpos($line, '/*');
+                $closePos = strpos($line, '*/');
+                // Enter multi-line comment mode when no */ follows the /*
+                if ($closePos === false || $closePos < $openPos) {
+                    $inMultiLineComment = true;
+                }
+            }
+
+            // Remove single-line (//) comments before counting quotes
+            $noLineComment = preg_replace('!//.*$!', '', $line);
+
+            // Remove inline block comments /* ... */ to avoid counting quotes inside them
+            $noComments = preg_replace('!/\*.*?\*/!s', '', $noLineComment);
+
+            // Remove escape sequences (e.g. \", \', \\) so escaped quotes are not counted
+            $noEscapes = preg_replace('/\\\\./', '', $noComments);
+
+            // Count quote characters (odd count means unclosed string on this line)
+            $dq = substr_count($noEscapes, '"');
+            if ($dq % 2 !== 0) {
+                $errors[] = 'Possible unclosed double-quoted string on line ' . ($lineNum + 1);
+            }
+
+            $sq = substr_count($noEscapes, "'");
+            if ($sq % 2 !== 0) {
+                $errors[] = 'Possible unclosed single-quoted string on line ' . ($lineNum + 1);
+            }
+        }
+
         return [
             'valid' => empty($errors),
             'errors' => $errors

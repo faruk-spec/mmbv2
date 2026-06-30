@@ -66,32 +66,85 @@ class ApiController
     public function validate(): void
     {
         header('Content-Type: application/json');
-        
-        $code = $_POST['code'] ?? '';
-        $language = $_POST['language'] ?? 'html';
+
+        $rawBody = file_get_contents('php://input');
+        $payload = [];
+        if (is_string($rawBody) && trim($rawBody) !== '') {
+            $decoded = json_decode($rawBody, true);
+            if (is_array($decoded)) {
+                $payload = $decoded;
+            }
+        }
+
+        $htmlCode = $payload['html'] ?? $_POST['html'] ?? null;
+        $cssCode  = $payload['css']  ?? $_POST['css']  ?? null;
+        $jsCode   = $payload['js']   ?? $_POST['js']   ?? null;
+        $hasMultiPayload = ($htmlCode !== null || $cssCode !== null || $jsCode !== null);
+
+        $code = $payload['code'] ?? $_POST['code'] ?? '';
+        $language = $payload['language'] ?? $_POST['language'] ?? 'html';
         
         try {
+            if ($hasMultiPayload) {
+                $errors = [];
+                $resultLines = [];
+
+                $checks = [
+                    'HTML' => [is_string($htmlCode) ? $htmlCode : '', [CodeFormatter::class, 'validateHTML']],
+                    'CSS'  => [is_string($cssCode)  ? $cssCode  : '', [CodeFormatter::class, 'validateCSS']],
+                    'JS'   => [is_string($jsCode)   ? $jsCode   : '', [CodeFormatter::class, 'validateJavaScript']],
+                ];
+
+                foreach ($checks as $label => [$source, $validator]) {
+                    $validation = (array) call_user_func($validator, (string) $source);
+                    $sectionErrors = isset($validation['errors']) && is_array($validation['errors'])
+                        ? $validation['errors']
+                        : [];
+
+                    if (!empty($sectionErrors)) {
+                        $errors = array_merge(
+                            $errors,
+                            array_map(static fn($err) => $label . ': ' . (string) $err, $sectionErrors)
+                        );
+                        $resultLines[] = '❌ ' . $label . ': ' . implode('; ', array_map('strval', $sectionErrors));
+                    } else {
+                        $resultLines[] = '✅ ' . $label . ': OK';
+                    }
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'valid'   => empty($errors),
+                    'errors'  => $errors,
+                    'result'  => implode("\n", $resultLines),
+                ]);
+                return;
+            }
+
             $validation = [];
-            
-            switch (strtolower($language)) {
+
+            switch (strtolower((string) $language)) {
                 case 'html':
-                    $validation = CodeFormatter::validateHTML($code);
+                    $validation = CodeFormatter::validateHTML((string) $code);
                     break;
                 case 'css':
-                    $validation = CodeFormatter::validateCSS($code);
+                    $validation = CodeFormatter::validateCSS((string) $code);
                     break;
                 case 'javascript':
                 case 'js':
-                    $validation = CodeFormatter::validateJavaScript($code);
+                    $validation = CodeFormatter::validateJavaScript((string) $code);
                     break;
                 default:
                     throw new \Exception('Unsupported language');
             }
-            
+
+            $errors = isset($validation['errors']) && is_array($validation['errors'])
+                ? $validation['errors']
+                : [];
             echo json_encode([
                 'success' => true,
-                'valid' => $validation['valid'] ?? true,
-                'errors' => $validation['errors'] ?? []
+                'valid' => empty($errors),
+                'errors' => $errors
             ]);
         } catch (\Exception $e) {
             echo json_encode([

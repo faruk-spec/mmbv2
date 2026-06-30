@@ -1570,8 +1570,21 @@ body .main {
 var resumeData    = <?= json_encode($resumeData,    JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 var themeSettings = <?= json_encode($themeSettings, JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 var allThemes     = <?= json_encode($allThemes,     JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+var resumeTemplateKey = <?= json_encode($resume['template'] ?? 'ocean-blue', JSON_HEX_TAG | JSON_HEX_APOS) ?>;
 var csrfToken     = <?= json_encode($csrfToken) ?>;
 var resumeId      = <?= (int)$resume['id'] ?>;
+
+if (!themeSettings || typeof themeSettings !== 'object') {
+    themeSettings = {};
+}
+var normalizedTemplateKey = (themeSettings.key && allThemes[themeSettings.key])
+    ? themeSettings.key
+    : (allThemes[resumeTemplateKey] ? resumeTemplateKey : 'ocean-blue');
+if (allThemes[normalizedTemplateKey]) {
+    themeSettings = Object.assign({}, allThemes[normalizedTemplateKey], themeSettings, { key: normalizedTemplateKey });
+} else {
+    themeSettings.key = normalizedTemplateKey;
+}
 
 /* ── Ensure resumeData defaults ─────────────────────────────── */
 resumeData.contact        = resumeData.contact        || {};
@@ -2739,6 +2752,7 @@ function renderColourPalette() {
 window.selectTheme = function (key) {
     if (!allThemes[key]) return;
     themeSettings = JSON.parse(JSON.stringify(allThemes[key]));
+    renderColourPalette();
     renderThemeGrid();
     markDirty();
 };

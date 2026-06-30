@@ -745,6 +745,12 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         opacity: 1;
         transform: translateY(0);
         pointer-events: auto;
+        /* Ensure solid background is always visible (overrides pages that may not define --bg-secondary) */
+        background: var(--bg-secondary, #0c0c12);
+    }
+
+    [data-theme="light"] .universal-nav.active {
+        background: #ffffff;
     }
     
     .universal-nav .nav-item,
@@ -766,7 +772,17 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
         }
     }
     
-    /* Overlay for better mobile menu experience */
+    /* Overlay for better mobile menu experience.
+       Use #nav-overlay (a real element) as the primary dim backdrop so it works
+       even on pages that set overflow:hidden on html/body (e.g. the code editor),
+       where position:fixed pseudo-elements may not render correctly. */
+    body.mobile-menu-open #nav-overlay.is-visible {
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* Keep body::before as a fallback for browsers that need it */
     body.mobile-menu-open::before {
         content: '';
         position: fixed;
@@ -1093,9 +1109,10 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
                                 $_navDbKeys[] = $_row['project_key'];
                                 if ((int) $_row['is_enabled'] === 1) {
                                     $_navProjects[] = [
-                                        'name'  => $_row['name'],
-                                        'url'   => $_row['url'] ?? '/projects/' . $_row['project_key'],
-                                        'color' => $_row['color'] ?? '#00f0ff',
+                                        'name'     => $_row['name'],
+                                        'url'      => $_row['url'] ?? '/projects/' . $_row['project_key'],
+                                        'color'    => $_row['color'] ?? '#00f0ff',
+                                        'logo_url' => $_row['logo_url'] ?? '',
                                     ];
                                 }
                             }
@@ -1104,9 +1121,10 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
                             foreach ($_configProjects as $_key => $_cfg) {
                                 if (!empty($_cfg['enabled']) && !in_array($_key, $_navDbKeys, true)) {
                                     $_navProjects[] = [
-                                        'name'  => $_cfg['name'],
-                                        'url'   => $_cfg['url'] ?? '/projects/' . $_key,
-                                        'color' => $_cfg['color'] ?? '#00f0ff',
+                                        'name'     => $_cfg['name'],
+                                        'url'      => $_cfg['url'] ?? '/projects/' . $_key,
+                                        'color'    => $_cfg['color'] ?? '#00f0ff',
+                                        'logo_url' => $_cfg['logo_url'] ?? '',
                                     ];
                                 }
                             }
@@ -1118,9 +1136,10 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
                                 foreach ($_configProjects as $_key => $_cfg) {
                                     if (!empty($_cfg['enabled'])) {
                                         $_navProjects[] = [
-                                            'name'  => $_cfg['name'],
-                                            'url'   => $_cfg['url'] ?? '/projects/' . $_key,
-                                            'color' => $_cfg['color'] ?? '#00f0ff',
+                                            'name'     => $_cfg['name'],
+                                            'url'      => $_cfg['url'] ?? '/projects/' . $_key,
+                                            'color'    => $_cfg['color'] ?? '#00f0ff',
+                                            'logo_url' => $_cfg['logo_url'] ?? '',
                                         ];
                                     }
                                 }
@@ -1131,9 +1150,13 @@ html:not([data-theme="light"]) .universal-header .dropdown-item:hover {
                         foreach ($_navProjects as $_p):
                         ?>
                             <a href="<?= htmlspecialchars($_p['url']) ?>" class="dropdown-item">
+                                <?php if (!empty($_p['logo_url'])): ?>
+                                <img src="<?= htmlspecialchars($_p['logo_url']) ?>" alt="" style="width:24px;height:24px;border-radius:6px;object-fit:cover;flex-shrink:0;">
+                                <?php else: ?>
                                 <div class="project-icon" style="background: <?= htmlspecialchars($_p['color']) ?>20; color: <?= htmlspecialchars($_p['color']) ?>">
                                     <?= htmlspecialchars(strtoupper(substr($_p['name'], 0, 1))) ?>
                                 </div>
+                                <?php endif; ?>
                                 <?= htmlspecialchars($_p['name']) ?>
                             </a>
                         <?php 

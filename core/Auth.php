@@ -107,8 +107,8 @@ class Auth
                          ON DUPLICATE KEY UPDATE `value` = ?, `updated_at` = NOW()",
                         [
                             'new_login_notify_' . $userId,
-                            json_encode(['time' => time(), 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', 'ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 100)]),
-                            json_encode(['time' => time(), 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', 'ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 100)])
+                            json_encode(['time' => time(), 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', 'ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 100), 'device' => self::parseDeviceName($_SERVER['HTTP_USER_AGENT'] ?? '')]),
+                            json_encode(['time' => time(), 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', 'ua' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 100), 'device' => self::parseDeviceName($_SERVER['HTTP_USER_AGENT'] ?? '')])
                         ]
                     );
                 }
@@ -156,6 +156,46 @@ class Auth
         }
     }
     
+    /**
+     * Parse device name from User-Agent string
+     */
+    private static function parseDeviceName(string $ua): string
+    {
+        if (empty($ua)) return 'Unknown Device';
+
+        $device = '';
+        $browser = '';
+        $platform = '';
+
+        // Detect platform/OS
+        if (preg_match('/Windows NT 10/i', $ua)) $platform = 'Windows 10';
+        elseif (preg_match('/Windows NT 11/i', $ua)) $platform = 'Windows 11';
+        elseif (preg_match('/Windows/i', $ua)) $platform = 'Windows';
+        elseif (preg_match('/Macintosh|Mac OS/i', $ua)) $platform = 'macOS';
+        elseif (preg_match('/iPhone/i', $ua)) $platform = 'iPhone';
+        elseif (preg_match('/iPad/i', $ua)) $platform = 'iPad';
+        elseif (preg_match('/Android/i', $ua)) {
+            $platform = 'Android';
+            if (preg_match('/Android[^;]*;\s*([^)]+)\)/i', $ua, $m)) {
+                $device = trim(explode(' Build', $m[1])[0]);
+            }
+        } elseif (preg_match('/Linux/i', $ua)) $platform = 'Linux';
+        else $platform = 'Unknown OS';
+
+        // Detect browser
+        if (preg_match('/Edg(?:e)?\/[\d.]+/i', $ua)) $browser = 'Edge';
+        elseif (preg_match('/OPR|Opera/i', $ua)) $browser = 'Opera';
+        elseif (preg_match('/Chrome\/[\d.]+/i', $ua) && !preg_match('/Edg/i', $ua)) $browser = 'Chrome';
+        elseif (preg_match('/Safari\/[\d.]+/i', $ua) && !preg_match('/Chrome/i', $ua)) $browser = 'Safari';
+        elseif (preg_match('/Firefox\/[\d.]+/i', $ua)) $browser = 'Firefox';
+        else $browser = 'Unknown Browser';
+
+        if ($device) {
+            return "$device ($browser)";
+        }
+        return "$platform ($browser)";
+    }
+
     /**
      * Generate a 6-digit OTP token with embedded 5-minute expiry.
      * Format: "{padded_6_digit_code}_{unix_timestamp}"

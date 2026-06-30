@@ -322,7 +322,7 @@ if ($userId) {
                             </td>
                             <td style="padding: 0.75rem;">
                                 <div style="background: white; padding: 0.25rem; border-radius: 0.25rem; display: inline-block; min-width: 70px; min-height: 70px;">
-                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px;"></div>
+                                    <div id="qr-<?= $qr['id'] ?>" style="width: 60px; height: 60px; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
                                 </div>
                             </td>
                             <td style="padding: 0.75rem; max-width: 15rem; overflow: hidden; text-overflow: ellipsis;" 
@@ -471,20 +471,52 @@ if ($userId) {
 
 <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
+function ensureQrLibraryLoaded() {
+    if (typeof window.qrcode === 'function') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const fallback = document.createElement('script');
+        fallback.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+        fallback.onload = () => resolve();
+        fallback.onerror = reject;
+        document.head.appendChild(fallback);
+    });
+}
+
 // Generate QR code previews
+ensureQrLibraryLoaded().then(function () {
+function utf8ToByteString(value) {
+    return encodeURIComponent(value).replace(/%([0-9A-F]{2})/g, function (_, code) {
+        return String.fromCharCode(parseInt(code, 16));
+    });
+}
 <?php foreach ($history as $qr): ?>
-(function() {
-    try {
-        const qr = qrcode(0, 'H');
-        qr.addData(<?= json_encode($qr['content']) ?>);
-        qr.make();
-        // Use cellSize of 2 for better visibility (60px container / 30 cells = 2px per cell)
-        document.getElementById('qr-<?= $qr['id'] ?>').innerHTML = qr.createImgTag(2, 0);
-    } catch (e) {
-        console.error('Failed to generate QR preview:', e);
-    }
-})();
+    (function() {
+        try {
+            if (typeof qrcode !== 'function') throw new Error('QR library unavailable');
+            var container = document.getElementById('qr-<?= $qr['id'] ?>');
+            if (!container) return;
+            var rawContent = <?= json_encode((string) ($qr['content'] ?? '')) ?>;
+            if (!rawContent) throw new Error('Empty QR content');
+            var qr = qrcode(0, 'H');
+            qr.addData(utf8ToByteString(rawContent));
+            qr.make();
+            container.innerHTML = qr.createImgTag(2, 0);
+            var img = container.querySelector('img');
+            if (img) {
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '100%';
+                img.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('Failed to generate QR preview:', e);
+            var container = document.getElementById('qr-<?= $qr['id'] ?>');
+            if (container) container.innerHTML = '<span style="font-size:10px;color:#999;">Preview unavailable</span>';
+        }
+    })();
 <?php endforeach; ?>
+}).catch(function (e) {
+    console.error('Failed to load QR preview library:', e);
+});
 
 // Download QR code
 function downloadQRCode(id) {

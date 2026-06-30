@@ -112,12 +112,15 @@ header("Expires: 0");
         /* ── Feature-gate blur overlay ── */
         .feature-gate-wrap {
             position: relative;
+            overflow: hidden;
+            min-height: min(40rem, calc(100vh - 7rem));
         }
         .feature-gate-wrap .feature-gate-blur {
             filter: blur(6px);
             opacity: 0.6;
             pointer-events: none;
             user-select: none;
+            overflow: hidden;
         }
         .feature-gate-badge {
             position: absolute;
@@ -131,9 +134,26 @@ header("Expires: 0");
             padding: 28px 36px;
             text-align: center;
             min-width: 280px;
-            max-width: 380px;
+            width: min(380px, calc(100% - 2rem));
             box-shadow: 0 8px 40px rgba(153,69,255,.35);
             pointer-events: auto;
+        }
+        @media (max-width: 768px) {
+            .feature-gate-wrap {
+                min-height: auto;
+                overflow: visible;
+                padding: 12px;
+            }
+            .feature-gate-badge {
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
+                min-width: auto;
+                max-width: 100%;
+                width: 100%;
+                padding: 20px 16px;
+            }
         }
         .feature-gate-badge .fgb-icon {
             font-size: 2.4rem;
