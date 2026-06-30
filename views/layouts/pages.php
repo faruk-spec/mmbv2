@@ -1,6 +1,7 @@
 <?php use Core\View; use Core\Security; ?>
 <?php
 $defaultTheme = 'dark';
+$codeVersion = \Core\Version::display();
 try {
     $db = \Core\Database::getInstance();
     $navbarSettings = $db->fetch("SELECT default_theme FROM navbar_settings WHERE id = 1");
@@ -67,6 +68,7 @@ try {
 <footer class="page-footer">
     <div class="container">
         <p>&copy; <?= date('Y') ?> <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?>. All rights reserved.</p>
+        <p style="margin-top:6px;font-size:12px;">Code Version: <?= htmlspecialchars($codeVersion, ENT_QUOTES, 'UTF-8') ?></p>
     </div>
 </footer>
 <?php endif; ?>

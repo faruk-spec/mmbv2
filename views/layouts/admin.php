@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
     
     <!-- Admin Panel Responsive CSS - Optimized for all devices -->
-    <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= rawurlencode(\Core\Version::asset()) ?>">
     
     <style>
         /* Dark Theme (Default) */
