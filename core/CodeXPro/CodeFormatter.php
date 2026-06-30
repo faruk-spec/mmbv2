@@ -195,6 +195,11 @@ class CodeFormatter
     public static function validateHTML($html)
     {
         $errors = [];
+        $trimmed = trim((string) $html);
+
+        if ($trimmed !== '' && !preg_match('/<[^>]+>/', $trimmed)) {
+            $errors[] = 'No HTML elements found';
+        }
         
         // Check for unclosed tags
         preg_match_all('/<([a-z]+)[^>]*>/i', $html, $openTags);

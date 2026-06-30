@@ -115,9 +115,9 @@ try {
         /* Editor body */
         #editor-body{
             position:fixed;top:calc(var(--navbar-height) + 48px);left:0;right:0;bottom:24px;
-            display:flex;overflow:hidden;
+            display:flex;overflow:hidden;background:var(--editor-bg);
         }
-        #code-panel{flex:1 1 50%;min-width:250px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+        #code-panel{flex:1 1 50%;min-width:250px;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--editor-surface)}
         .cm-editor-wrap{display:none;flex:1;overflow:hidden;position:relative;flex-direction:column}
         .cm-editor-wrap.active{display:flex}
         .cm-editor-wrap .CodeMirror{flex:1;height:100%;font-size:13.5px;font-family:'Fira Code','Cascadia Code',Consolas,monospace;line-height:1.6}
@@ -130,7 +130,7 @@ try {
         #iframe-drag-guard{display:none;position:absolute;inset:0;z-index:50;cursor:ew-resize}
         #iframe-drag-guard.active{display:block}
 
-        #preview-panel{flex:1 1 50%;min-width:200px;display:flex;flex-direction:column;overflow:hidden}
+        #preview-panel{flex:1 1 50%;min-width:200px;display:flex;flex-direction:column;overflow:hidden;background:var(--editor-bg)}
         #preview-header{
             height:32px;background:var(--editor-toolbar);border-bottom:1px solid var(--editor-border);
             display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;
@@ -450,6 +450,13 @@ try {
     const MY_USER_ID   = <?= json_encode((int)($_SESSION['user_id'] ?? 0)) ?>;
     let   SERVER_VER   = <?= json_encode(isset($project['version']) ? (int)$project['version'] : 0) ?>;
 
+    function syncNavbarHeight() {
+        var nav = document.querySelector('.universal-header');
+        if (!nav) return;
+        var h = Math.max(48, Math.round(nav.getBoundingClientRect().height || 0));
+        document.documentElement.style.setProperty('--navbar-height', h + 'px');
+    }
+
     function cmTheme() {
         return document.documentElement.dataset.theme === 'light' ? 'default' : 'dracula';
     }
@@ -485,6 +492,9 @@ try {
             }
         };
     }
+
+    syncNavbarHeight();
+    window.addEventListener('resize', syncNavbarHeight);
 
     var editors = {
         html: CodeMirror.fromTextArea(document.getElementById('cm-html'), cmOptions('htmlmixed')),
@@ -890,7 +900,7 @@ try {
         .then(function(data) {
             var el = document.getElementById('validate-result');
             el.textContent = data.result || data.message || JSON.stringify(data, null, 2);
-            var hasErrors = data.errors && (Array.isArray(data.errors) ? data.errors.length > 0 : true);
+            var hasErrors = Array.isArray(data.errors) ? data.errors.length > 0 : !!data.errors;
             el.style.color = hasErrors ? '#f87171' : (data.success === true ? '#4ade80' : '#fbbf24');
         })
         .catch(function() {

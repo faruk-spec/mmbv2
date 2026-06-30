@@ -70,21 +70,41 @@
 .badge-trial   { background: rgba(245,158,11,.15); color: #f59e0b; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .badge-pending { background: rgba(0,240,255,.15); color: var(--cyan); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 600; }
 .rx-sidebar-toggle {
-    position:fixed; right:18px; bottom:18px; z-index:1100; width:48px; height:48px; border:none; border-radius:12px;
-    background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); 
-    box-shadow:0 4px 12px rgba(0,0,0,.2);
-    display:none; align-items:center; justify-content:center; cursor:pointer;
-    transition: all 0.2s ease;
+    display:none;
+    position:fixed;
+    bottom:24px;
+    right:20px;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--cyan), var(--purple));
+    border:none;
+    color:#06060a;
+    cursor:pointer;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 20px rgba(0,240,255,0.35);
+    z-index:1010;
+    transition:transform 0.2s ease, box-shadow 0.2s ease;
+    will-change:transform;
 }
 .rx-sidebar-toggle:hover {
-    background:linear-gradient(135deg, var(--cyan), var(--purple)); color:#06060a;
-    box-shadow:0 6px 20px rgba(0,240,255,.2);
+    box-shadow:0 6px 24px rgba(0,240,255,0.45);
 }
+.rx-sidebar-toggle:active { transform: scale(0.93); }
+.rx-sidebar-toggle svg { width:22px; height:22px; flex-shrink:0; }
 .rx-sidebar-overlay {
-    position:fixed; inset:0; background:rgba(6,6,10,.68); backdrop-filter:blur(2px); z-index:1090;
-    opacity:0; pointer-events:none; transition:opacity .2s ease;
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(6,6,10,0.7);
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
+    z-index:1005;
+    opacity:0;
+    transition:opacity 0.25s ease;
 }
-.rx-sidebar-overlay.active { opacity:1; pointer-events:auto; }
+.rx-sidebar-overlay.active { display:block; opacity:1; }
 @media (max-width: 960px) {
     .rx-layout { flex-direction:row; }
     .rx-sidebar {

@@ -471,29 +471,47 @@ if ($userId) {
 
 <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
+function ensureQrLibraryLoaded() {
+    if (typeof window.qrcode === 'function') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const fallback = document.createElement('script');
+        fallback.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+        fallback.onload = () => resolve();
+        fallback.onerror = reject;
+        document.head.appendChild(fallback);
+    });
+}
+
 // Generate QR code previews
+ensureQrLibraryLoaded().then(function () {
 <?php foreach ($history as $qr): ?>
-(function() {
-    try {
-        const qr = qrcode(0, 'H');
-        qr.addData(<?= json_encode($qr['content']) ?>);
-        qr.make();
-        var container = document.getElementById('qr-<?= $qr['id'] ?>');
-        container.innerHTML = qr.createImgTag(2, 0);
-        // Ensure img fits container
-        var img = container.querySelector('img');
-        if (img) {
-            img.style.maxWidth = '100%';
-            img.style.maxHeight = '100%';
-            img.style.display = 'block';
+    (function() {
+        try {
+            if (typeof qrcode !== 'function') throw new Error('QR library unavailable');
+            var container = document.getElementById('qr-<?= $qr['id'] ?>');
+            if (!container) return;
+            var rawContent = <?= json_encode((string) ($qr['content'] ?? '')) ?>;
+            if (!rawContent) throw new Error('Empty QR content');
+            var qr = qrcode(0, 'H');
+            qr.addData(unescape(encodeURIComponent(rawContent)));
+            qr.make();
+            container.innerHTML = qr.createImgTag(2, 0);
+            var img = container.querySelector('img');
+            if (img) {
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '100%';
+                img.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('Failed to generate QR preview:', e);
+            var container = document.getElementById('qr-<?= $qr['id'] ?>');
+            if (container) container.innerHTML = '<span style="font-size:10px;color:#999;">Preview unavailable</span>';
         }
-    } catch (e) {
-        console.error('Failed to generate QR preview:', e);
-        var container = document.getElementById('qr-<?= $qr['id'] ?>');
-        if (container) container.innerHTML = '<span style="font-size:10px;color:#999;">Error</span>';
-    }
-})();
+    })();
 <?php endforeach; ?>
+}).catch(function (e) {
+    console.error('Failed to load QR preview library:', e);
+});
 
 // Download QR code
 function downloadQRCode(id) {

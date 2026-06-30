@@ -113,14 +113,13 @@ header("Expires: 0");
         .feature-gate-wrap {
             position: relative;
             overflow: hidden;
-            max-height: 100vh;
+            min-height: min(40rem, calc(100vh - 7rem));
         }
         .feature-gate-wrap .feature-gate-blur {
             filter: blur(6px);
             opacity: 0.6;
             pointer-events: none;
             user-select: none;
-            max-height: 100vh;
             overflow: hidden;
         }
         .feature-gate-badge {
@@ -135,23 +134,25 @@ header("Expires: 0");
             padding: 28px 36px;
             text-align: center;
             min-width: 280px;
-            max-width: 380px;
+            width: min(380px, calc(100% - 2rem));
             box-shadow: 0 8px 40px rgba(153,69,255,.35);
             pointer-events: auto;
         }
         @media (max-width: 768px) {
             .feature-gate-wrap {
-                max-height: calc(100vh - 120px);
-                overflow: hidden;
+                min-height: auto;
+                overflow: visible;
+                padding: 12px;
             }
             .feature-gate-badge {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
+                position: relative;
+                top: auto;
+                left: auto;
+                transform: none;
                 min-width: auto;
-                max-width: calc(100vw - 48px);
-                padding: 24px 20px;
+                max-width: 100%;
+                width: 100%;
+                padding: 20px 16px;
             }
         }
         .feature-gate-badge .fgb-icon {
