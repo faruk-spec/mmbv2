@@ -292,6 +292,7 @@
 $settings['logo_text_gradient_enabled'] = (int) ($settings['logo_text_gradient_enabled'] ?? 0);
 $settings['logo_text_gradient_start'] = $settings['logo_text_gradient_start'] ?? '#00f0ff';
 $settings['logo_text_gradient_end'] = $settings['logo_text_gradient_end'] ?? '#ff2ec4';
+$projectShortcuts = is_array($projectShortcuts ?? null) ? $projectShortcuts : [];
 ?>
 
 <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 24px;">
@@ -501,6 +502,28 @@ $settings['logo_text_gradient_end'] = $settings['logo_text_gradient_end'] ?? '#f
         <div class="settings-card">
             <h3><i class="fas fa-link"></i> Custom Links</h3>
             <p style="color: var(--text-secondary); margin-bottom: 16px;">Add custom menu links to your navbar. You can make any link a dropdown with rich sub-items (logo, title, description, styling).</p>
+
+            <?php if (!empty($projectShortcuts)): ?>
+                <div class="form-row" style="grid-template-columns: 1fr auto; margin-bottom: 16px;">
+                    <select id="projectShortcutSelect" class="form-control">
+                        <option value="">Select project/application shortcut...</option>
+                        <?php foreach ($projectShortcuts as $project): ?>
+                            <option
+                                value="<?= View::e($project['key']) ?>"
+                                data-name="<?= View::e($project['name']) ?>"
+                                data-url="<?= View::e($project['url']) ?>"
+                                data-icon="<?= View::e($project['icon'] ?? '') ?>"
+                                data-logo-url="<?= View::e($project['logo_url'] ?? '') ?>"
+                            >
+                                <?= View::e($project['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" class="btn-secondary" onclick="addSelectedProjectShortcut()">
+                        <i class="fas fa-bolt"></i> Add Project/Application Shortcut
+                    </button>
+                </div>
+            <?php endif; ?>
             
             <div id="custom-links-container">
                 <?php if (!empty($settings['custom_links'])): ?>
@@ -771,6 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 let linkCounter = <?= !empty($settings['custom_links']) ? count($settings['custom_links']) : 0 ?>;
+const projectShortcuts = <?= json_encode($projectShortcuts, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 function previewLinkLogo(input) {
     const row = input.closest('.upload-row');
@@ -785,26 +809,60 @@ function previewLinkLogo(input) {
     }
 }
 
-function addCustomLink() {
+function addSelectedProjectShortcut() {
+    const select = document.getElementById('projectShortcutSelect');
+    if (!select || !select.value) {
+        alert('Please select a project/application first.');
+        return;
+    }
+
+    const selected = projectShortcuts.find(project => project.key === select.value);
+    if (!selected) {
+        return;
+    }
+
+    addCustomLink({
+        title: selected.name || '',
+        url: selected.url || '',
+        icon: selected.icon || '',
+        logo_url: selected.logo_url || ''
+    });
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function addCustomLink(preset = {}) {
     const container = document.getElementById('custom-links-container');
     const idx       = linkCounter;
+    const title     = escapeHtml(preset.title || '');
+    const url       = escapeHtml(preset.url || '');
+    const icon      = escapeHtml(preset.icon || '');
+    const logoUrl   = escapeHtml(preset.logo_url || '');
+    const logoStyle = logoUrl ? '' : 'display:none;';
     const linkItem  = document.createElement('div');
     linkItem.className = 'custom-link-item';
     linkItem.setAttribute('data-index', idx);
     linkItem.innerHTML = `
         <input type="hidden" name="custom_link_idx[]" value="${idx}">
         <div class="form-row">
-            <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title">
-            <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://...">
-            <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon (optional)">
+            <input type="text" name="custom_link_title[]" class="form-control" placeholder="Link Title" value="${title}">
+            <input type="text" name="custom_link_url[]" class="form-control" placeholder="/path or https://..." value="${url}">
+            <input type="text" name="custom_link_icon[]" class="form-control" placeholder="fas fa-icon (optional)" value="${icon}">
             <input type="number" name="custom_link_position[]" class="form-control" placeholder="Order" value="0" min="0">
         </div>
         <div class="form-group" style="margin-top:10px;">
             <label style="font-size:13px; color:var(--text-secondary);">Link Logo / SVG (optional)</label>
             <div class="upload-row">
                 <input type="file" name="custom_link_logo[]" class="form-control" accept="image/*,.svg" onchange="previewLinkLogo(this)">
-                <input type="text" name="custom_link_logo_url[]" class="form-control" placeholder="Or paste image URL">
-                <img class="logo-preview" alt="" style="display:none;">
+                <input type="text" name="custom_link_logo_url[]" class="form-control" placeholder="Or paste image URL" value="${logoUrl}">
+                <img class="logo-preview" alt="" src="${logoUrl}" style="${logoStyle}">
             </div>
             <small>Upload or paste a URL for this link's icon (PNG, JPG, SVG).</small>
         </div>

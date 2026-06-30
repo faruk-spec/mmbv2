@@ -49,7 +49,8 @@ class NavbarController extends BaseController
 
         View::render('admin/navbar', [
             'title' => 'Navbar Settings',
-            'settings' => $settings
+            'settings' => $settings,
+            'projectShortcuts' => $this->getProjectShortcutOptions(),
         ]);
     }
 
@@ -490,5 +491,61 @@ class NavbarController extends BaseController
     private function sanitizeHexColor(string $value, string $fallback): string
     {
         return preg_match('/^#[0-9A-Fa-f]{6}$/', $value) ? $value : $fallback;
+    }
+
+    /**
+     * Build project/application shortcuts list for navbar custom links.
+     */
+    private function getProjectShortcutOptions(): array
+    {
+        $shortcuts = [];
+
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT project_key, name, url, icon, logo_url, color
+                 FROM home_projects
+                 WHERE is_enabled = 1
+                 ORDER BY sort_order ASC, name ASC"
+            );
+
+            foreach ($rows as $row) {
+                $key = (string)($row['project_key'] ?? '');
+                if ($key === '') {
+                    continue;
+                }
+                $shortcuts[$key] = [
+                    'key' => $key,
+                    'name' => (string)($row['name'] ?? ucfirst($key)),
+                    'url' => (string)($row['url'] ?? ('/projects/' . $key)),
+                    'icon' => (string)($row['icon'] ?? ''),
+                    'logo_url' => $this->normalizeUrl((string)($row['logo_url'] ?? '')),
+                    'color' => (string)($row['color'] ?? '#00f0ff'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Fall back to config only.
+        }
+
+        try {
+            $configProjects = require BASE_PATH . '/config/projects.php';
+            foreach ($configProjects as $key => $cfg) {
+                if (empty($cfg['enabled']) || isset($shortcuts[$key])) {
+                    continue;
+                }
+
+                $shortcuts[$key] = [
+                    'key' => (string)$key,
+                    'name' => (string)($cfg['name'] ?? ucfirst((string)$key)),
+                    'url' => (string)($cfg['url'] ?? ('/projects/' . $key)),
+                    'icon' => (string)($cfg['icon'] ?? ''),
+                    'logo_url' => $this->normalizeUrl((string)($cfg['logo_url'] ?? '')),
+                    'color' => (string)($cfg['color'] ?? '#00f0ff'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Ignore config errors and return what we have.
+        }
+
+        return array_values($shortcuts);
     }
 }
