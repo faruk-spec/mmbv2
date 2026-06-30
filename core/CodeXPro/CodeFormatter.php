@@ -331,13 +331,19 @@ class CodeFormatter
             // Remove single-line (//) comments before counting quotes
             $noLineComment = preg_replace('!//.*$!', '', $line);
 
+            // Remove inline block comments /* ... */ to avoid counting quotes inside them
+            $noComments = preg_replace('!/\*.*?\*/!s', '', $noLineComment);
+
+            // Remove escape sequences (e.g. \", \', \\) so escaped quotes are not counted
+            $noEscapes = preg_replace('/\\\\./', '', $noComments);
+
             // Count quote characters (odd count means unclosed string on this line)
-            $dq = substr_count($noLineComment, '"');
+            $dq = substr_count($noEscapes, '"');
             if ($dq % 2 !== 0) {
                 $errors[] = 'Possible unclosed double-quoted string on line ' . ($lineNum + 1);
             }
 
-            $sq = substr_count($noLineComment, "'");
+            $sq = substr_count($noEscapes, "'");
             if ($sq % 2 !== 0) {
                 $errors[] = 'Possible unclosed single-quoted string on line ' . ($lineNum + 1);
             }
