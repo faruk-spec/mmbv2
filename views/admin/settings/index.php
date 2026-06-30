@@ -304,7 +304,7 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
                     <span style="color: var(--text-secondary);">Platform Version</span>
-                    <span><?= APP_VERSION ?></span>
+                    <span><?= htmlspecialchars(\Core\Version::display(), ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                     <span style="color: var(--text-secondary);">Server</span>

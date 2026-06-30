@@ -7,10 +7,17 @@
 
 use Core\Auth;
 use Core\Helpers;
+use Core\Version;
 
 // API health check
 $router->get('/api/health', function() {
-    Helpers::json(['status' => 'ok', 'version' => APP_VERSION]);
+    $version = Version::metadata();
+    Helpers::json([
+        'status' => 'ok',
+        'version' => APP_VERSION,
+        'code_version' => $version['display'],
+        'revision' => $version['revision'],
+    ]);
 });
 
 // SSO endpoints

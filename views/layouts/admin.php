@@ -1,4 +1,5 @@
 <?php use Core\View; use Core\Auth; ?>
+<?php $adminCssVersion = \Core\Version::assetFor(defined('BASE_PATH') ? BASE_PATH . '/public/css/admin-responsive.css' : null); ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -20,7 +21,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
     
     <!-- Admin Panel Responsive CSS - Optimized for all devices -->
-    <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/admin-responsive.css?v=<?= rawurlencode($adminCssVersion) ?>">
     
     <style>
         /* Dark Theme (Default) */
@@ -197,6 +198,13 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .sidebar-version {
+            margin-top: 8px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.4px;
         }
         
         .sidebar-menu {
@@ -1278,6 +1286,7 @@ window.mmbSkeleton = (function(){
                         <?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
                     <?php endif; ?>
                 </div>
+                <div class="sidebar-version">Version <?= htmlspecialchars(\Core\Version::app()) ?></div>
             </div>
             
             <nav class="sidebar-menu">
