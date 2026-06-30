@@ -1286,7 +1286,7 @@ window.mmbSkeleton = (function(){
                         <?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
                     <?php endif; ?>
                 </div>
-                <div class="sidebar-version">Version <?= htmlspecialchars(\Core\Version::current()) ?></div>
+                <div class="sidebar-version">Version <?= htmlspecialchars(\Core\Version::app()) ?></div>
             </div>
             
             <nav class="sidebar-menu">
