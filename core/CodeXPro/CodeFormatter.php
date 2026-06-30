@@ -320,8 +320,10 @@ class CodeFormatter
                 continue;
             }
             if (strpos($line, '/*') !== false) {
+                $openPos  = (int) strpos($line, '/*');
                 $closePos = strpos($line, '*/');
-                if ($closePos === false || $closePos < strpos($line, '/*')) {
+                // Enter multi-line comment mode when no */ follows the /*
+                if ($closePos === false || $closePos < $openPos) {
                     $inMultiLineComment = true;
                 }
             }
@@ -329,14 +331,13 @@ class CodeFormatter
             // Remove single-line (//) comments before counting quotes
             $noLineComment = preg_replace('!//.*$!', '', $line);
 
-            // Count unescaped double quotes (odd count = unclosed string)
-            $dq = preg_match_all('/(?<!\\\\)"/', $noLineComment);
+            // Count quote characters (odd count means unclosed string on this line)
+            $dq = substr_count($noLineComment, '"');
             if ($dq % 2 !== 0) {
                 $errors[] = 'Possible unclosed double-quoted string on line ' . ($lineNum + 1);
             }
 
-            // Count unescaped single quotes (odd count = unclosed string)
-            $sq = preg_match_all("/(?<!\\\\)'/", $noLineComment);
+            $sq = substr_count($noLineComment, "'");
             if ($sq % 2 !== 0) {
                 $errors[] = 'Possible unclosed single-quoted string on line ' . ($lineNum + 1);
             }
