@@ -199,6 +199,13 @@
             align-items: center;
             gap: 10px;
         }
+
+        .sidebar-version {
+            margin-top: 8px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.4px;
+        }
         
         .sidebar-menu {
             padding: 20px 0;
@@ -1279,6 +1286,7 @@ window.mmbSkeleton = (function(){
                         <?= htmlspecialchars($sidebarNavSettings['logo_text'] ?? APP_NAME) ?> Admin
                     <?php endif; ?>
                 </div>
+                <div class="sidebar-version">Version <?= htmlspecialchars(\Core\Version::current()) ?></div>
             </div>
             
             <nav class="sidebar-menu">
