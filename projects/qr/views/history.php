@@ -484,6 +484,11 @@ function ensureQrLibraryLoaded() {
 
 // Generate QR code previews
 ensureQrLibraryLoaded().then(function () {
+function utf8ToByteString(value) {
+    return encodeURIComponent(value).replace(/%([0-9A-F]{2})/g, function (_, code) {
+        return String.fromCharCode(parseInt(code, 16));
+    });
+}
 <?php foreach ($history as $qr): ?>
     (function() {
         try {
@@ -493,7 +498,7 @@ ensureQrLibraryLoaded().then(function () {
             var rawContent = <?= json_encode((string) ($qr['content'] ?? '')) ?>;
             if (!rawContent) throw new Error('Empty QR content');
             var qr = qrcode(0, 'H');
-            qr.addData(unescape(encodeURIComponent(rawContent)));
+            qr.addData(utf8ToByteString(rawContent));
             qr.make();
             container.innerHTML = qr.createImgTag(2, 0);
             var img = container.querySelector('img');
