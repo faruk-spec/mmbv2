@@ -49,7 +49,8 @@ class NavbarController extends BaseController
 
         View::render('admin/navbar', [
             'title' => 'Navbar Settings',
-            'settings' => $settings
+            'settings' => $settings,
+            'projectShortcuts' => $this->getProjectShortcutOptions(),
         ]);
     }
 
@@ -115,12 +116,19 @@ class NavbarController extends BaseController
                 $isDropdownArr = $_POST['custom_link_is_dropdown'] ?? [];
 
                 foreach ($titles as $i => $title) {
-                    if (empty($title) || empty($urls[$i])) {
+                    // The data-index for this link (used to name dropdown-item fields)
+                    $idx = isset($dataIndices[$i]) ? (string)$dataIndices[$i] : (string)$i;
+                    $isDropdown = in_array($idx, $isDropdownArr, true);
+                    $linkUrl = trim((string)($urls[$i] ?? ''));
+
+                    if (empty($title)) {
                         continue;
                     }
 
-                    // The data-index for this link (used to name dropdown-item fields)
-                    $idx = isset($dataIndices[$i]) ? (string)$dataIndices[$i] : (string)$i;
+                    // For regular links URL is required; dropdown parent links may omit URL.
+                    if (!$isDropdown && $linkUrl === '') {
+                        continue;
+                    }
 
                     // Per-link logo file upload (custom_link_logo[])
                     $linkLogoUrl = $logoUrls[$i] ?? '';
@@ -137,11 +145,11 @@ class NavbarController extends BaseController
 
                     $linkData = [
                         'title'          => $title,
-                        'url'            => $urls[$i],
+                        'url'            => $linkUrl,
                         'icon'           => $icons[$i] ?? '',
                         'logo_url'       => $this->normalizeUrl($linkLogoUrl),
                         'position'       => (int)($positions[$i] ?? 0),
-                        'is_dropdown'    => in_array($idx, $isDropdownArr),
+                        'is_dropdown'    => $isDropdown,
                         'dropdown_items' => []
                     ];
 
@@ -490,5 +498,61 @@ class NavbarController extends BaseController
     private function sanitizeHexColor(string $value, string $fallback): string
     {
         return preg_match('/^#[0-9A-Fa-f]{6}$/', $value) ? $value : $fallback;
+    }
+
+    /**
+     * Build project/application shortcuts list for navbar custom links.
+     */
+    private function getProjectShortcutOptions(): array
+    {
+        $shortcuts = [];
+
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT project_key, name, url, icon, logo_url, color
+                 FROM home_projects
+                 WHERE is_enabled = 1
+                 ORDER BY sort_order ASC, name ASC"
+            );
+
+            foreach ($rows as $row) {
+                $key = (string)($row['project_key'] ?? '');
+                if ($key === '') {
+                    continue;
+                }
+                $shortcuts[$key] = [
+                    'key' => $key,
+                    'name' => (string)($row['name'] ?? ucfirst($key)),
+                    'url' => (string)($row['url'] ?? ('/projects/' . $key)),
+                    'icon' => (string)($row['icon'] ?? ''),
+                    'logo_url' => $this->normalizeUrl((string)($row['logo_url'] ?? '')),
+                    'color' => (string)($row['color'] ?? '#00f0ff'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            Logger::error('NavbarController: getProjectShortcutOptions DB fallback — ' . $e->getMessage());
+        }
+
+        try {
+            $configProjects = require BASE_PATH . '/config/projects.php';
+            foreach ($configProjects as $key => $cfg) {
+                if (empty($cfg['enabled']) || isset($shortcuts[$key])) {
+                    continue;
+                }
+
+                $shortcuts[$key] = [
+                    'key' => (string)$key,
+                    'name' => (string)($cfg['name'] ?? ucfirst((string)$key)),
+                    'url' => (string)($cfg['url'] ?? ('/projects/' . $key)),
+                    'icon' => (string)($cfg['icon'] ?? ''),
+                    'logo_url' => $this->normalizeUrl((string)($cfg['logo_url'] ?? '')),
+                    'color' => (string)($cfg['color'] ?? '#00f0ff'),
+                ];
+            }
+        } catch (\Throwable $e) {
+            Logger::error('NavbarController: getProjectShortcutOptions config fallback — ' . $e->getMessage());
+        }
+
+        return array_values($shortcuts);
     }
 }
