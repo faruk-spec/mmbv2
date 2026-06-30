@@ -135,22 +135,7 @@ class DownloadController
                 "Your file '{$file['original_name']}' was downloaded.", $file['id']);
         }
         
-        // Self-destruct ONLY if enabled (check flag is 1)
-        if ($file['self_destruct'] == 1) {
-            $db->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
-            
-            // Create notification for user if logged in
-            if ($file['user_id']) {
-                $this->sendNotification(
-                    $file['user_id'],
-                    'security_alert',
-                    "Your file '{$file['original_name']}' was automatically deleted after download",
-                    $file['id']
-                );
-            }
-            
-            @unlink($file['path']);
-        }
+        $shouldSelfDestruct = ((int)($file['self_destruct'] ?? 0) === 1);
         
         // Serve file — use RFC 5987 filename* for correct Unicode handling
         $safeName = preg_replace('/[^\x20-\x7E]/', '_', $file['original_name']); // ASCII fallback
@@ -164,7 +149,23 @@ class DownloadController
         header('Cache-Control: no-cache, must-revalidate');
         header('Expires: 0');
         
-        readfile($file['path']);
+        $bytesSent = readfile($file['path']);
+
+        if ($shouldSelfDestruct && $bytesSent !== false) {
+            $db->update('proshare_files', ['status' => 'deleted'], 'id = ?', [$file['id']]);
+
+            if ($file['user_id']) {
+                $this->sendNotification(
+                    $file['user_id'],
+                    'security_alert',
+                    "Your file '{$file['original_name']}' was automatically deleted after download",
+                    $file['id']
+                );
+            }
+
+            @unlink($file['path']);
+        }
+
         exit;
     }
     
