@@ -367,6 +367,17 @@ $router->get('/admin/notifications/preferences', 'Admin\\NotificationController@
 $router->post('/admin/notifications/send-test', 'Admin\\NotificationController@sendTest', ['auth', 'admin']);
 $router->post('/admin/notifications/delete-old', 'Admin\\NotificationController@deleteOld', ['auth', 'admin']);
 
+// Deployment / Backstage Dashboard routes
+$router->get('/admin/deployment', 'Admin\\DeploymentController@index', ['auth', 'admin']);
+$router->get('/admin/deployment/github', 'Admin\\DeploymentController@github', ['auth', 'admin']);
+$router->get('/admin/deployment/branches', 'Admin\\DeploymentController@branches', ['auth', 'admin']);
+$router->get('/admin/deployment/deploy', 'Admin\\DeploymentController@deploy', ['auth', 'admin']);
+$router->get('/admin/deployment/history', 'Admin\\DeploymentController@history', ['auth', 'admin']);
+$router->get('/admin/deployment/versions', 'Admin\\DeploymentController@versions', ['auth', 'admin']);
+$router->get('/admin/deployment/logs', 'Admin\\DeploymentController@logs', ['auth', 'admin']);
+$router->get('/admin/deployment/server', 'Admin\\DeploymentController@server', ['auth', 'admin']);
+$router->get('/admin/deployment/settings', 'Admin\\DeploymentController@settings', ['auth', 'admin']);
+
 // Performance Management routes
 $router->get('/admin/performance/cache', 'Admin\\PerformanceController@cache', ['auth', 'admin']);
 $router->get('/admin/performance/assets', 'Admin\\PerformanceController@assets', ['auth', 'admin']);

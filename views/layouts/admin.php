@@ -2425,6 +2425,57 @@ window.mmbSkeleton = (function(){
                 <?php $settingsActive = strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/settings') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/navbar') === 0 || strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/home-content') === 0; ?>
                 <div class="menu-section">
                     <div class="menu-section-title">System</div>
+
+                    <?php if (\Core\Auth::isAdmin()): ?>
+                    <!-- Deployment / Backstage Dashboard -->
+                    <div class="menu-item menu-dropdown <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment') === 0 ? 'open' : '' ?>">
+                        <div class="menu-dropdown-toggle <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment') === 0 ? 'active' : '' ?>">
+                            <div class="left">
+                                <i class="fas fa-rocket"></i>
+                                <span>Deployment</span>
+                            </div>
+                            <i class="fas fa-chevron-down arrow"></i>
+                        </div>
+                        <div class="menu-dropdown-content">
+                            <a href="/admin/deployment" class="menu-link <?= ($_SERVER['REQUEST_URI'] ?? '') === '/admin/deployment' ? 'active' : '' ?>">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <span>Overview</span>
+                            </a>
+                            <a href="/admin/deployment/github" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/github') === 0 ? 'active' : '' ?>">
+                                <i class="fab fa-github"></i>
+                                <span>GitHub</span>
+                            </a>
+                            <a href="/admin/deployment/branches" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/branches') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-code-branch"></i>
+                                <span>Branches</span>
+                            </a>
+                            <a href="/admin/deployment/deploy" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/deploy') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-rocket"></i>
+                                <span>Deploy</span>
+                            </a>
+                            <a href="/admin/deployment/history" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/history') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-history"></i>
+                                <span>History</span>
+                            </a>
+                            <a href="/admin/deployment/versions" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/versions') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-tag"></i>
+                                <span>Versions</span>
+                            </a>
+                            <a href="/admin/deployment/logs" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/logs') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-terminal"></i>
+                                <span>Logs</span>
+                            </a>
+                            <a href="/admin/deployment/server" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/server') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-server"></i>
+                                <span>Server</span>
+                            </a>
+                            <a href="/admin/deployment/settings" class="menu-link <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/deployment/settings') === 0 ? 'active' : '' ?>">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     
                     <div class="menu-item menu-dropdown <?= $settingsActive ? 'open' : '' ?>">
                         <div class="menu-dropdown-toggle <?= $settingsActive ? 'active' : '' ?>">
