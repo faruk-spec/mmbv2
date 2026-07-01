@@ -151,10 +151,18 @@ class DeploymentController extends BaseController
         $token = trim($this->input('github_token', ''));
         $repo  = trim($this->input('github_repo', ''));
 
+        if (!$repo) {
+            $this->jsonError('Repository name is required.');
+            return;
+        }
+
         try {
             $db = Database::getInstance();
-            $this->upsertSetting($db, 'github_token', $token);
-            $this->upsertSetting($db, 'github_repo',  $repo);
+            // Only update the token if a new one was provided (empty means keep existing)
+            if ($token !== '') {
+                $this->upsertSetting($db, 'github_token', $token);
+            }
+            $this->upsertSetting($db, 'github_repo', $repo);
 
             Logger::activity(Auth::id(), 'github_token_saved', ['repo' => $repo]);
 

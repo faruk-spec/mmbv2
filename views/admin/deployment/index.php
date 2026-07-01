@@ -412,7 +412,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
             <div class="dep-card-body">
                 <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
                     Connect your GitHub repository using a Personal Access Token (PAT) to view repo stats, releases, and CI/CD workflow runs directly from this dashboard.
-                    <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=MMB+Dashboard" target="_blank" rel="noopener" style="color:var(--cyan);">Create a token &rarr;</a>
+                    <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=<?= urlencode((defined('APP_NAME') ? APP_NAME : 'MMB') . ' Dashboard') ?>" target="_blank" rel="noopener" style="color:var(--cyan);">Create a token &rarr;</a>
                 </p>
                 <form id="github-connect-form" style="display:grid;gap:14px;">
                     <div>
@@ -959,28 +959,36 @@ async function runAction(action, label) {
         status.textContent = 'Error';
         status.style.color = '#f87171';
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = btn.innerHTML.replace('<i class="fas fa-circle-notch fa-spin"></i> Running…', btn.dataset.orig || btn.textContent); }
-        // restore button labels
-        document.getElementById('btn-git-pull').innerHTML = '<i class="fas fa-download"></i> Git Pull';
-        document.getElementById('btn-clear-cache').innerHTML = '<i class="fas fa-broom"></i> Clear Cache';
-        document.getElementById('btn-composer').innerHTML = '<i class="fas fa-box"></i> Composer Install';
+        document.getElementById('btn-git-pull').innerHTML      = '<i class="fas fa-download"></i> Git Pull';
+        document.getElementById('btn-clear-cache').innerHTML   = '<i class="fas fa-broom"></i> Clear Cache';
+        document.getElementById('btn-composer').innerHTML      = '<i class="fas fa-box"></i> Composer Install';
+        document.querySelectorAll('#btn-git-pull,#btn-clear-cache,#btn-composer').forEach(b => b.disabled = false);
     }
 }
 
 // ── GitHub connect ───────────────────────────────────────────────────────────
 async function saveGitHubToken() {
-    const token = document.getElementById('gh-token').value;
+    const tokenInput = document.getElementById('gh-token');
     const repo  = document.getElementById('gh-repo').value.trim();
     const msg   = document.getElementById('gh-save-msg');
 
-    if (!token || !repo) { showMsg(msg, 'Both token and repository are required.', false); return; }
+    // If the field still shows the mask placeholder, don't overwrite the stored token
+    const tokenValue = tokenInput.value;
+    const isMasked   = /^[•]+$/.test(tokenValue);
+    const token      = isMasked ? '' : tokenValue;
+
+    if (!repo) { showMsg(msg, 'Repository name is required.', false); return; }
+    if (!token && !isMasked) { showMsg(msg, 'Personal Access Token is required.', false); return; }
 
     msg.style.display = 'none';
+    const body = '_csrf_token=' + encodeURIComponent(DEP_CSRF) +
+                 '&github_repo=' + encodeURIComponent(repo) +
+                 (token ? '&github_token=' + encodeURIComponent(token) : '');
     try {
         const res  = await fetch('/admin/deployment/save-github-token', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: '_csrf_token=' + encodeURIComponent(DEP_CSRF) + '&github_token=' + encodeURIComponent(token) + '&github_repo=' + encodeURIComponent(repo)
+            body
         });
         const data = await res.json();
         showMsg(msg, data.message, data.success);
