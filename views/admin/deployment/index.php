@@ -3,55 +3,31 @@
 
 <?php
 $activeTab = $activeTab ?? 'overview';
-// Variables passed from controller
-$github_token        = $github_token ?? '';
-$github_repo         = $github_repo ?? '';
-$admin_subdomain_url = $admin_subdomain_url ?? '';
-
-$phpVersion     = PHP_VERSION;
+$phpVersion    = PHP_VERSION;
 $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
-$diskPath       = defined('BASE_PATH') ? BASE_PATH : '/';
-$diskTotalRaw   = @disk_total_space($diskPath);
-$diskFreeRaw    = @disk_free_space($diskPath);
-$diskTotal      = is_numeric($diskTotalRaw) ? (int) $diskTotalRaw : 0;
-$diskFree       = is_numeric($diskFreeRaw) ? (int) $diskFreeRaw : 0;
-$diskUsed       = max($diskTotal - $diskFree, 0);
-$diskPct        = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 1) : 0;
-$memUsage       = memory_get_usage(true);
-$memPeak        = memory_get_peak_usage(true);
+$diskPath   = defined('BASE_PATH') ? BASE_PATH : '/';
+$diskTotal  = disk_total_space($diskPath);
+$diskFree   = disk_free_space($diskPath);
+$diskUsed   = $diskTotal - $diskFree;
+$diskPct    = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 1) : 0;
+$memUsage   = memory_get_usage(true);
+$memPeak    = memory_get_peak_usage(true);
 if (!function_exists('dep_bsz')) {
-    function dep_bsz($bytes): string {
-        $bytes = (float) $bytes;
+    function dep_bsz(int $bytes): string {
         if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
         if ($bytes >= 1048576)    return round($bytes / 1048576,    2) . ' MB';
         if ($bytes >= 1024)       return round($bytes / 1024,       2) . ' KB';
-        return (string) ((int) $bytes) . ' B';
+        return $bytes . ' B';
     }
 }
-if (!function_exists('dep_shell')) {
-    function dep_shell(string $command): string {
-        if (!function_exists('shell_exec')) {
-            return '';
-        }
-
-        $output = shell_exec($command);
-        return is_string($output) ? trim($output) : '';
-    }
-}
-if (!function_exists('dep_lines')) {
-    function dep_lines(string $output): array {
-        return array_values(array_filter(explode("\n", trim($output)), static fn($line) => trim($line) !== ''));
-    }
-}
-$gitBranch          = dep_shell('git -C ' . escapeshellarg($diskPath) . ' rev-parse --abbrev-ref HEAD 2>/dev/null') ?: 'unknown';
-$gitCommit          = dep_shell('git -C ' . escapeshellarg($diskPath) . ' log -1 --format="%h %s" 2>/dev/null') ?: '—';
-$gitStatus          = dep_shell('git -C ' . escapeshellarg($diskPath) . ' status --short 2>/dev/null');
-$gitLog             = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' log --oneline -25 2>/dev/null'));
-$gitRemotes         = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' remote -v 2>/dev/null'));
-$gitBranches        = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' branch -a 2>/dev/null'));
-$gitBranchesVerbose = dep_shell('git -C ' . escapeshellarg($diskPath) . ' branch -avv 2>/dev/null');
-$gitTags            = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' tag --sort=-creatordate 2>/dev/null'));
-$csrfToken  = \Core\Security::generateCsrfToken();
+$gitBranch  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' rev-parse --abbrev-ref HEAD 2>/dev/null') ?? 'unknown');
+$gitCommit  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' log -1 --format="%h %s" 2>/dev/null') ?? '—');
+$gitStatus  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' status --short 2>/dev/null') ?? '');
+$gitLog     = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' log --oneline -25 2>/dev/null') ?? '')));
+$gitRemotes = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' remote -v 2>/dev/null') ?? '')));
+$gitBranches= array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' branch -a 2>/dev/null') ?? '')));
+$gitBranchesVerbose = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' branch -avv 2>/dev/null') ?? '');
+$gitTags    = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' tag --sort=-creatordate 2>/dev/null') ?? '')));
 ?>
 
 <?php View::section('styles'); ?>
@@ -321,7 +297,6 @@ $csrfToken  = \Core\Security::generateCsrfToken();
         <a href="/admin/deployment/versions"  class="dep-tab <?= $activeTab === 'versions'  ? 'active' : '' ?>"><i class="fas fa-tag"></i> Versions</a>
         <a href="/admin/deployment/logs"      class="dep-tab <?= $activeTab === 'logs'      ? 'active' : '' ?>"><i class="fas fa-terminal"></i> Logs</a>
         <a href="/admin/deployment/server"    class="dep-tab <?= $activeTab === 'server'    ? 'active' : '' ?>"><i class="fas fa-server"></i> Server</a>
-        <a href="/admin/deployment/subdomain" class="dep-tab <?= $activeTab === 'subdomain' ? 'active' : '' ?>"><i class="fas fa-globe"></i> Subdomain</a>
         <a href="/admin/deployment/settings"  class="dep-tab <?= $activeTab === 'settings'  ? 'active' : '' ?>"><i class="fas fa-cog"></i> Settings</a>
     </nav>
 
@@ -416,66 +391,8 @@ $csrfToken  = \Core\Security::generateCsrfToken();
 
     <!-- ═══════════════════════════════ GITHUB ═════════════════════════════════ -->
     <div class="dep-panel <?= $activeTab === 'github' ? 'active' : '' ?>">
-
-        <!-- GitHub Connect / Token Setup -->
         <div class="dep-card">
-            <div class="dep-card-head">
-                <span><i class="fab fa-github"></i>GitHub Connect</span>
-                <?php if ($github_token && $github_repo): ?>
-                    <span id="gh-connect-status" style="font-size:12px;color:#00dc82;"><i class="fas fa-circle" style="font-size:8px;"></i> Connected</span>
-                <?php else: ?>
-                    <span id="gh-connect-status" style="font-size:12px;color:#f59e0b;"><i class="fas fa-circle" style="font-size:8px;"></i> Not configured</span>
-                <?php endif; ?>
-            </div>
-            <div class="dep-card-body">
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-                    Connect your GitHub repository using a Personal Access Token (PAT) to view repo stats, releases, and CI/CD workflow runs directly from this dashboard.
-                    <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=<?= urlencode((defined('APP_NAME') ? APP_NAME : 'MMB') . ' Dashboard') ?>" target="_blank" rel="noopener" style="color:var(--cyan);">Create a token &rarr;</a>
-                </p>
-                <form id="github-connect-form" style="display:grid;gap:14px;">
-                    <div>
-                        <label style="font-size:13px;font-weight:600;color:var(--text-primary);display:block;margin-bottom:6px;">GitHub Repository <small style="color:var(--text-secondary);font-weight:400;">(owner/repo)</small></label>
-                        <input type="text" id="gh-repo" value="<?= htmlspecialchars($github_repo) ?>"
-                               placeholder="e.g. myorg/myrepo"
-                               style="width:100%;padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;">
-                    </div>
-                    <div>
-                        <label style="font-size:13px;font-weight:600;color:var(--text-primary);display:block;margin-bottom:6px;">Personal Access Token <small style="color:var(--text-secondary);font-weight:400;">(stored encrypted)</small></label>
-                        <input type="password" id="gh-token" value="<?= $github_token ? str_repeat('•', 30) : '' ?>"
-                               placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                               autocomplete="new-password"
-                               style="width:100%;padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;">
-                        <small style="color:var(--text-secondary);font-size:11px;margin-top:4px;display:block;">Required scopes: <code>repo</code>, <code>workflow</code> (optional)</small>
-                    </div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button type="button" onclick="saveGitHubToken()" class="dep-btn dep-btn-primary"><i class="fas fa-save"></i> Save</button>
-                        <button type="button" onclick="loadGitHubData()" class="dep-btn dep-btn-secondary" id="gh-test-btn"><i class="fas fa-plug"></i> Test Connection</button>
-                    </div>
-                    <div id="gh-save-msg" style="display:none;font-size:13px;margin-top:4px;"></div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Live GitHub Data (loaded via JS) -->
-        <div id="gh-live-data" style="<?= ($github_token && $github_repo) ? '' : 'display:none;' ?>">
-            <div id="gh-repo-stats" class="dep-stats" style="margin-bottom:20px;">
-                <!-- filled by JS -->
-            </div>
-            <div class="dep-grid-2">
-                <div class="dep-card">
-                    <div class="dep-card-head"><span><i class="fas fa-tag"></i>Latest Releases</span></div>
-                    <div class="dep-card-body" id="gh-releases-body"><div class="dep-empty"><i class="fas fa-circle-notch fa-spin"></i>Loading…</div></div>
-                </div>
-                <div class="dep-card">
-                    <div class="dep-card-head"><span><i class="fas fa-cogs"></i>Workflow Runs</span></div>
-                    <div class="dep-card-body" id="gh-workflows-body"><div class="dep-empty"><i class="fas fa-circle-notch fa-spin"></i>Loading…</div></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Git remotes (local) -->
-        <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-network-wired"></i>Local Git Remotes</span></div>
+            <div class="dep-card-head"><span><i class="fab fa-github"></i>Remote Repositories</span></div>
             <div class="dep-card-body">
                 <?php if ($gitRemotes): ?>
                 <div class="dep-code"><?php foreach ($gitRemotes as $r): ?><?= htmlspecialchars(trim($r)) . "\n" ?><?php endforeach; ?></div>
@@ -509,8 +426,8 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                     <?php foreach ($gitBranches as $b):
                         $b = trim($b);
                         if ($b === '') continue;
-                        $current = strpos($b, '*') === 0;
-                        $b = $current ? trim(substr($b, 1)) : trim($b);
+                        $current = str_starts_with($b, '*');
+                        $b = ltrim($b, '* ');
                     ?>
                     <span class="dep-branch-pill <?= $current ? 'current' : '' ?>">
                         <i class="fas fa-code-branch"></i><?= htmlspecialchars($b) ?>
@@ -534,33 +451,6 @@ $csrfToken  = \Core\Security::generateCsrfToken();
 
     <!-- ═══════════════════════════════ DEPLOY ════════════════════════════════ -->
     <div class="dep-panel <?= $activeTab === 'deploy' ? 'active' : '' ?>">
-
-        <!-- Action Buttons -->
-        <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-bolt"></i>Quick Actions</span></div>
-            <div class="dep-card-body">
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-                    <button onclick="runAction('git-pull','Git Pull')" class="dep-btn dep-btn-primary" id="btn-git-pull">
-                        <i class="fas fa-download"></i> Git Pull
-                    </button>
-                    <button onclick="runAction('clear-cache','Clear Cache')" class="dep-btn dep-btn-secondary" id="btn-clear-cache">
-                        <i class="fas fa-broom"></i> Clear Cache
-                    </button>
-                    <button onclick="runAction('composer-install','Composer Install')" class="dep-btn dep-btn-secondary" id="btn-composer">
-                        <i class="fas fa-box"></i> Composer Install
-                    </button>
-                </div>
-                <div id="action-output-wrap" style="display:none;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                        <span id="action-output-label" style="font-size:13px;font-weight:600;color:var(--text-primary);"></span>
-                        <button onclick="document.getElementById('action-output-wrap').style.display='none';" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:16px;">&times;</button>
-                    </div>
-                    <div id="action-output" class="dep-code" style="max-height:250px;"></div>
-                    <div id="action-status" style="margin-top:10px;font-size:13px;font-weight:600;"></div>
-                </div>
-            </div>
-        </div>
-
         <div class="dep-card">
             <div class="dep-card-head"><span><i class="fas fa-rocket"></i>Deployment Checklist</span></div>
             <div class="dep-card-body">
@@ -779,114 +669,6 @@ $csrfToken  = \Core\Security::generateCsrfToken();
         </div>
     </div>
 
-    <!-- ═══════════════════════════════ SUBDOMAIN ════════════════════════════ -->
-    <div class="dep-panel <?= $activeTab === 'subdomain' ? 'active' : '' ?>">
-
-        <!-- Subdomain URL Setting -->
-        <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-globe"></i>Admin Subdomain Access</span></div>
-            <div class="dep-card-body">
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-                    Configure a dedicated subdomain (e.g. <code style="color:var(--cyan);">admin.yourdomain.com</code>) as a backup entry point to this dashboard.
-                    If your main site ever goes down, you can restore or manage it from this subdomain URL.
-                </p>
-                <div style="display:grid;gap:14px;">
-                    <div>
-                        <label style="font-size:13px;font-weight:600;color:var(--text-primary);display:block;margin-bottom:6px;">Admin Subdomain URL</label>
-                        <input type="url" id="subdomain-url" value="<?= htmlspecialchars($admin_subdomain_url) ?>"
-                               placeholder="https://admin.yourdomain.com"
-                               style="width:100%;padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;">
-                        <small style="color:var(--text-secondary);font-size:11px;margin-top:4px;display:block;">Save your subdomain URL here so you can always find the link to your admin dashboard.</small>
-                    </div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                        <button type="button" onclick="saveSubdomainUrl()" class="dep-btn dep-btn-primary"><i class="fas fa-save"></i> Save URL</button>
-                        <?php if ($admin_subdomain_url): ?>
-                            <a href="<?= htmlspecialchars($admin_subdomain_url) ?>/admin" target="_blank" rel="noopener" class="dep-btn dep-btn-secondary">
-                                <i class="fas fa-external-link-alt"></i> Open Subdomain Admin
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                    <div id="subdomain-save-msg" style="display:none;font-size:13px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Setup Guide: Apache -->
-        <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-server"></i>Apache / .htaccess Setup</span></div>
-            <div class="dep-card-body">
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
-                    Create a subdomain vhost pointing to the same document root, then add this <code>.htaccess</code> to route correctly:
-                </p>
-                <div class="dep-code"><?= htmlspecialchars(
-'# /etc/apache2/sites-available/admin.yourdomain.com.conf
-<VirtualHost *:80>
-    ServerName admin.yourdomain.com
-    DocumentRoot /var/www/html/your-app-root/public
-
-    <Directory /var/www/html/your-app-root/public>
-        AllowOverride All
-        Require all granted
-    </Directory>
-</VirtualHost>
-
-# Or redirect subdomain directly to /admin
-# RewriteEngine On
-# RewriteRule ^(.*)$ /admin$1 [L,R=301]') ?></div>
-                <p style="font-size:12px;color:var(--text-secondary);margin-top:10px;">
-                    <i class="fas fa-shield-alt" style="color:#f59e0b;margin-right:4px;"></i>
-                    <strong>Security tip:</strong> Restrict access to the admin subdomain by IP in your web server config or firewall.
-                </p>
-            </div>
-        </div>
-
-        <!-- Setup Guide: Nginx -->
-        <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-server"></i>Nginx Setup</span></div>
-            <div class="dep-card-body">
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">Add this server block to your Nginx config:</p>
-                <div class="dep-code"><?= htmlspecialchars(
-'# /etc/nginx/sites-available/admin.yourdomain.com
-server {
-    listen 80;
-    server_name admin.yourdomain.com;
-    root /var/www/html/your-app-root/public;
-    index index.php;
-
-    # Optional: restrict to specific IPs
-    # allow 203.0.113.10;
-    # deny all;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-}') ?></div>
-            </div>
-        </div>
-
-        <!-- PHP Entry Point Info -->
-        <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-file-code"></i>Subdomain Entry Point</span></div>
-            <div class="dep-card-body">
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
-                    A dedicated entry point is available at <code style="color:var(--cyan);">subdomain/admin/index.php</code> in the repository.
-                    You can also point the subdomain directly to the main <code style="color:var(--cyan);">public/index.php</code> &mdash; the application will handle routing normally, giving full access to the admin panel at <code>/admin</code>.
-                </p>
-                <table class="dep-info-table">
-                    <tr><td>Admin dashboard</td><td><code><?= htmlspecialchars(($admin_subdomain_url ?: 'https://admin.yourdomain.com') . '/admin') ?></code></td></tr>
-                    <tr><td>Login page</td><td><code><?= htmlspecialchars(($admin_subdomain_url ?: 'https://admin.yourdomain.com') . '/login') ?></code></td></tr>
-                    <tr><td>Main site</td><td><code><?= htmlspecialchars(defined('APP_URL') ? APP_URL : '') ?></code></td></tr>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <!-- ═══════════════════════════════ SETTINGS ══════════════════════════════ -->
     <div class="dep-panel <?= $activeTab === 'settings' ? 'active' : '' ?>">
         <div class="dep-card">
@@ -937,212 +719,4 @@ server {
 
 </div>
 <?php View::endSection(); ?>
-
-<?php View::section('scripts'); ?>
-<script>
-const DEP_CSRF = <?= json_encode($csrfToken) ?>;
-
-// ── Quick action buttons (git pull, clear cache, composer) ──────────────────
-async function runAction(action, label) {
-    const btnId = {
-        'git-pull': 'btn-git-pull',
-        'clear-cache': 'btn-clear-cache',
-        'composer-install': 'btn-composer'
-    }[action];
-    const btn = document.getElementById(btnId);
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Running…'; }
-
-    const wrap   = document.getElementById('action-output-wrap');
-    const output = document.getElementById('action-output');
-    const status = document.getElementById('action-status');
-    const lbl    = document.getElementById('action-output-label');
-
-    wrap.style.display = 'block';
-    lbl.textContent = label + ' — output:';
-    output.textContent = 'Running…';
-    status.textContent = '';
-
-    try {
-        const res = await fetch('/admin/deployment/' + action, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: '_csrf_token=' + encodeURIComponent(DEP_CSRF)
-        });
-        const data = await res.json();
-        output.textContent = data.output || '(no output)';
-        status.textContent = data.message || '';
-        status.style.color = data.success ? '#00dc82' : '#f87171';
-    } catch (e) {
-        output.textContent = 'Request failed: ' + e.message;
-        status.textContent = 'Error';
-        status.style.color = '#f87171';
-    } finally {
-        document.getElementById('btn-git-pull').innerHTML      = '<i class="fas fa-download"></i> Git Pull';
-        document.getElementById('btn-clear-cache').innerHTML   = '<i class="fas fa-broom"></i> Clear Cache';
-        document.getElementById('btn-composer').innerHTML      = '<i class="fas fa-box"></i> Composer Install';
-        document.querySelectorAll('#btn-git-pull,#btn-clear-cache,#btn-composer').forEach(b => b.disabled = false);
-    }
-}
-
-// ── GitHub connect ───────────────────────────────────────────────────────────
-async function saveGitHubToken() {
-    const tokenInput = document.getElementById('gh-token');
-    const repo  = document.getElementById('gh-repo').value.trim();
-    const msg   = document.getElementById('gh-save-msg');
-
-    // If the field still shows the mask placeholder, don't overwrite the stored token
-    const tokenValue = tokenInput.value;
-    const isMasked   = /^[•]+$/.test(tokenValue);
-    const token      = isMasked ? '' : tokenValue;
-
-    if (!repo) { showMsg(msg, 'Repository name is required.', false); return; }
-    if (!token && !isMasked) { showMsg(msg, 'Personal Access Token is required.', false); return; }
-
-    msg.style.display = 'none';
-    const body = '_csrf_token=' + encodeURIComponent(DEP_CSRF) +
-                 '&github_repo=' + encodeURIComponent(repo) +
-                 (token ? '&github_token=' + encodeURIComponent(token) : '');
-    try {
-        const res  = await fetch('/admin/deployment/save-github-token', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body
-        });
-        const data = await res.json();
-        showMsg(msg, data.message, data.success);
-        if (data.success) {
-            document.getElementById('gh-connect-status').innerHTML = '<i class="fas fa-circle" style="font-size:8px;"></i> Connected';
-            document.getElementById('gh-connect-status').style.color = '#00dc82';
-            loadGitHubData();
-        }
-    } catch(e) { showMsg(msg, 'Request failed: ' + e.message, false); }
-}
-
-async function loadGitHubData() {
-    const btn = document.getElementById('gh-test-btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Connecting…'; }
-    try {
-        const res  = await fetch('/admin/deployment/github-api-data');
-        const data = await res.json();
-        if (!data.success) {
-            document.getElementById('gh-connect-status').innerHTML = '<i class="fas fa-circle" style="font-size:8px;"></i> ' + (data.message || 'Error');
-            document.getElementById('gh-connect-status').style.color = '#f87171';
-            return;
-        }
-        document.getElementById('gh-live-data').style.display = '';
-        document.getElementById('gh-connect-status').innerHTML = '<i class="fas fa-circle" style="font-size:8px;"></i> Connected';
-        document.getElementById('gh-connect-status').style.color = '#00dc82';
-
-        // Render stat cards
-        const r = data.repo;
-        document.getElementById('gh-repo-stats').innerHTML = `
-            <div class="dep-stat cyan">
-                <div class="dep-stat-icon"><i class="fab fa-github"></i></div>
-                <div class="dep-stat-val" style="font-size:1rem;">${escHtml(r.name)}</div>
-                <div class="dep-stat-label">${escHtml(r.visibility)} · ${escHtml(r.default_branch)}</div>
-            </div>
-            <div class="dep-stat green">
-                <div class="dep-stat-icon"><i class="fas fa-star"></i></div>
-                <div class="dep-stat-val">${r.stars}</div>
-                <div class="dep-stat-label">Stars</div>
-            </div>
-            <div class="dep-stat mag">
-                <div class="dep-stat-icon"><i class="fas fa-code-branch"></i></div>
-                <div class="dep-stat-val">${r.forks}</div>
-                <div class="dep-stat-label">Forks</div>
-            </div>
-            <div class="dep-stat orange">
-                <div class="dep-stat-icon"><i class="fas fa-exclamation-circle"></i></div>
-                <div class="dep-stat-val">${r.open_issues}</div>
-                <div class="dep-stat-label">Open Issues</div>
-            </div>`;
-
-        // Render releases
-        const relBody = document.getElementById('gh-releases-body');
-        if (data.releases.length) {
-            relBody.innerHTML = data.releases.map(rel => `
-                <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-                    <a href="${escHtml(rel.url)}" target="_blank" rel="noopener"
-                       style="color:var(--cyan);font-size:13px;font-weight:600;text-decoration:none;">
-                        <i class="fas fa-tag" style="margin-right:6px;"></i>${escHtml(rel.tag)}
-                    </a>
-                    <span style="color:var(--text-secondary);font-size:12px;margin-left:8px;">${escHtml(rel.published ? rel.published.substring(0,10) : '')}</span>
-                    ${rel.name ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${escHtml(rel.name)}</div>` : ''}
-                </div>`).join('');
-        } else {
-            relBody.innerHTML = '<div class="dep-empty"><i class="fas fa-tag"></i>No releases</div>';
-        }
-
-        // Render workflow runs
-        const wfBody = document.getElementById('gh-workflows-body');
-        if (data.workflow_runs.length) {
-            wfBody.innerHTML = data.workflow_runs.map(w => {
-                const conc = w.conclusion || w.status;
-                const col  = conc === 'success' ? '#00dc82' : (conc === 'failure' ? '#f87171' : (conc === 'in_progress' ? '#f59e0b' : 'var(--text-secondary)'));
-                return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-                    <a href="${escHtml(w.url)}" target="_blank" rel="noopener"
-                       style="color:var(--text-primary);font-size:13px;font-weight:500;text-decoration:none;">
-                        ${escHtml(w.name)}
-                    </a>
-                    <span style="color:${col};font-size:12px;margin-left:8px;text-transform:capitalize;">${escHtml(conc)}</span>
-                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escHtml(w.created_at ? w.created_at.substring(0,16).replace('T',' ') : '')}</div>
-                </div>`;
-            }).join('');
-        } else {
-            wfBody.innerHTML = '<div class="dep-empty"><i class="fas fa-cogs"></i>No workflow runs</div>';
-        }
-    } catch(e) {
-        document.getElementById('gh-connect-status').textContent = 'Error: ' + e.message;
-    } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plug"></i> Test Connection'; }
-    }
-}
-
-// ── Subdomain URL save ────────────────────────────────────────────────────────
-async function saveSubdomainUrl() {
-    const url = document.getElementById('subdomain-url').value.trim();
-    const msg = document.getElementById('subdomain-save-msg');
-    try {
-        const res  = await fetch('/admin/deployment/save-subdomain', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: '_csrf_token=' + encodeURIComponent(DEP_CSRF) + '&admin_subdomain_url=' + encodeURIComponent(url)
-        });
-        const data = await res.json();
-        showMsg(msg, data.message, data.success);
-        if (data.success && url) {
-            // update open link without reload
-            const openBtn = msg.closest('.dep-card-body').querySelector('a[target="_blank"]');
-            if (!openBtn) {
-                const newLink = document.createElement('a');
-                newLink.href = url + '/admin';
-                newLink.target = '_blank';
-                newLink.rel = 'noopener';
-                newLink.className = 'dep-btn dep-btn-secondary';
-                newLink.innerHTML = '<i class="fas fa-external-link-alt"></i> Open Subdomain Admin';
-                msg.closest('.dep-card-body').querySelector('[id="subdomain-save-msg"]').before(newLink);
-            }
-        }
-    } catch(e) { showMsg(msg, 'Request failed: ' + e.message, false); }
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function showMsg(el, text, ok) {
-    el.style.display = 'block';
-    el.style.color = ok ? '#00dc82' : '#f87171';
-    el.textContent = text;
-}
-function escHtml(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// Auto-load GitHub data if connected
-<?php if ($github_token && $github_repo): ?>
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.querySelector('.dep-tab.active i.fab.fa-github') || <?= json_encode($activeTab === 'github') ?>) {
-        loadGitHubData();
-    }
-});
-<?php endif; ?>
-</script>
 <?php View::endSection(); ?>
