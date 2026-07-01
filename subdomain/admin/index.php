@@ -37,9 +37,9 @@ $mainUrl = rtrim($mainUrl, '/');
 $uri    = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $qs     = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
 
-// If the request already carries /admin prefix keep it; otherwise prepend.
-if (!str_starts_with($uri, '/admin')) {
-    $uri = '/admin' . $uri;
+// If the request is not already under /admin, prepend it.
+if ($uri !== '/admin' && !str_starts_with($uri, '/admin/')) {
+    $uri = '/admin';
 }
 
 header('Location: ' . $mainUrl . $uri . $qs, true, 302);
