@@ -120,7 +120,7 @@ class DashboardController extends BaseController
             try {
                 $projectStats['proshare'] = [
                     'files' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM proshare_files") ?: 0),
-                    'texts' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM proshare_texts") ?: 0),
+                    'texts' => (int) ($db->fetchColumn("SELECT COUNT(*) FROM proshare_text_shares") ?: 0),
                 ];
             } catch (\Exception $e) {
                 $projectStats['proshare'] = ['files' => 0, 'texts' => 0];
