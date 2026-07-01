@@ -420,7 +420,7 @@ class DeploymentController extends BaseController
             $this->jsonError('composer.lock is required before running install.', 422);
             return;
         }
-        $composerBinary = $this->resolveBinary('composer', [
+        $composerBinary = $this->resolveBinary('composer', array_filter([
             '/usr/bin/composer',
             '/usr/local/bin/composer',
             '/usr/local/cpanel/3rdparty/bin/composer',
@@ -428,7 +428,7 @@ class DeploymentController extends BaseController
             '/usr/local/php/bin/composer',
             getenv('HOME') ? getenv('HOME') . '/.config/composer/vendor/bin/composer' : '',
             getenv('HOME') ? getenv('HOME') . '/.composer/vendor/bin/composer' : '',
-        ]);
+        ]));
 
         // If no standard binary found, try running composer.phar via the PHP interpreter
         $composerCmd = null;

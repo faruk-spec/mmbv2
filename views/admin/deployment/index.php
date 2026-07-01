@@ -875,12 +875,20 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                 <div class="dep-card-body">
                     <?php
                     $wantedExt = ['pdo','pdo_mysql','mbstring','json','openssl','curl','gd','zip','intl','fileinfo','opcache'];
-                    foreach ($wantedExt as $ext): $loaded = extension_loaded($ext); ?>
+                    foreach ($wantedExt as $ext): $loaded = extension_loaded($ext);
+                        if ($loaded) {
+                            $extStatus = 'Loaded';
+                        } elseif ($ext === 'opcache') {
+                            $extStatus = 'Not loaded — contact host to enable';
+                        } else {
+                            $extStatus = 'Missing';
+                        }
+                    ?>
                     <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;">
                         <span style="color:var(--text-primary);"><?= htmlspecialchars($ext) ?></span>
                         <span style="color:<?= $loaded ? '#00dc82' : '#f87171' ?>;">
                             <i class="fas <?= $loaded ? 'fa-check-circle' : 'fa-times-circle' ?>"></i>
-                            <?= $loaded ? 'Loaded' : ($ext === 'opcache' ? 'Not loaded — contact host to enable' : 'Missing') ?>
+                            <?= $extStatus ?>
                         </span>
                     </div>
                     <?php endforeach; ?>
