@@ -514,17 +514,6 @@ class DeploymentController extends BaseController
     }
 
     /**
-     * Return JSON success response
-     */
-    private function json(array $data, int $status = 200): void
-    {
-        http_response_code($status);
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
-    }
-
-    /**
      * Return JSON error response
      */
     private function jsonError(string $message, int $status = 400): void
