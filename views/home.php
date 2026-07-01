@@ -499,7 +499,7 @@ try {
     // Build the display value from the current schema fields
     $stats = $db->fetchAll(
         "SELECT id,
-                CONCAT(COALESCE(prefix, ''), COALESCE(CAST(count_value AS CHAR), ''), COALESCE(suffix, '')) AS value,
+                CONCAT(COALESCE(prefix, ''), CAST(count_value AS CHAR), COALESCE(suffix, '')) AS value,
                 label,
                 '' AS description,
                 sort_order,
