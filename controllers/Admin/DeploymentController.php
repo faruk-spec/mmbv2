@@ -234,6 +234,11 @@ class DeploymentController extends BaseController
             return;
         }
 
+        if (!function_exists('exec')) {
+            $this->jsonError('Command execution is not available on this server.', 503);
+            return;
+        }
+
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         $output   = [];
         $code     = 0;
@@ -295,6 +300,11 @@ class DeploymentController extends BaseController
     {
         if (!$this->validateCsrf()) {
             $this->jsonError('Invalid request.');
+            return;
+        }
+
+        if (!function_exists('exec')) {
+            $this->jsonError('Command execution is not available on this server.', 503);
             return;
         }
 
@@ -376,6 +386,10 @@ class DeploymentController extends BaseController
      */
     private function fetchGitHubApi(string $url, string $token): ?array
     {
+        if (!function_exists('curl_init')) {
+            return null;
+        }
+
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -391,7 +405,7 @@ class DeploymentController extends BaseController
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($code !== 200 || !$body) {
+        if ($body === false || $code !== 200 || !$body) {
             return null;
         }
 

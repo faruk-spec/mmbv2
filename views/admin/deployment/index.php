@@ -8,31 +8,48 @@ $github_token        = $github_token ?? '';
 $github_repo         = $github_repo ?? '';
 $admin_subdomain_url = $admin_subdomain_url ?? '';
 
-$phpVersion    = PHP_VERSION;
+$phpVersion     = PHP_VERSION;
 $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
-$diskPath   = defined('BASE_PATH') ? BASE_PATH : '/';
-$diskTotal  = disk_total_space($diskPath);
-$diskFree   = disk_free_space($diskPath);
-$diskUsed   = $diskTotal - $diskFree;
-$diskPct    = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 1) : 0;
-$memUsage   = memory_get_usage(true);
-$memPeak    = memory_get_peak_usage(true);
+$diskPath       = defined('BASE_PATH') ? BASE_PATH : '/';
+$diskTotalRaw   = @disk_total_space($diskPath);
+$diskFreeRaw    = @disk_free_space($diskPath);
+$diskTotal      = is_numeric($diskTotalRaw) ? (int) $diskTotalRaw : 0;
+$diskFree       = is_numeric($diskFreeRaw) ? (int) $diskFreeRaw : 0;
+$diskUsed       = max($diskTotal - $diskFree, 0);
+$diskPct        = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 1) : 0;
+$memUsage       = memory_get_usage(true);
+$memPeak        = memory_get_peak_usage(true);
 if (!function_exists('dep_bsz')) {
-    function dep_bsz(int $bytes): string {
+    function dep_bsz(int|float $bytes): string {
         if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
         if ($bytes >= 1048576)    return round($bytes / 1048576,    2) . ' MB';
         if ($bytes >= 1024)       return round($bytes / 1024,       2) . ' KB';
         return $bytes . ' B';
     }
 }
-$gitBranch  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' rev-parse --abbrev-ref HEAD 2>/dev/null') ?? 'unknown');
-$gitCommit  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' log -1 --format="%h %s" 2>/dev/null') ?? '—');
-$gitStatus  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' status --short 2>/dev/null') ?? '');
-$gitLog     = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' log --oneline -25 2>/dev/null') ?? '')));
-$gitRemotes = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' remote -v 2>/dev/null') ?? '')));
-$gitBranches= array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' branch -a 2>/dev/null') ?? '')));
-$gitBranchesVerbose = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' branch -avv 2>/dev/null') ?? '');
-$gitTags    = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' tag --sort=-creatordate 2>/dev/null') ?? '')));
+if (!function_exists('dep_shell')) {
+    function dep_shell(string $command): string {
+        if (!function_exists('shell_exec')) {
+            return '';
+        }
+
+        $output = shell_exec($command);
+        return is_string($output) ? trim($output) : '';
+    }
+}
+if (!function_exists('dep_lines')) {
+    function dep_lines(string $output): array {
+        return array_values(array_filter(explode("\n", trim($output)), static fn($line) => trim($line) !== ''));
+    }
+}
+$gitBranch          = dep_shell('git -C ' . escapeshellarg($diskPath) . ' rev-parse --abbrev-ref HEAD 2>/dev/null') ?: 'unknown';
+$gitCommit          = dep_shell('git -C ' . escapeshellarg($diskPath) . ' log -1 --format="%h %s" 2>/dev/null') ?: '—';
+$gitStatus          = dep_shell('git -C ' . escapeshellarg($diskPath) . ' status --short 2>/dev/null');
+$gitLog             = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' log --oneline -25 2>/dev/null'));
+$gitRemotes         = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' remote -v 2>/dev/null'));
+$gitBranches        = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' branch -a 2>/dev/null'));
+$gitBranchesVerbose = dep_shell('git -C ' . escapeshellarg($diskPath) . ' branch -avv 2>/dev/null');
+$gitTags            = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' tag --sort=-creatordate 2>/dev/null'));
 $csrfToken  = \Core\Security::generateCsrfToken();
 ?>
 
