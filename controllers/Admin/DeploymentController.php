@@ -235,7 +235,7 @@ class DeploymentController extends BaseController
         }
 
         if (!function_exists('exec')) {
-            $this->jsonError('Command execution is not available on this server.', 501);
+            $this->jsonError('Command execution is not available on this server.', 503);
             return;
         }
 
@@ -304,7 +304,7 @@ class DeploymentController extends BaseController
         }
 
         if (!function_exists('exec')) {
-            $this->jsonError('Command execution is not available on this server.', 501);
+            $this->jsonError('Command execution is not available on this server.', 503);
             return;
         }
 
