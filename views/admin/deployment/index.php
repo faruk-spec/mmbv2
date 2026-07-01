@@ -494,7 +494,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                                autocomplete="new-password"
                                style="width:100%;padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;">
-                        <small style="color:var(--text-secondary);font-size:11px;margin-top:4px;display:block;">Required scopes: <code>repo</code>, <code>workflow</code> (optional)</small>
+                        <small style="color:var(--text-secondary);font-size:11px;margin-top:4px;display:block;">Required scopes: <code>repo</code>, <code>workflow</code> (optional). <span style="color:#f59e0b;">Warning:</span> <code>repo</code> grants broad repository access—use a dedicated machine token.</small>
                     </div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <button type="button" onclick="saveGitHubToken()" class="dep-btn dep-btn-primary"><i class="fas fa-save"></i> Save</button>

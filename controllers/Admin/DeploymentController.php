@@ -249,6 +249,18 @@ class DeploymentController extends BaseController
             $this->jsonError('Git binary not found on server.', 503);
             return;
         }
+        $originRemote = [];
+        $remoteCode = 0;
+        exec(
+            escapeshellarg($gitBinary) . ' -C ' . escapeshellarg($basePath) . ' config --get remote.origin.url 2>/dev/null',
+            $originRemote,
+            $remoteCode
+        );
+        $originUrl = trim($originRemote[0] ?? '');
+        if ($remoteCode !== 0 || $originUrl === '' || !preg_match('/^(https:\/\/|git@|ssh:\/\/)/i', $originUrl)) {
+            $this->jsonError('Origin remote is missing or not trusted.', 422);
+            return;
+        }
         $output   = [];
         $code     = 0;
         exec(escapeshellarg($gitBinary) . ' -C ' . escapeshellarg($basePath) . ' pull 2>&1', $output, $code);
@@ -276,14 +288,23 @@ class DeploymentController extends BaseController
         $basePath  = defined('BASE_PATH') ? BASE_PATH : getcwd();
         $cacheDir  = $basePath . '/storage/cache';
         $cleared   = 0;
+        $realCacheDir = is_dir($cacheDir) ? realpath($cacheDir) : false;
 
-        if (is_dir($cacheDir)) {
+        if ($realCacheDir && is_dir($realCacheDir)) {
             foreach (new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($cacheDir, \FilesystemIterator::SKIP_DOTS),
+                new \RecursiveDirectoryIterator($realCacheDir, \FilesystemIterator::SKIP_DOTS),
                 \RecursiveIteratorIterator::CHILD_FIRST
             ) as $file) {
-                if ($file->isFile() && $file->getFilename() !== '.gitkeep') {
-                    unlink($file->getRealPath());
+                if (
+                    $file->isFile() &&
+                    !$file->isLink() &&
+                    $file->getFilename() !== '.gitkeep'
+                ) {
+                    $realFilePath = $file->getRealPath();
+                    if (!is_string($realFilePath) || !str_starts_with($realFilePath, $realCacheDir . DIRECTORY_SEPARATOR)) {
+                        continue;
+                    }
+                    unlink($realFilePath);
                     $cleared++;
                 }
             }
@@ -320,6 +341,10 @@ class DeploymentController extends BaseController
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
         if (!is_file($basePath . '/composer.json')) {
             $this->jsonError('composer.json not found on server path.', 422);
+            return;
+        }
+        if (!is_file($basePath . '/composer.lock')) {
+            $this->jsonError('composer.lock is required before running install.', 422);
             return;
         }
         $composerBinary = $this->resolveBinary('composer', [
