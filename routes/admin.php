@@ -384,6 +384,8 @@ $router->post('/admin/deployment/clear-cache', 'Admin\\DeploymentController@clea
 $router->post('/admin/deployment/composer-install', 'Admin\\DeploymentController@composerInstall', ['auth', 'admin']);
 $router->post('/admin/deployment/save-github-token', 'Admin\\DeploymentController@saveGitHubToken', ['auth', 'admin']);
 $router->get('/admin/deployment/github-api-data', 'Admin\\DeploymentController@gitHubApiData', ['auth', 'admin']);
+$router->get('/admin/deployment/github-branches-data', 'Admin\\DeploymentController@gitHubBranchesData', ['auth', 'admin']);
+$router->get('/admin/deployment/github-commits-data', 'Admin\\DeploymentController@gitHubCommitsData', ['auth', 'admin']);
 $router->post('/admin/deployment/save-subdomain', 'Admin\\DeploymentController@saveSubdomain', ['auth', 'admin']);
 
 // Performance Management routes

@@ -550,9 +550,26 @@ $csrfToken  = \Core\Security::generateCsrfToken();
     </div>
 
     <!-- ═══════════════════════════════ BRANCHES ══════════════════════════════ -->
+    <!-- ═══════════════════════════════ BRANCHES ═════════════════════════════ -->
     <div class="dep-panel <?= $activeTab === 'branches' ? 'active' : '' ?>">
+
+        <?php if ($github_token && $github_repo): ?>
+        <!-- GitHub API Branches -->
         <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-code-branch"></i>All Branches</span></div>
+            <div class="dep-card-head">
+                <span><i class="fab fa-github"></i>GitHub Branches</span>
+                <button id="btn-refresh-branches" onclick="loadGitHubBranches()" class="dep-btn dep-btn-secondary dep-btn-sm">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="dep-card-body" id="gh-branches-body">
+                <div class="dep-empty"><i class="fas fa-circle-notch fa-spin"></i> Loading branches…</div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <div class="dep-card">
+            <div class="dep-card-head"><span><i class="fas fa-code-branch"></i>Local Branches (server)</span></div>
             <div class="dep-card-body">
                 <?php if ($gitBranches): ?>
                 <div style="flex-wrap:wrap;display:flex;">
@@ -569,15 +586,15 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                     <?php endforeach; ?>
                 </div>
                 <?php else: ?>
-                <div class="dep-empty"><i class="fas fa-code-branch"></i>No branches found</div>
+                <div class="dep-empty"><i class="fas fa-code-branch"></i>No local branch data (shell_exec may be disabled on this server)</div>
                 <?php endif; ?>
             </div>
         </div>
 
         <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-terminal"></i>Branch Details</span></div>
+            <div class="dep-card-head"><span><i class="fas fa-terminal"></i>Branch Details (local verbose)</span></div>
             <div class="dep-card-body">
-                <div class="dep-code"><?= htmlspecialchars($gitBranchesVerbose ?: 'No branch data available') ?></div>
+                <div class="dep-code"><?= htmlspecialchars($gitBranchesVerbose ?: 'No local branch data available') ?></div>
             </div>
         </div>
     </div>
@@ -621,7 +638,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                     ['Disk space available',    $diskPct < 90,         dep_bsz($diskFree) . ' free (' . $diskPct . '% used)'],
                     ['Memory within limits',    $memUsage < 100*1024*1024, dep_bsz($memUsage) . ' / ' . dep_bsz($memPeak) . ' peak'],
                     ['Composer autoload',       file_exists(BASE_PATH . '/vendor/autoload.php'), 'vendor/autoload.php'],
-                    ['Environment config',      file_exists(BASE_PATH . '/config/config.php'),  'config/config.php'],
+                    ['Environment config',      file_exists(BASE_PATH . '/config/app.php'),  'config/app.php'],
                 ];
                 ?>
                 <?php foreach ($checks as [$label, $ok, $detail]): ?>
@@ -657,7 +674,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
         <div class="dep-stats">
             <div class="dep-stat cyan">
                 <div class="dep-stat-icon"><i class="fas fa-code-commit"></i></div>
-                <div class="dep-stat-val"><?= count($gitHistoryRows) ?></div>
+                <div class="dep-stat-val" id="history-commit-count"><?= count($gitHistoryRows) ?></div>
                 <div class="dep-stat-label">Recent commits</div>
             </div>
             <div class="dep-stat green">
@@ -672,8 +689,23 @@ $csrfToken  = \Core\Security::generateCsrfToken();
             </div>
         </div>
 
+        <?php if ($github_token && $github_repo): ?>
+        <!-- GitHub API commit history -->
         <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-history"></i>Deployment History Timeline</span></div>
+            <div class="dep-card-head">
+                <span><i class="fab fa-github"></i>GitHub Commit History</span>
+                <button onclick="loadGitHubCommits()" class="dep-btn dep-btn-secondary dep-btn-sm">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="dep-card-body" id="gh-commits-body">
+                <div class="dep-empty"><i class="fas fa-circle-notch fa-spin"></i> Loading commit history…</div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <div class="dep-card">
+            <div class="dep-card-head"><span><i class="fas fa-history"></i>Local Git History (server)</span></div>
             <div class="dep-card-body">
                 <?php if ($gitHistoryRows): ?>
                 <div class="dep-history-list">
@@ -711,7 +743,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                     <?php endforeach; ?>
                 </div>
                 <?php else: ?>
-                <div class="dep-empty"><i class="fas fa-history"></i>No commit history available</div>
+                <div class="dep-empty"><i class="fas fa-history"></i>No local commit history (shell_exec may be disabled on this server)</div>
                 <?php endif; ?>
             </div>
         </div>
@@ -848,7 +880,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                         <span style="color:var(--text-primary);"><?= htmlspecialchars($ext) ?></span>
                         <span style="color:<?= $loaded ? '#00dc82' : '#f87171' ?>;">
                             <i class="fas <?= $loaded ? 'fa-check-circle' : 'fa-times-circle' ?>"></i>
-                            <?= $loaded ? 'Loaded' : 'Missing' ?>
+                            <?= $loaded ? 'Loaded' : ($ext === 'opcache' ? 'Not loaded — contact host to enable' : 'Missing') ?>
                         </span>
                     </div>
                     <?php endforeach; ?>
@@ -869,6 +901,52 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                     <div class="dep-progress-fill" style="width:<?= $diskPct ?>%;background:<?= $col ?>;"></div>
                 </div>
                 <div style="text-align:center;font-size:12px;color:var(--text-secondary);margin-top:6px;"><?= $diskPct ?>% used</div>
+            </div>
+        </div>
+
+        <?php
+        $opcacheLoaded = extension_loaded('opcache');
+        $opcacheStatus = $opcacheLoaded && function_exists('opcache_get_status') ? @opcache_get_status(false) : false;
+        ?>
+        <div class="dep-card">
+            <div class="dep-card-head"><span><i class="fas fa-tachometer-alt"></i>OPcache Status</span></div>
+            <div class="dep-card-body">
+                <?php if ($opcacheLoaded && is_array($opcacheStatus)): ?>
+                <?php
+                    $opcEnabled  = !empty($opcacheStatus['opcache_enabled']);
+                    $ocMem       = $opcacheStatus['memory_usage'] ?? [];
+                    $ocUsed      = $ocMem['used_memory'] ?? 0;
+                    $ocFree      = $ocMem['free_memory'] ?? 0;
+                    $ocWaste     = $ocMem['wasted_memory'] ?? 0;
+                    $ocTotal     = $ocUsed + $ocFree + $ocWaste;
+                    $ocPct       = $ocTotal > 0 ? round($ocUsed / $ocTotal * 100, 1) : 0;
+                    $ocStats     = $opcacheStatus['opcache_statistics'] ?? [];
+                    $ocHits      = $ocStats['hits'] ?? 0;
+                    $ocMisses    = $ocStats['misses'] ?? 0;
+                    $ocHitRate   = ($ocHits + $ocMisses) > 0 ? round($ocHits / ($ocHits + $ocMisses) * 100, 1) : 0;
+                    $ocScripts   = $ocStats['num_cached_scripts'] ?? 0;
+                ?>
+                <table class="dep-info-table" style="margin-bottom:14px;">
+                    <tr><td>Status</td><td style="color:<?= $opcEnabled ? '#00dc82' : '#f59e0b' ?>"><?= $opcEnabled ? 'Enabled' : 'Disabled (extension loaded but off)' ?></td></tr>
+                    <tr><td>Hit Rate</td><td style="color:#00dc82;font-weight:600;"><?= $ocHitRate ?>%</td></tr>
+                    <tr><td>Cached Scripts</td><td><?= number_format($ocScripts) ?></td></tr>
+                    <tr><td>Hits / Misses</td><td><?= number_format($ocHits) ?> / <?= number_format($ocMisses) ?></td></tr>
+                    <tr><td>Memory Used</td><td><?= dep_bsz($ocUsed) ?> / <?= dep_bsz($ocTotal) ?> (<?= $ocPct ?>%)</td></tr>
+                    <tr><td>Wasted Memory</td><td><?= dep_bsz($ocWaste) ?></td></tr>
+                </table>
+                <div class="dep-progress" style="height:10px;">
+                    <?php $ocCol = $ocPct > 85 ? '#f87171' : ($ocPct > 70 ? '#f59e0b' : 'var(--cyan)'); ?>
+                    <div class="dep-progress-fill" style="width:<?= $ocPct ?>%;background:<?= $ocCol ?>;"></div>
+                </div>
+                <div style="text-align:center;font-size:11px;color:var(--text-secondary);margin-top:5px;"><?= $ocPct ?>% memory used</div>
+                <?php elseif ($opcacheLoaded): ?>
+                <div class="dep-empty"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> OPcache extension is loaded but opcache_get_status() is unavailable (check <code>opcache.enable_cli</code>).</div>
+                <?php else: ?>
+                <div class="dep-empty" style="flex-direction:column;gap:8px;text-align:center;">
+                    <span style="color:#f87171;"><i class="fas fa-times-circle"></i> OPcache is not loaded on this server.</span>
+                    <span style="font-size:12px;color:var(--text-secondary);">To enable OPcache, ask your hosting provider or add <code>extension=opcache</code> to your <code>php.ini</code> and set <code>opcache.enable=1</code>.</span>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -1269,7 +1347,111 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.querySelector('.dep-tab.active i.fab.fa-github') || <?= json_encode($activeTab === 'github') ?>) {
         loadGitHubData();
     }
+    if (<?= json_encode($activeTab === 'branches') ?>) {
+        loadGitHubBranches();
+    }
+    if (<?= json_encode($activeTab === 'history') ?>) {
+        loadGitHubCommits();
+    }
 });
 <?php endif; ?>
+
+// ── GitHub Branches ──────────────────────────────────────────────────────────
+async function loadGitHubBranches() {
+    const body = document.getElementById('gh-branches-body');
+    if (!body) return;
+    const btn = document.getElementById('btn-refresh-branches');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; }
+    body.innerHTML = '<div class="dep-empty"><i class="fas fa-circle-notch fa-spin"></i> Loading branches…</div>';
+    try {
+        const res  = await fetch('/admin/deployment/github-branches-data');
+        const data = await res.json();
+        if (!data.success) {
+            body.innerHTML = '<div class="dep-empty" style="color:#f87171;"><i class="fas fa-times-circle"></i> ' + escHtml(data.message || 'Failed to load') + '</div>';
+            return;
+        }
+        if (!data.branches.length) {
+            body.innerHTML = '<div class="dep-empty"><i class="fas fa-code-branch"></i> No branches found</div>';
+            return;
+        }
+        const countStat = document.getElementById('gh-branch-count');
+        if (countStat) countStat.textContent = data.branches.length;
+        body.innerHTML = `
+            <div style="margin-bottom:14px;font-size:12px;color:var(--text-secondary);">
+                <i class="fab fa-github"></i> <strong style="color:var(--text-primary);">${data.branches.length}</strong> branch${data.branches.length !== 1 ? 'es' : ''} on GitHub
+            </div>
+            <div style="flex-wrap:wrap;display:flex;gap:8px;margin-bottom:18px;">
+                ${data.branches.map(b => `
+                    <a href="${escHtml(b.url)}" target="_blank" rel="noopener"
+                       style="text-decoration:none;">
+                        <span class="dep-branch-pill${b.protected ? ' current' : ''}"
+                              title="${b.protected ? 'Protected branch · ' : ''}SHA: ${escHtml(b.sha)}">
+                            <i class="fas fa-code-branch"></i>${escHtml(b.name)}
+                            ${b.protected ? '<i class="fas fa-lock" style="font-size:9px;margin-left:3px;color:#f59e0b;" title="Protected"></i>' : ''}
+                        </span>
+                    </a>`).join('')}
+            </div>
+            <table class="dep-info-table">
+                <thead><tr><th style="font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Branch</th><th style="font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Last Commit</th><th style="font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Protected</th></tr></thead>
+                <tbody>
+                    ${data.branches.map(b => `<tr>
+                        <td><a href="${escHtml(b.url)}" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none;"><i class="fas fa-code-branch" style="margin-right:6px;"></i>${escHtml(b.name)}</a></td>
+                        <td><code style="font-size:11px;color:var(--text-secondary);">${escHtml(b.sha)}</code></td>
+                        <td style="color:${b.protected ? '#f59e0b' : 'var(--text-secondary)'};">${b.protected ? '<i class="fas fa-lock"></i> Yes' : 'No'}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+    } catch (e) {
+        body.innerHTML = '<div class="dep-empty" style="color:#f87171;"><i class="fas fa-times-circle"></i> Error: ' + escHtml(e.message) + '</div>';
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh'; }
+    }
+}
+
+// ── GitHub Commit History ────────────────────────────────────────────────────
+async function loadGitHubCommits() {
+    const body = document.getElementById('gh-commits-body');
+    if (!body) return;
+    body.innerHTML = '<div class="dep-empty"><i class="fas fa-circle-notch fa-spin"></i> Loading commits…</div>';
+    try {
+        const res  = await fetch('/admin/deployment/github-commits-data');
+        const data = await res.json();
+        if (!data.success) {
+            body.innerHTML = '<div class="dep-empty" style="color:#f87171;"><i class="fas fa-times-circle"></i> ' + escHtml(data.message || 'Failed to load') + '</div>';
+            return;
+        }
+        if (!data.commits.length) {
+            body.innerHTML = '<div class="dep-empty"><i class="fas fa-history"></i> No commits found</div>';
+            return;
+        }
+        const countEl = document.getElementById('history-commit-count');
+        if (countEl) countEl.textContent = data.commits.length;
+        body.innerHTML = '<div class="dep-history-list">' +
+            data.commits.map(c => `
+                <div class="dep-history-item">
+                    <div class="dep-history-top">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span class="dep-log-hash" style="min-width:58px;flex-shrink:0;">${escHtml(c.sha)}</span>
+                            <span class="dep-log-msg">${escHtml(c.message || 'No message')}</span>
+                        </div>
+                        <div class="dep-history-actions">
+                            <a href="${escHtml(c.url)}" target="_blank" rel="noopener" class="dep-btn dep-btn-secondary dep-btn-sm">
+                                <i class="fas fa-up-right-from-square"></i> View
+                            </a>
+                            <button type="button" class="dep-btn dep-btn-secondary dep-btn-sm" onclick="copyCommitHash('${escHtml(c.sha)}')">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dep-history-meta">
+                        <span><i class="fas fa-calendar-day"></i> ${escHtml(c.date || 'Unknown date')}</span>
+                        <span><i class="fas fa-user"></i> ${escHtml(c.author || 'Unknown')}</span>
+                    </div>
+                </div>`).join('') +
+            '</div>';
+    } catch (e) {
+        body.innerHTML = '<div class="dep-empty" style="color:#f87171;"><i class="fas fa-times-circle"></i> Error: ' + escHtml(e.message) + '</div>';
+    }
+}
 </script>
 <?php View::endSection(); ?>

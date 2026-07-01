@@ -225,6 +225,68 @@ class DeploymentController extends BaseController
     }
 
     /**
+     * Fetch branch list from the GitHub API
+     */
+    public function gitHubBranchesData(): void
+    {
+        ['github_token' => $token, 'github_repo' => $repo] = $this->getGitHubSettings();
+
+        if (!$token || !$repo) {
+            $this->json(['success' => false, 'message' => 'GitHub not configured.']);
+            return;
+        }
+
+        $branches = $this->fetchGitHubApi("https://api.github.com/repos/{$repo}/branches?per_page=100", $token);
+        if (!is_array($branches)) {
+            $this->json(['success' => false, 'message' => 'Failed to fetch branches from GitHub.']);
+            return;
+        }
+
+        $this->json([
+            'success'  => true,
+            'branches' => array_map(fn($b) => [
+                'name'      => $b['name'] ?? '',
+                'sha'       => substr($b['commit']['sha'] ?? '', 0, 7),
+                'full_sha'  => $b['commit']['sha'] ?? '',
+                'protected' => !empty($b['protected']),
+                'url'       => "https://github.com/{$repo}/tree/" . ($b['name'] ?? ''),
+            ], $branches),
+            'repo_url'  => "https://github.com/{$repo}",
+        ]);
+    }
+
+    /**
+     * Fetch commit history from the GitHub API
+     */
+    public function gitHubCommitsData(): void
+    {
+        ['github_token' => $token, 'github_repo' => $repo] = $this->getGitHubSettings();
+
+        if (!$token || !$repo) {
+            $this->json(['success' => false, 'message' => 'GitHub not configured.']);
+            return;
+        }
+
+        $commits = $this->fetchGitHubApi("https://api.github.com/repos/{$repo}/commits?per_page=50", $token);
+        if (!is_array($commits)) {
+            $this->json(['success' => false, 'message' => 'Failed to fetch commits from GitHub.']);
+            return;
+        }
+
+        $this->json([
+            'success' => true,
+            'commits' => array_map(fn($c) => [
+                'sha'     => substr($c['sha'] ?? '', 0, 7),
+                'full_sha'=> $c['sha'] ?? '',
+                'message' => explode("\n", trim($c['commit']['message'] ?? ''))[0],
+                'author'  => $c['commit']['author']['name'] ?? '',
+                'date'    => substr($c['commit']['author']['date'] ?? '', 0, 10),
+                'url'     => $c['html_url'] ?? '',
+            ], $commits),
+        ]);
+    }
+
+    /**
      * Run git pull on the server
      */
     public function gitPull(): void
@@ -361,16 +423,35 @@ class DeploymentController extends BaseController
         $composerBinary = $this->resolveBinary('composer', [
             '/usr/bin/composer',
             '/usr/local/bin/composer',
+            '/usr/local/cpanel/3rdparty/bin/composer',
             $basePath . '/composer.phar',
+            '/usr/local/php/bin/composer',
+            getenv('HOME') ? getenv('HOME') . '/.config/composer/vendor/bin/composer' : '',
+            getenv('HOME') ? getenv('HOME') . '/.composer/vendor/bin/composer' : '',
         ]);
-        if ($composerBinary === null) {
-            $this->jsonError('Composer binary not found on server.', 503);
+
+        // If no standard binary found, try running composer.phar via the PHP interpreter
+        $composerCmd = null;
+        if ($composerBinary !== null) {
+            $composerCmd = escapeshellarg($composerBinary);
+        } else {
+            $pharPath = $basePath . '/composer.phar';
+            if (is_file($pharPath)) {
+                $phpBin = $this->resolveBinary('php', [PHP_BINARY, '/usr/bin/php', '/usr/local/bin/php']);
+                if ($phpBin !== null) {
+                    $composerCmd = escapeshellarg($phpBin) . ' ' . escapeshellarg($pharPath);
+                }
+            }
+        }
+
+        if ($composerCmd === null) {
+            $this->jsonError('Composer binary not found on server. Upload composer.phar to the project root or install Composer globally.', 503);
             return;
         }
         $output   = [];
         $code     = 0;
         exec(
-            escapeshellarg($composerBinary) . ' --working-dir=' . escapeshellarg($basePath) . ' install --no-dev --optimize-autoloader 2>&1',
+            $composerCmd . ' --working-dir=' . escapeshellarg($basePath) . ' install --no-dev --optimize-autoloader 2>&1',
             $output,
             $code
         );
