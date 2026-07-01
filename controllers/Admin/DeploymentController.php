@@ -257,7 +257,16 @@ class DeploymentController extends BaseController
             $remoteCode
         );
         $originUrl = trim($originRemote[0] ?? '');
-        if ($remoteCode !== 0 || $originUrl === '' || !preg_match('/^(https:\/\/|git@|ssh:\/\/)/i', $originUrl)) {
+        $isTrustedRemote = false;
+        if (preg_match('/^https:\/\//i', $originUrl)) {
+            $isTrustedRemote = filter_var($originUrl, FILTER_VALIDATE_URL) !== false;
+        } elseif (preg_match('/^git@[\w.\-]+:[\w.\-\/]+(?:\.git)?$/i', $originUrl)) {
+            $isTrustedRemote = true;
+        } elseif (preg_match('/^ssh:\/\/[^\s]+$/i', $originUrl)) {
+            $isTrustedRemote = true;
+        }
+
+        if ($remoteCode !== 0 || $originUrl === '' || !$isTrustedRemote) {
             $this->jsonError('Origin remote is missing or not trusted.', 422);
             return;
         }
@@ -301,7 +310,9 @@ class DeploymentController extends BaseController
                     $file->getFilename() !== '.gitkeep'
                 ) {
                     $realFilePath = $file->getRealPath();
-                    if (!is_string($realFilePath) || !str_starts_with($realFilePath, $realCacheDir . DIRECTORY_SEPARATOR)) {
+                    $normalizedRoot = str_replace('\\', '/', $realCacheDir) . '/';
+                    $normalizedFile = is_string($realFilePath) ? str_replace('\\', '/', $realFilePath) : '';
+                    if ($normalizedFile === '' || !str_starts_with($normalizedFile, $normalizedRoot)) {
                         continue;
                     }
                     unlink($realFilePath);
@@ -359,8 +370,7 @@ class DeploymentController extends BaseController
         $output   = [];
         $code     = 0;
         exec(
-            'cd ' . escapeshellarg($basePath) .
-            ' && ' . escapeshellarg($composerBinary) . ' install --no-dev --optimize-autoloader 2>&1',
+            escapeshellarg($composerBinary) . ' --working-dir=' . escapeshellarg($basePath) . ' install --no-dev --optimize-autoloader 2>&1',
             $output,
             $code
         );

@@ -29,6 +29,7 @@ if (!function_exists('dep_bsz')) {
 }
 if (!function_exists('dep_shell')) {
     function dep_shell(string $command): string {
+        // Security: pass only static/internal command strings and escape dynamic values at call-sites.
         if (!function_exists('shell_exec')) {
             return '';
         }

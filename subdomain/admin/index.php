@@ -39,7 +39,7 @@ $qs     = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''
 
 // If the request is not already under /admin, prepend it.
 if ($uri !== '/admin' && !str_starts_with($uri, '/admin/')) {
-    $uri = '/admin';
+    $uri = '/admin' . ($uri === '/' ? '' : $uri);
 }
 
 header('Location: ' . $mainUrl . $uri . $qs, true, 302);
