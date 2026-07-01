@@ -50,6 +50,14 @@ $gitRemotes         = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) 
 $gitBranches        = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' branch -a 2>/dev/null'));
 $gitBranchesVerbose = dep_shell('git -C ' . escapeshellarg($diskPath) . ' branch -avv 2>/dev/null');
 $gitTags            = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' tag --sort=-creatordate 2>/dev/null'));
+$gitHistoryRows     = dep_lines(dep_shell('git -C ' . escapeshellarg($diskPath) . ' log --date=short --pretty=format:"%h|%ad|%an|%s" -25 2>/dev/null'));
+$githubCommitBase   = '';
+$githubCompareBase  = '';
+if ($github_repo && strpos($github_repo, '/') !== false) {
+    $githubRepoSafe  = trim($github_repo);
+    $githubCommitBase = 'https://github.com/' . $githubRepoSafe . '/commit/';
+    $githubCompareBase = 'https://github.com/' . $githubRepoSafe . '/compare/';
+}
 $csrfToken  = \Core\Security::generateCsrfToken();
 ?>
 
@@ -276,6 +284,48 @@ $csrfToken  = \Core\Security::generateCsrfToken();
     font-size: 13px;
 }
 .dep-timeline li:last-child { border-bottom: none; }
+
+.dep-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dep-history-item {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px;
+    background: color-mix(in srgb, var(--bg-secondary) 75%, transparent);
+}
+
+.dep-history-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.dep-history-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dep-history-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dep-btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+}
 .dep-tl-dot {
     width: 10px; height: 10px; border-radius: 50%;
     margin-top: 4px; flex-shrink: 0;
@@ -603,19 +653,63 @@ $csrfToken  = \Core\Security::generateCsrfToken();
 
     <!-- ═══════════════════════════════ HISTORY ═══════════════════════════════ -->
     <div class="dep-panel <?= $activeTab === 'history' ? 'active' : '' ?>">
+        <div class="dep-stats">
+            <div class="dep-stat cyan">
+                <div class="dep-stat-icon"><i class="fas fa-code-commit"></i></div>
+                <div class="dep-stat-val"><?= count($gitHistoryRows) ?></div>
+                <div class="dep-stat-label">Recent commits</div>
+            </div>
+            <div class="dep-stat green">
+                <div class="dep-stat-icon"><i class="fas fa-code-branch"></i></div>
+                <div class="dep-stat-val" style="font-size:1rem;"><?= htmlspecialchars($gitBranch) ?></div>
+                <div class="dep-stat-label">Current branch</div>
+            </div>
+            <div class="dep-stat orange">
+                <div class="dep-stat-icon"><i class="fas fa-list-check"></i></div>
+                <div class="dep-stat-val"><?= $gitStatus ? substr_count($gitStatus, "\n") + 1 : 0 ?></div>
+                <div class="dep-stat-label">Uncommitted files</div>
+            </div>
+        </div>
+
         <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-history"></i>Commit History (last 25)</span></div>
-            <div class="dep-card-body" style="padding:12px 20px;">
-                <?php if ($gitLog): foreach ($gitLog as $line):
-                    $parts = explode(' ', trim($line), 2);
-                    $hash = $parts[0] ?? '';
-                    $msg  = $parts[1] ?? '';
-                ?>
-                <div class="dep-log-line" style="display:flex;gap:8px;align-items:baseline;">
-                    <span class="dep-log-hash" style="min-width:58px;flex-shrink:0;"><?= htmlspecialchars($hash) ?></span>
-                    <span class="dep-log-msg"><?= htmlspecialchars($msg) ?></span>
+            <div class="dep-card-head"><span><i class="fas fa-history"></i>Deployment History Timeline</span></div>
+            <div class="dep-card-body">
+                <?php if ($gitHistoryRows): ?>
+                <div class="dep-history-list">
+                    <?php foreach ($gitHistoryRows as $row):
+                        [$hash, $date, $author, $msg] = array_pad(explode('|', $row, 4), 4, '');
+                        $safeHash = htmlspecialchars($hash);
+                    ?>
+                    <div class="dep-history-item">
+                        <div class="dep-history-top">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span class="dep-log-hash" style="min-width:58px;flex-shrink:0;"><?= $safeHash ?></span>
+                                <span class="dep-log-msg"><?= htmlspecialchars($msg ?: 'No message') ?></span>
+                            </div>
+                            <div class="dep-history-actions">
+                                <?php if ($githubCommitBase): ?>
+                                <a href="<?= htmlspecialchars($githubCommitBase . rawurlencode($hash)) ?>" target="_blank" rel="noopener" class="dep-btn dep-btn-secondary dep-btn-sm">
+                                    <i class="fas fa-up-right-from-square"></i> View
+                                </a>
+                                <?php endif; ?>
+                                <?php if ($githubCompareBase): ?>
+                                <a href="<?= htmlspecialchars($githubCompareBase . rawurlencode($hash) . '...HEAD') ?>" target="_blank" rel="noopener" class="dep-btn dep-btn-secondary dep-btn-sm">
+                                    <i class="fas fa-code-compare"></i> Compare
+                                </a>
+                                <?php endif; ?>
+                                <button type="button" class="dep-btn dep-btn-secondary dep-btn-sm" onclick="copyCommitHash('<?= $safeHash ?>')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="dep-history-meta">
+                            <span><i class="fas fa-calendar-day"></i> <?= htmlspecialchars($date ?: 'Unknown date') ?></span>
+                            <span><i class="fas fa-user"></i> <?= htmlspecialchars($author ?: 'Unknown author') ?></span>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
-                <?php endforeach; else: ?>
+                <?php else: ?>
                 <div class="dep-empty"><i class="fas fa-history"></i>No commit history available</div>
                 <?php endif; ?>
             </div>
@@ -1133,6 +1227,23 @@ function showMsg(el, text, ok) {
 }
 function escHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function copyCommitHash(hash) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(hash);
+            alert('Copied commit hash: ' + hash);
+            return;
+        }
+    } catch (e) {}
+    const area = document.createElement('textarea');
+    area.value = hash;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    document.body.removeChild(area);
+    alert('Copied commit hash: ' + hash);
 }
 
 // Auto-load GitHub data if connected

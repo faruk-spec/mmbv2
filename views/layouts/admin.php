@@ -206,6 +206,26 @@
             color: var(--text-secondary);
             letter-spacing: 0.4px;
         }
+
+        .sidebar-collapse-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .sidebar-collapse-btn:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: var(--hover-bg);
+        }
         
         .sidebar-menu {
             padding: 20px 0;
@@ -338,6 +358,73 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        .admin-container.sidebar-collapsed .sidebar {
+            width: 84px;
+        }
+
+        .admin-container.sidebar-collapsed .main-content {
+            margin-left: 84px;
+        }
+
+        .admin-container.sidebar-collapsed .sidebar-header {
+            padding: 16px 10px;
+            text-align: center;
+        }
+
+        .admin-container.sidebar-collapsed .sidebar-logo {
+            justify-content: center;
+            gap: 0;
+        }
+
+        .admin-container.sidebar-collapsed .sidebar-logo img {
+            max-height: 30px !important;
+        }
+
+        .admin-container.sidebar-collapsed .sidebar-logo span,
+        .admin-container.sidebar-collapsed .sidebar-version,
+        .admin-container.sidebar-collapsed .menu-section-title,
+        .admin-container.sidebar-collapsed .menu-link span,
+        .admin-container.sidebar-collapsed .menu-dropdown-toggle .left span,
+        .admin-container.sidebar-collapsed .menu-dropdown-toggle .arrow,
+        .admin-container.sidebar-collapsed .menu-link .badge {
+            display: none !important;
+        }
+
+        .admin-container.sidebar-collapsed .menu-link,
+        .admin-container.sidebar-collapsed .menu-dropdown-toggle {
+            justify-content: center;
+            padding: 12px 10px;
+            position: relative;
+        }
+
+        .admin-container.sidebar-collapsed .menu-dropdown-toggle .left {
+            width: auto;
+            justify-content: center;
+        }
+
+        .admin-container.sidebar-collapsed .menu-dropdown-content {
+            display: none !important;
+        }
+
+        .admin-container.sidebar-collapsed .menu-link:hover::after,
+        .admin-container.sidebar-collapsed .menu-dropdown-toggle:hover::after {
+            content: attr(data-label);
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1101;
+            box-shadow: 0 10px 24px var(--shadow);
+            pointer-events: none;
         }
         
         /* Top Bar */
@@ -877,6 +964,14 @@
         
         /* Mobile Responsive (< 768px) */
         @media (max-width: 767px) {
+            .admin-container.sidebar-collapsed .sidebar {
+                width: var(--sidebar-width);
+            }
+
+            .admin-container.sidebar-collapsed .main-content {
+                margin-left: 0;
+            }
+
             .sidebar {
                 transform: translateX(-100%);
             }
@@ -2598,6 +2693,9 @@ window.mmbSkeleton = (function(){
                     <button class="mobile-menu-btn" id="mobileMenuBtn">
                         <i class="fas fa-bars"></i>
                     </button>
+                    <button class="sidebar-collapse-btn hide-mobile" id="sidebarCollapseBtn" title="Collapse sidebar">
+                        <i class="fas fa-angles-left" id="sidebarCollapseIcon"></i>
+                    </button>
                     <div class="topbar-title">
                         <h1><?= $title ?? 'Admin Panel' ?></h1>
                         <?php if (isset($subtitle)): ?>
@@ -2777,6 +2875,35 @@ window.mmbSkeleton = (function(){
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const adminContainer = document.querySelector('.admin-container');
+        const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+        const sidebarCollapseIcon = document.getElementById('sidebarCollapseIcon');
+        const SIDEBAR_COLLAPSE_KEY = 'adminSidebarCollapsed';
+
+        function updateSidebarCollapseState(collapsed) {
+            if (!adminContainer) return;
+            adminContainer.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > 767);
+            if (sidebarCollapseIcon) {
+                sidebarCollapseIcon.className = collapsed ? 'fas fa-angles-right' : 'fas fa-angles-left';
+            }
+            if (sidebarCollapseBtn) {
+                sidebarCollapseBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+            }
+        }
+
+        updateSidebarCollapseState(localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === '1');
+
+        if (sidebarCollapseBtn) {
+            sidebarCollapseBtn.addEventListener('click', () => {
+                const collapsed = !(adminContainer && adminContainer.classList.contains('sidebar-collapsed'));
+                localStorage.setItem(SIDEBAR_COLLAPSE_KEY, collapsed ? '1' : '0');
+                updateSidebarCollapseState(collapsed);
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            updateSidebarCollapseState(localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === '1');
+        });
         
         mobileMenuBtn.addEventListener('click', () => {
             sidebar.classList.toggle('active');
@@ -2791,6 +2918,11 @@ window.mmbSkeleton = (function(){
         // Dropdown menus
         document.querySelectorAll('.menu-dropdown-toggle').forEach(toggle => {
             toggle.addEventListener('click', function() {
+                if (adminContainer && adminContainer.classList.contains('sidebar-collapsed') && window.innerWidth > 767) {
+                    localStorage.setItem(SIDEBAR_COLLAPSE_KEY, '0');
+                    updateSidebarCollapseState(false);
+                    return;
+                }
                 const dropdown = this.parentElement;
                 const wasOpen = dropdown.classList.contains('open');
                 
@@ -2804,6 +2936,24 @@ window.mmbSkeleton = (function(){
                     dropdown.classList.add('open');
                 }
             });
+        });
+
+        document.querySelectorAll('#sidebar .menu-link').forEach(link => {
+            const label = (link.querySelector('span')?.textContent || link.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!label) return;
+            link.setAttribute('data-label', label);
+            if (!link.getAttribute('title')) {
+                link.setAttribute('title', label);
+            }
+        });
+
+        document.querySelectorAll('#sidebar .menu-dropdown-toggle').forEach(toggle => {
+            const label = (toggle.querySelector('.left span')?.textContent || toggle.textContent || '').replace(/\s+/g, ' ').trim();
+            if (!label) return;
+            toggle.setAttribute('data-label', label);
+            if (!toggle.getAttribute('title')) {
+                toggle.setAttribute('title', label);
+            }
         });
         
         // Auto-open dropdown if current page is in it
