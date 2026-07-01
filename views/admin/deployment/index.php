@@ -20,11 +20,12 @@ $diskPct        = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 1) : 0;
 $memUsage       = memory_get_usage(true);
 $memPeak        = memory_get_peak_usage(true);
 if (!function_exists('dep_bsz')) {
-    function dep_bsz(int|float $bytes): string {
+    function dep_bsz($bytes): string {
+        $bytes = (float) $bytes;
         if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
         if ($bytes >= 1048576)    return round($bytes / 1048576,    2) . ' MB';
         if ($bytes >= 1024)       return round($bytes / 1024,       2) . ' KB';
-        return $bytes . ' B';
+        return (string) ((int) $bytes) . ' B';
     }
 }
 if (!function_exists('dep_shell')) {
@@ -508,8 +509,8 @@ $csrfToken  = \Core\Security::generateCsrfToken();
                     <?php foreach ($gitBranches as $b):
                         $b = trim($b);
                         if ($b === '') continue;
-                        $current = str_starts_with($b, '*');
-                        $b = ltrim($b, '* ');
+                        $current = strpos($b, '*') === 0;
+                        $b = $current ? trim(substr($b, 1)) : trim($b);
                     ?>
                     <span class="dep-branch-pill <?= $current ? 'current' : '' ?>">
                         <i class="fas fa-code-branch"></i><?= htmlspecialchars($b) ?>
