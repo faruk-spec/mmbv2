@@ -377,6 +377,14 @@ $router->get('/admin/deployment/versions', 'Admin\\DeploymentController@versions
 $router->get('/admin/deployment/logs', 'Admin\\DeploymentController@logs', ['auth', 'admin']);
 $router->get('/admin/deployment/server', 'Admin\\DeploymentController@server', ['auth', 'admin']);
 $router->get('/admin/deployment/settings', 'Admin\\DeploymentController@settings', ['auth', 'admin']);
+$router->get('/admin/deployment/subdomain', 'Admin\\DeploymentController@subdomain', ['auth', 'admin']);
+// Deployment actions (AJAX POST)
+$router->post('/admin/deployment/git-pull', 'Admin\\DeploymentController@gitPull', ['auth', 'admin']);
+$router->post('/admin/deployment/clear-cache', 'Admin\\DeploymentController@clearCache', ['auth', 'admin']);
+$router->post('/admin/deployment/composer-install', 'Admin\\DeploymentController@composerInstall', ['auth', 'admin']);
+$router->post('/admin/deployment/save-github-token', 'Admin\\DeploymentController@saveGitHubToken', ['auth', 'admin']);
+$router->get('/admin/deployment/github-api-data', 'Admin\\DeploymentController@gitHubApiData', ['auth', 'admin']);
+$router->post('/admin/deployment/save-subdomain', 'Admin\\DeploymentController@saveSubdomain', ['auth', 'admin']);
 
 // Performance Management routes
 $router->get('/admin/performance/cache', 'Admin\\PerformanceController@cache', ['auth', 'admin']);
