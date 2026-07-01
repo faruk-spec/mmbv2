@@ -244,9 +244,14 @@ class DeploymentController extends BaseController
             $this->jsonError('Git repository not found on server path.', 422);
             return;
         }
+        $gitBinary = $this->resolveBinary('git', ['/usr/bin/git', '/usr/local/bin/git']);
+        if ($gitBinary === null) {
+            $this->jsonError('Git binary not found on server.', 503);
+            return;
+        }
         $output   = [];
         $code     = 0;
-        exec('git -C ' . escapeshellarg($basePath) . ' pull 2>&1', $output, $code);
+        exec(escapeshellarg($gitBinary) . ' -C ' . escapeshellarg($basePath) . ' pull 2>&1', $output, $code);
 
         $outputStr = implode("\n", $output);
         Logger::activity(Auth::id(), 'git_pull', ['exit_code' => $code, 'output' => substr($outputStr, 0, 500)]);
@@ -317,9 +322,23 @@ class DeploymentController extends BaseController
             $this->jsonError('composer.json not found on server path.', 422);
             return;
         }
+        $composerBinary = $this->resolveBinary('composer', [
+            '/usr/bin/composer',
+            '/usr/local/bin/composer',
+            $basePath . '/composer.phar',
+        ]);
+        if ($composerBinary === null) {
+            $this->jsonError('Composer binary not found on server.', 503);
+            return;
+        }
         $output   = [];
         $code     = 0;
-        exec('cd ' . escapeshellarg($basePath) . ' && composer install --no-dev --optimize-autoloader 2>&1', $output, $code);
+        exec(
+            'cd ' . escapeshellarg($basePath) .
+            ' && ' . escapeshellarg($composerBinary) . ' install --no-dev --optimize-autoloader 2>&1',
+            $output,
+            $code
+        );
 
         $outputStr = implode("\n", $output);
         Logger::activity(Auth::id(), 'composer_install', ['exit_code' => $code, 'output' => substr($outputStr, 0, 500)]);
@@ -431,6 +450,32 @@ class DeploymentController extends BaseController
         } else {
             $db->insert('settings', ['key' => $key, 'value' => $value, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')]);
         }
+    }
+
+    /**
+     * Resolve command binary path from known candidates or PATH lookup.
+     */
+    private function resolveBinary(string $command, array $candidates = []): ?string
+    {
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && is_file($candidate) && is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        if (function_exists('exec')) {
+            $lookup = [];
+            $code = 0;
+            exec('command -v ' . escapeshellarg($command) . ' 2>/dev/null', $lookup, $code);
+            if ($code === 0) {
+                $resolved = trim($lookup[0] ?? '');
+                if ($resolved !== '' && is_file($resolved) && is_executable($resolved)) {
+                    return $resolved;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

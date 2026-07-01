@@ -1034,6 +1034,7 @@ server {
 <?php View::section('scripts'); ?>
 <script>
 const DEP_CSRF = <?= json_encode($csrfToken) ?>;
+const GH_TOKEN_MASK_CHAR = '•';
 const depHistoryStatusEl = document.createElement('div');
 depHistoryStatusEl.style.cssText = 'position:fixed;right:18px;bottom:18px;padding:10px 12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border-color);box-shadow:0 10px 24px rgba(0,0,0,.35);font-size:12px;color:var(--text-primary);z-index:1200;display:none;';
 document.body.appendChild(depHistoryStatusEl);
@@ -1088,7 +1089,8 @@ async function saveGitHubToken() {
 
     // If the field still shows the mask placeholder, don't overwrite the stored token
     const tokenValue = tokenInput.value;
-    const isMasked   = /^[•]+$/.test(tokenValue);
+    const maskRegex  = new RegExp('^' + GH_TOKEN_MASK_CHAR.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '+$');
+    const isMasked   = maskRegex.test(tokenValue);
     const token      = isMasked ? '' : tokenValue;
 
     if (!repo) { showMsg(msg, 'Repository name is required.', false); return; }
