@@ -2879,10 +2879,11 @@ window.mmbSkeleton = (function(){
         const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
         const sidebarCollapseIcon = document.getElementById('sidebarCollapseIcon');
         const SIDEBAR_COLLAPSE_KEY = 'adminSidebarCollapsed';
+        const MOBILE_BREAKPOINT = 767;
 
         function updateSidebarCollapseState(collapsed) {
             if (!adminContainer) return;
-            adminContainer.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > 767);
+            adminContainer.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > MOBILE_BREAKPOINT);
             if (sidebarCollapseIcon) {
                 sidebarCollapseIcon.className = collapsed ? 'fas fa-angles-right' : 'fas fa-angles-left';
             }
@@ -2918,7 +2919,7 @@ window.mmbSkeleton = (function(){
         // Dropdown menus
         document.querySelectorAll('.menu-dropdown-toggle').forEach(toggle => {
             toggle.addEventListener('click', function() {
-                if (adminContainer && adminContainer.classList.contains('sidebar-collapsed') && window.innerWidth > 767) {
+                if (adminContainer && adminContainer.classList.contains('sidebar-collapsed') && window.innerWidth > MOBILE_BREAKPOINT) {
                     localStorage.setItem(SIDEBAR_COLLAPSE_KEY, '0');
                     updateSidebarCollapseState(false);
                     return;

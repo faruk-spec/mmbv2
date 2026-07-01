@@ -295,7 +295,7 @@ $csrfToken  = \Core\Security::generateCsrfToken();
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 12px;
-    background: color-mix(in srgb, var(--bg-secondary) 75%, transparent);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .dep-history-top {
@@ -1034,6 +1034,9 @@ server {
 <?php View::section('scripts'); ?>
 <script>
 const DEP_CSRF = <?= json_encode($csrfToken) ?>;
+const depHistoryStatusEl = document.createElement('div');
+depHistoryStatusEl.style.cssText = 'position:fixed;right:18px;bottom:18px;padding:10px 12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border-color);box-shadow:0 10px 24px rgba(0,0,0,.35);font-size:12px;color:var(--text-primary);z-index:1200;display:none;';
+document.body.appendChild(depHistoryStatusEl);
 
 // ── Quick action buttons (git pull, clear cache, composer) ──────────────────
 async function runAction(action, label) {
@@ -1229,11 +1232,22 @@ function escHtml(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function showHistoryStatus(message, ok = true) {
+    depHistoryStatusEl.textContent = message;
+    depHistoryStatusEl.style.display = 'block';
+    depHistoryStatusEl.style.borderColor = ok ? 'rgba(0,220,130,.35)' : 'rgba(248,113,113,.35)';
+    depHistoryStatusEl.style.color = ok ? '#00dc82' : '#f87171';
+    clearTimeout(showHistoryStatus._timer);
+    showHistoryStatus._timer = setTimeout(() => {
+        depHistoryStatusEl.style.display = 'none';
+    }, 1800);
+}
+
 async function copyCommitHash(hash) {
     try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(hash);
-            alert('Copied commit hash: ' + hash);
+            showHistoryStatus('Copied commit hash: ' + hash, true);
             return;
         }
     } catch (e) {}
@@ -1243,7 +1257,7 @@ async function copyCommitHash(hash) {
     area.select();
     document.execCommand('copy');
     document.body.removeChild(area);
-    alert('Copied commit hash: ' + hash);
+    showHistoryStatus('Copied commit hash: ' + hash, true);
 }
 
 // Auto-load GitHub data if connected

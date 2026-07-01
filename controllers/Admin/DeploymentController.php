@@ -240,6 +240,10 @@ class DeploymentController extends BaseController
         }
 
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        if (!is_dir($basePath . '/.git')) {
+            $this->jsonError('Git repository not found on server path.', 422);
+            return;
+        }
         $output   = [];
         $code     = 0;
         exec('git -C ' . escapeshellarg($basePath) . ' pull 2>&1', $output, $code);
@@ -309,6 +313,10 @@ class DeploymentController extends BaseController
         }
 
         $basePath = defined('BASE_PATH') ? BASE_PATH : getcwd();
+        if (!is_file($basePath . '/composer.json')) {
+            $this->jsonError('composer.json not found on server path.', 422);
+            return;
+        }
         $output   = [];
         $code     = 0;
         exec('cd ' . escapeshellarg($basePath) . ' && composer install --no-dev --optimize-autoloader 2>&1', $output, $code);
@@ -394,7 +402,7 @@ class DeploymentController extends BaseController
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 10,
-            CURLOPT_USERAGENT      => 'MMB-DeploymentDashboard/1.0',
+            CURLOPT_USERAGENT      => (defined('APP_NAME') ? APP_NAME : 'MMB') . '-DeploymentDashboard/' . (defined('APP_VERSION') ? APP_VERSION : '1.0'),
             CURLOPT_HTTPHEADER     => [
                 'Authorization: Bearer ' . $token,
                 'Accept: application/vnd.github+json',
