@@ -5,25 +5,29 @@
 $activeTab = $activeTab ?? 'overview';
 $phpVersion    = PHP_VERSION;
 $serverSoftware = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
-$diskTotal  = disk_total_space('/');
-$diskFree   = disk_free_space('/');
+$diskPath   = defined('BASE_PATH') ? BASE_PATH : '/';
+$diskTotal  = disk_total_space($diskPath);
+$diskFree   = disk_free_space($diskPath);
 $diskUsed   = $diskTotal - $diskFree;
 $diskPct    = $diskTotal > 0 ? round(($diskUsed / $diskTotal) * 100, 1) : 0;
 $memUsage   = memory_get_usage(true);
 $memPeak    = memory_get_peak_usage(true);
-function bsz(int $bytes): string {
-    if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
-    if ($bytes >= 1048576)    return round($bytes / 1048576,    2) . ' MB';
-    if ($bytes >= 1024)       return round($bytes / 1024,       2) . ' KB';
-    return $bytes . ' B';
+if (!function_exists('dep_bsz')) {
+    function dep_bsz(int $bytes): string {
+        if ($bytes >= 1073741824) return round($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576)    return round($bytes / 1048576,    2) . ' MB';
+        if ($bytes >= 1024)       return round($bytes / 1024,       2) . ' KB';
+        return $bytes . ' B';
+    }
 }
-$gitBranch  = trim(shell_exec('git rev-parse --abbrev-ref HEAD 2>/dev/null') ?? 'unknown');
-$gitCommit  = trim(shell_exec('git log -1 --format="%h %s" 2>/dev/null') ?? '—');
-$gitStatus  = trim(shell_exec('git status --short 2>/dev/null') ?? '');
-$gitLog     = array_filter(explode("\n", trim(shell_exec('git log --oneline -10 2>/dev/null') ?? '')));
-$gitRemotes = array_filter(explode("\n", trim(shell_exec('git remote -v 2>/dev/null') ?? '')));
-$gitBranches= array_filter(explode("\n", trim(shell_exec('git branch -a 2>/dev/null') ?? '')));
-$gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creatordate 2>/dev/null') ?? '')));
+$gitBranch  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' rev-parse --abbrev-ref HEAD 2>/dev/null') ?? 'unknown');
+$gitCommit  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' log -1 --format="%h %s" 2>/dev/null') ?? '—');
+$gitStatus  = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' status --short 2>/dev/null') ?? '');
+$gitLog     = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' log --oneline -25 2>/dev/null') ?? '')));
+$gitRemotes = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' remote -v 2>/dev/null') ?? '')));
+$gitBranches= array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' branch -a 2>/dev/null') ?? '')));
+$gitBranchesVerbose = trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' branch -avv 2>/dev/null') ?? '');
+$gitTags    = array_filter(explode("\n", trim(shell_exec('git -C ' . escapeshellarg($diskPath) . ' tag --sort=-creatordate 2>/dev/null') ?? '')));
 ?>
 
 <?php View::section('styles'); ?>
@@ -316,7 +320,7 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
             </div>
             <div class="dep-stat orange">
                 <div class="dep-stat-icon"><i class="fas fa-microchip"></i></div>
-                <div class="dep-stat-val"><?= bsz($memUsage) ?></div>
+                <div class="dep-stat-val"><?= dep_bsz($memUsage) ?></div>
                 <div class="dep-stat-label">Memory Usage</div>
             </div>
         </div>
@@ -353,9 +357,9 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
             <div class="dep-card-head"><span><i class="fas fa-hdd"></i>Disk Usage</span></div>
             <div class="dep-card-body">
                 <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
-                    <span>Used: <?= bsz($diskUsed) ?></span>
-                    <span>Free: <?= bsz($diskFree) ?></span>
-                    <span>Total: <?= bsz($diskTotal) ?></span>
+                    <span>Used: <?= dep_bsz($diskUsed) ?></span>
+                    <span>Free: <?= dep_bsz($diskFree) ?></span>
+                    <span>Total: <?= dep_bsz($diskTotal) ?></span>
                 </div>
                 <div class="dep-progress">
                     <div class="dep-progress-fill" style="width:<?= $diskPct ?>%;background:linear-gradient(90deg,var(--cyan),var(--magenta));"></div>
@@ -440,7 +444,7 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
         <div class="dep-card">
             <div class="dep-card-head"><span><i class="fas fa-terminal"></i>Branch Details</span></div>
             <div class="dep-card-body">
-                <div class="dep-code"><?= htmlspecialchars(shell_exec('git branch -avv 2>/dev/null') ?: 'No branch data available') ?></div>
+                <div class="dep-code"><?= htmlspecialchars($gitBranchesVerbose ?: 'No branch data available') ?></div>
             </div>
         </div>
     </div>
@@ -454,8 +458,8 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
                 $checks = [
                     ['Working tree clean',      !$gitStatus,           $gitStatus ? 'Uncommitted changes detected' : 'No pending changes'],
                     ['PHP version compatible',  version_compare(PHP_VERSION, '8.0', '>='), 'PHP ' . PHP_VERSION],
-                    ['Disk space available',    $diskPct < 90,         bsz($diskFree) . ' free (' . $diskPct . '% used)'],
-                    ['Memory within limits',    $memUsage < 100*1024*1024, bsz($memUsage) . ' / ' . bsz($memPeak) . ' peak'],
+                    ['Disk space available',    $diskPct < 90,         dep_bsz($diskFree) . ' free (' . $diskPct . '% used)'],
+                    ['Memory within limits',    $memUsage < 100*1024*1024, dep_bsz($memUsage) . ' / ' . dep_bsz($memPeak) . ' peak'],
                     ['Composer autoload',       file_exists(BASE_PATH . '/vendor/autoload.php'), 'vendor/autoload.php'],
                     ['Environment config',      file_exists(BASE_PATH . '/config/config.php'),  'config/config.php'],
                 ];
@@ -475,18 +479,16 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
         </div>
 
         <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-play-circle"></i>Quick Actions</span></div>
-            <div class="dep-card-body" style="display:flex;flex-wrap:wrap;gap:10px;">
-                <button class="dep-btn dep-btn-primary" onclick="depRunCmd('git pull')"><i class="fas fa-cloud-download-alt"></i>Pull Latest</button>
-                <button class="dep-btn dep-btn-secondary" onclick="depRunCmd('composer install --no-dev --optimize-autoloader')"><i class="fas fa-box"></i>Install Dependencies</button>
-                <button class="dep-btn dep-btn-secondary" onclick="depRunCmd('git status')"><i class="fas fa-info-circle"></i>Git Status</button>
-                <button class="dep-btn dep-btn-danger"    onclick="if(confirm('Clear cache?')) depRunCmd('php -r \"echo shell_exec(\\\"find storage/cache -type f -name *.php -delete\\\");\"')"><i class="fas fa-trash-alt"></i>Clear Cache</button>
+            <div class="dep-card-head"><span><i class="fas fa-info-circle"></i>Deployment Notes</span></div>
+            <div class="dep-card-body">
+                <ul style="margin:0;padding-left:18px;color:var(--text-secondary);font-size:13px;line-height:2;">
+                    <li>Ensure working tree is clean before deploying.</li>
+                    <li>Run <code style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px;color:var(--cyan);">composer install --no-dev --optimize-autoloader</code> after pulling updates.</li>
+                    <li>Clear application caches after every deployment.</li>
+                    <li>Verify database migrations are up to date.</li>
+                    <li>Check the Server tab to confirm PHP extensions and disk space.</li>
+                </ul>
             </div>
-        </div>
-
-        <div class="dep-card" id="depCmdOutput" style="display:none;">
-            <div class="dep-card-head"><span><i class="fas fa-terminal"></i>Command Output</span></div>
-            <div class="dep-card-body"><div class="dep-code" id="depCmdContent"></div></div>
         </div>
     </div>
 
@@ -495,10 +497,7 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
         <div class="dep-card">
             <div class="dep-card-head"><span><i class="fas fa-history"></i>Commit History (last 25)</span></div>
             <div class="dep-card-body" style="padding:12px 20px;">
-                <?php
-                $fullLog = array_filter(explode("\n", trim(shell_exec('git log --oneline -25 2>/dev/null') ?? '')));
-                ?>
-                <?php if ($fullLog): foreach ($fullLog as $line):
+                <?php if ($gitLog): foreach ($gitLog as $line):
                     $parts = explode(' ', trim($line), 2);
                     $hash = $parts[0] ?? '';
                     $msg  = $parts[1] ?? '';
@@ -547,9 +546,20 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
     <!-- ═══════════════════════════════ LOGS ══════════════════════════════════ -->
     <div class="dep-panel <?= $activeTab === 'logs' ? 'active' : '' ?>">
         <div class="dep-card">
-            <div class="dep-card-head"><span><i class="fas fa-terminal"></i>Git Reflog (last 20)</span></div>
-            <div class="dep-card-body">
-                <div class="dep-code"><?= htmlspecialchars(shell_exec('git reflog --oneline -20 2>/dev/null') ?: 'No reflog data') ?></div>
+            <div class="dep-card-head"><span><i class="fas fa-history"></i>Recent Git Activity</span></div>
+            <div class="dep-card-body" style="padding:12px 20px;">
+                <?php if ($gitLog): foreach ($gitLog as $line):
+                    $parts = explode(' ', trim($line), 2);
+                    $hash = $parts[0] ?? '';
+                    $msg  = $parts[1] ?? '';
+                ?>
+                <div class="dep-log-line" style="display:flex;gap:8px;align-items:baseline;">
+                    <span class="dep-log-hash" style="min-width:58px;flex-shrink:0;"><?= htmlspecialchars($hash) ?></span>
+                    <span class="dep-log-msg"><?= htmlspecialchars($msg) ?></span>
+                </div>
+                <?php endforeach; else: ?>
+                <div class="dep-empty"><i class="fas fa-history"></i>No git activity found</div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -568,7 +578,7 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
                         <span style="font-size:13px;font-weight:600;color:var(--text-primary);">
                             <i class="fas fa-file-code" style="color:var(--cyan);margin-right:6px;"></i><?= htmlspecialchars(basename($lf)) ?>
                         </span>
-                        <span style="font-size:11px;color:var(--text-secondary);"><?= bsz(filesize($lf)) ?> &bull; <?= date('Y-m-d H:i', filemtime($lf)) ?></span>
+                        <span style="font-size:11px;color:var(--text-secondary);"><?= dep_bsz(filesize($lf)) ?> &bull; <?= date('Y-m-d H:i', filemtime($lf)) ?></span>
                     </div>
                     <div class="dep-code" style="max-height:160px;"><?= htmlspecialchars(implode("\n", array_slice(array_reverse(file($lf, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)), 0, 20))) ?></div>
                 </div>
@@ -593,7 +603,7 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
             </div>
             <div class="dep-stat green">
                 <div class="dep-stat-icon"><i class="fas fa-memory"></i></div>
-                <div class="dep-stat-val"><?= bsz($memUsage) ?></div>
+                <div class="dep-stat-val"><?= dep_bsz($memUsage) ?></div>
                 <div class="dep-stat-label">Memory Usage</div>
             </div>
             <div class="dep-stat mag">
@@ -646,9 +656,9 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
             <div class="dep-card-head"><span><i class="fas fa-hdd"></i>Disk Storage</span></div>
             <div class="dep-card-body">
                 <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
-                    <span><i class="fas fa-circle" style="color:#f87171;font-size:10px;margin-right:4px;"></i>Used: <?= bsz($diskUsed) ?></span>
-                    <span><i class="fas fa-circle" style="color:#00dc82;font-size:10px;margin-right:4px;"></i>Free: <?= bsz($diskFree) ?></span>
-                    <span>Total: <?= bsz($diskTotal) ?></span>
+                    <span><i class="fas fa-circle" style="color:#f87171;font-size:10px;margin-right:4px;"></i>Used: <?= dep_bsz($diskUsed) ?></span>
+                    <span><i class="fas fa-circle" style="color:#00dc82;font-size:10px;margin-right:4px;"></i>Free: <?= dep_bsz($diskFree) ?></span>
+                    <span>Total: <?= dep_bsz($diskTotal) ?></span>
                 </div>
                 <div class="dep-progress" style="height:14px;">
                     <?php $col = $diskPct > 85 ? '#f87171' : ($diskPct > 70 ? '#f59e0b' : 'var(--cyan)'); ?>
@@ -709,23 +719,4 @@ $gitTags    = array_filter(explode("\n", trim(shell_exec('git tag --sort=-creato
 
 </div>
 <?php View::endSection(); ?>
-
-<?php View::section('scripts'); ?>
-<script>
-function depRunCmd(cmd) {
-    var out = document.getElementById('depCmdOutput');
-    var content = document.getElementById('depCmdContent');
-    out.style.display = 'block';
-    content.textContent = '⏳ Running…';
-    out.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    fetch('/admin/deployment/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cmd: cmd })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) { content.textContent = d.output || d.error || '(no output)'; })
-    .catch(function(e) { content.textContent = 'Error: ' + e.message; });
-}
-</script>
 <?php View::endSection(); ?>
