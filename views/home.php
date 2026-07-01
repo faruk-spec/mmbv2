@@ -496,8 +496,19 @@ $featuresSubheading = $sections['features']['subheading'] ?? 'Powerful capabilit
 $showStats = false;
 $stats = [];
 try {
-    // Use DISTINCT and LIMIT to prevent duplicates
-    $stats = $db->fetchAll("SELECT DISTINCT id, value, label, description, sort_order, is_active FROM home_stats WHERE is_active = 1 ORDER BY sort_order ASC LIMIT 8");
+    // Build the display value from the current schema fields
+    $stats = $db->fetchAll(
+        "SELECT id,
+                CONCAT(COALESCE(prefix, ''), CAST(count_value AS CHAR), COALESCE(suffix, '')) AS value,
+                label,
+                '' AS description,
+                sort_order,
+                is_active
+         FROM home_stats
+         WHERE is_active = 1
+         ORDER BY sort_order ASC
+         LIMIT 8"
+    );
     $showStats = !empty($stats);
 } catch (Exception $e) {
     $showStats = false;
